@@ -14,14 +14,14 @@ contributions:
     - id: napari-sbem-viewer.make_sample_data
       python_name: napari_sbem_viewer._sample_data:make_sample_data
       title: Load sample data from Napari SBEM Viewer
-    - id: napari-sbem-viewer.make_qwidget
-      python_name: napari_sbem_viewer._widget:ExampleQWidget
+    - id: napari-sbem-viewer.make_sbemimage_integration_widget
+      python_name: napari_sbem_viewer._widget:SBEMImageIntegration
       title: Make example QWidget
-    - id: napari-sbem-viewer.make_magic_widget
-      python_name: napari_sbem_viewer._widget:example_magic_widget
+    - id: napari-sbem-viewer.make_roi_selection_widget
+      python_name: napari_sbem_viewer._widget:ROISelection
       title: Make example magic widget
-    - id: napari-sbem-viewer.make_func_widget
-      python_name: napari_sbem_viewer._widget:example_function_widget
+    - id: napari-sbem-viewer.make_image_registration_widget
+      python_name: napari_sbem_viewer._widget:ImageRegistration
       title: Make example function widget
   readers:
     - command: napari-sbem-viewer.get_reader
@@ -39,10 +39,9 @@ contributions:
       display_name: Napari SBEM Viewer
       key: unique_id.1
   widgets:
-    - command: napari-sbem-viewer.make_qwidget
-      display_name: Example QWidget
-    - command: napari-sbem-viewer.make_magic_widget
-      display_name: Example Magic Widget
-    - command: napari-sbem-viewer.make_func_widget
-      autogenerate: true
-      display_name: Example Function Widget
+    - command: napari-sbem-viewer.make_sbemimage_integration_widget
+      display_name: SBEMImage Integration
+    - command: napari-sbem-viewer.make_roi_selection_widget
+      display_name: ROI Selection
+    - command: napari-sbem-viewer.make_image_registration_widget
+      display_name: Image Registration
