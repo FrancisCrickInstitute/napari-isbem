@@ -1,5 +1,5 @@
 import napari
-from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget, QGroupBox, QVBoxLayout
 
 
 class ROISelection(QWidget):
@@ -9,15 +9,17 @@ class ROISelection(QWidget):
     # 2. use a type annotation of 'napari.viewer.Viewer' for any parameter
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
-        self.viewer = napari_viewer
-
-        btn = QPushButton("Click me!")
-        btn.clicked.connect(self._on_click)
-
+        group_box = QGroupBox("ROI Selection")
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(btn)
+        self.layout().addWidget(group_box)
 
-    def _on_click(self):
-        print("TESTING 0000000")
-        print("napari has", len(self.viewer.layers), "layers")
+    #     btn = QPushButton("Click me!")
+    #     btn.clicked.connect(self._on_click)
+
+    #     self.setLayout(QVBoxLayout())
+    #     self.layout().addWidget(btn)
+
+    # def _on_click(self):
+    #     print("TESTING 0000000")
+    #     print("napari has", len(self.viewer.layers), "layers")
         

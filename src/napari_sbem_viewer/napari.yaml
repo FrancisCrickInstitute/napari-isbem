@@ -14,15 +14,9 @@ contributions:
     - id: napari-sbem-viewer.make_sample_data
       python_name: napari_sbem_viewer._sample_data:make_sample_data
       title: Load sample data from Napari SBEM Viewer
-    - id: napari-sbem-viewer.make_sbemimage_integration_widget
-      python_name: napari_sbem_viewer._widgets:SBEMimageIntegration
-      title: Configure settings for SBEMimage Integreation
-    - id: napari-sbem-viewer.make_roi_selection_widget
-      python_name: napari_sbem_viewer._widgets:ROISelection
-      title: Make example magic widget
-    - id: napari-sbem-viewer.make_image_registration_widget
-      python_name: napari_sbem_viewer._widgets:ImageRegistration
-      title: Make example function widget
+    - id: napari-sbem-viewer.make_sbem_viewer_widget
+      python_name: napari_sbem_viewer._widgets:MainWidget
+      title: SBEM Viewer
   readers:
     - command: napari-sbem-viewer.get_reader
       accepts_directories: false
@@ -39,9 +33,5 @@ contributions:
       display_name: Napari SBEM Viewer
       key: unique_id.1
   widgets:
-    - command: napari-sbem-viewer.make_sbemimage_integration_widget
-      display_name: SBEMImage Integration
-    - command: napari-sbem-viewer.make_roi_selection_widget
-      display_name: ROI Selection
-    - command: napari-sbem-viewer.make_image_registration_widget
-      display_name: Image Registration
+    - command: napari-sbem-viewer.make_sbem_viewer_widget
+      display_name: SBEM Viewer
