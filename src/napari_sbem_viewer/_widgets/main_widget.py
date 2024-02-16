@@ -9,7 +9,6 @@ class MainWidget(QTabWidget):
         super().__init__()
         self.viewer = napari_viewer
         self.setLayout(QVBoxLayout())
-        self.sizePolicy().setVerticalPolicy(QSizePolicy.Minimum)
 
         self.sbem_image_integration = SBEMimageIntegration(napari_viewer)
         self.insertTab(0, self.sbem_image_integration, "Config")
@@ -19,17 +18,4 @@ class MainWidget(QTabWidget):
         
         self.roi_selection = ROISelection(napari_viewer)
         self.insertTab(2, self.roi_selection, "ROIs")
-        
-        size_policy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        size_policy.setVerticalStretch(0)
-        # size_policy.setHorizontalPolicy(QSizePolicy.ShrinkFlag)
-        self.setSizePolicy(size_policy)
-        self.sbem_image_integration.setSizePolicy(size_policy)
-        
-    def _set_widget(self, widget_):
-        widget = QWidget()
-        widget.setLayout(QVBoxLayout())
-        widget.layout().addWidget(widget_)
-        widget.setMinimumHeight(0)
-        return widget
         

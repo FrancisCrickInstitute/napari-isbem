@@ -1,7 +1,7 @@
 import napari
 from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
-from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QGroupBox, QCheckBox, QListWidget
+from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QGroupBox, QCheckBox, QProgressBar
 
 from napari_sbem_viewer._widgets import PointSelection
 
@@ -43,6 +43,9 @@ class ManualRegistration(QGroupBox):
         
         self.register_button = QPushButton("Register")
         self.layout().addWidget(self.register_button, 5, 0, 1, 2)
+        
+        self.progress_bar = QProgressBar(value=0)
+        self.layout().addWidget(self.progress_bar, 6, 0, 1, 2)
         
     def get_moving_points(self):
         layer = self.moving_points_widget.stack_viewer.points_layer
