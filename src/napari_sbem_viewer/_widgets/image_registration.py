@@ -1,5 +1,5 @@
 import napari
-from napari.qt import thread_worker
+from napari.qt import thread_worker, create_worker
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget, QGroupBox, QVBoxLayout, QMessageBox
 import numpy as np
 import cv2
@@ -49,44 +49,11 @@ class ImageRegistration(QWidget):
         pts_moving = self.manual_registration.get_moving_points()
         pts_fixed = self.manual_registration.get_fixed_points()
         
-        self.do_manual_transform(fixed_layer, moving_layer, fixed_slice, moving_slice, reverse, pts_fixed, pts_moving)
-    
-    def do_manual_transform(self, fixed_layer, moving_layer, fixed_slice, moving_slice, reverse, pts_fixed, pts_moving):
-        
-        @thread_worker(connect={'returned': self._on_transform_image_finished, 
-                                'yielded': self.manual_registration.progress_bar.setValue,
-                                'errored': self._reset_ui})
-        def _do_manual_transform():
-            moving_image = moving_layer.data
-            aligned_image_scale = moving_layer.scale
-            if reverse:
-                moving_image = moving_image[::-1]
-            if moving_slice is not None and fixed_slice is not None:
-                moving_image = offset_stack(moving_image, moving_slice, fixed_slice, reverse)
-            if pts_fixed is not None and pts_moving is not None:
-                if len(pts_fixed) < 3 and len(pts_moving) < 3:
-                    QMessageBox.warning(self, "Not enough points", "Select at least 3 points for the transformation")
-                if len(pts_fixed) != len(pts_moving):
-                    raise ValueError("Number of fixed and moving points must be equal")
-                        
-                pts_moving_scaled = pts_moving / np.array(moving_layer.scale[1:])
-                pts_fixed_scaled = pts_fixed / np.array(fixed_layer.scale[1:])
-                transformation_matrix = get_transformation_matrix_2d(pts_moving_scaled, pts_fixed_scaled)
-                aligned_y = max(moving_layer.data.shape[1], fixed_layer.data.shape[1])
-                aligned_x = max(moving_layer.data.shape[2], fixed_layer.data.shape[2])
-                aligned_image_shape = (moving_image.shape[0], aligned_y, aligned_x)
-
-                moving_image_ = np.zeros(aligned_image_shape, moving_image.dtype)
-
-                for i in tqdm(range(aligned_image_shape[0])):
-                    transformed_slice = transform_slice(moving_image[i], transformation_matrix, aligned_image_shape[1:])
-                    moving_image_[i, :transformed_slice.shape[0], :transformed_slice.shape[1]] = transformed_slice
-                    yield int(i / aligned_image_shape[0] * 100)
-                moving_image = moving_image_
-                aligned_image_scale = (moving_layer.scale[0], 1, 1)
-                
-            return (moving_image, moving_layer.name, aligned_image_scale)
-        _do_manual_transform()
+        worker = create_worker(do_manual_transform, fixed_layer, moving_layer, fixed_slice, moving_slice, reverse, pts_fixed, pts_moving)
+        worker.yielded.connect(self.manual_registration.progress_bar.setValue)
+        worker.returned.connect(self._on_transform_image_finished)
+        worker.errored.connect(self._reset_ui)
+        worker.start()
             
     def _on_transform_image_finished(self, args):
         aligned_image, moving_layer_name, aligned_image_scale = args
@@ -148,5 +115,33 @@ def offset_stack(moving_image, moving_slice, fixed_slice, reverse):
     return offset_image
                 
     
-
+def do_manual_transform(fixed_layer, moving_layer, fixed_slice, moving_slice, reverse, pts_fixed, pts_moving):
+    moving_image = moving_layer.data
+    aligned_image_scale = moving_layer.scale
+    if reverse:
+        moving_image = moving_image[::-1]
+    if moving_slice is not None and fixed_slice is not None:
+        moving_image = offset_stack(moving_image, moving_slice, fixed_slice, reverse)
+    if pts_fixed is not None and pts_moving is not None:
+        if len(pts_fixed) < 3 and len(pts_moving) < 3:
+            QMessageBox.warning("Not enough points", "Select at least 3 points for the transformation")
+        if len(pts_fixed) != len(pts_moving):
+            raise ValueError("Number of fixed and moving points must be equal")
+                
+        pts_moving_scaled = pts_moving / np.array(moving_layer.scale[1:])
+        pts_fixed_scaled = pts_fixed / np.array(fixed_layer.scale[1:])
+        transformation_matrix = get_transformation_matrix_2d(pts_moving_scaled, pts_fixed_scaled)
+        aligned_y = max(moving_layer.data.shape[1], fixed_layer.data.shape[1])
+        aligned_x = max(moving_layer.data.shape[2], fixed_layer.data.shape[2])
+        aligned_image_shape = (moving_image.shape[0], aligned_y, aligned_x)
         
+        moving_image_ = np.zeros(aligned_image_shape, moving_image.dtype)
+
+        for i in tqdm(range(aligned_image_shape[0])):
+            transformed_slice = transform_slice(moving_image[i], transformation_matrix, aligned_image_shape[1:])
+            moving_image_[i, :transformed_slice.shape[0], :transformed_slice.shape[1]] = transformed_slice
+            yield int(i / aligned_image_shape[0] * 100)
+        moving_image = moving_image_
+        aligned_image_scale = (moving_layer.scale[0], 1, 1)
+        
+    return (moving_image, moving_layer.name, aligned_image_scale)
