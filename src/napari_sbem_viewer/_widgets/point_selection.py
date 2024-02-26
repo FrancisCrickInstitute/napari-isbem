@@ -27,7 +27,7 @@ class PointSelection(QWidget):
         
         self.layout().addWidget(QLabel(name), 0, 0, 1, 2)
         self.points_list_widget = QListWidget()
-        self.points_list_widget.currentItemChanged.connect(self._on_select_point)
+        self.points_list_widget.itemClicked.connect(self._on_select_point)
         self.layout().addWidget(self.points_list_widget, 1, 0, 1, 2)
         self.add_button = QPushButton("Add")
         self.add_button.clicked.connect(self._on_click_add)

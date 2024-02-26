@@ -13,12 +13,10 @@ class SelectImages(QGroupBox):
         
         self.layout().addWidget(QLabel("Fixed image"))
         self.fixed_combo_box = QComboBox()
-        self.fixed_combo_box.addItems([x.name for x in self.viewer.layers])
         self.layout().addWidget(self.fixed_combo_box)
         
         self.layout().addWidget(QLabel("Moving stack"))
         self.moving_combo_box = QComboBox()
-        self.moving_combo_box.addItems([x.name for x in self.viewer.layers])
         self.layout().addWidget(self.moving_combo_box)
         
         self.viewer.layers.events.removed.connect(self._update_selections)
