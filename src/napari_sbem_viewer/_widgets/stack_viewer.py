@@ -64,7 +64,9 @@ class StackViewer(QtViewer):
         self.viewer.layers.clear()
         self.points_layer = None
         if layer is not None:
-            self.viewer.layers.append(copy(layer))
+            layer_copy = copy(layer)
+            layer_copy.affine = None
+            self.viewer.layers.append(layer_copy)
             
     def remove_substack(self):
         if self.substack_layer is not None:

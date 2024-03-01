@@ -44,17 +44,15 @@ class ManualRegistration(QGroupBox):
         self.register_button = QPushButton("Register")
         self.layout().addWidget(self.register_button, 5, 0, 1, 2)
         
-        self.progress_bar = QProgressBar(value=0)
-        self.layout().addWidget(self.progress_bar, 6, 0, 1, 2)
+        # self.progress_bar = QProgressBar(value=0)
+        # self.layout().addWidget(self.progress_bar, 6, 0, 1, 2)
         
     def get_moving_points(self):
         layer = self.moving_points_widget.stack_viewer.points_layer
         if layer is not None:
-            return layer.data
+            return layer.data.copy()
         
     def get_fixed_points(self):
         layer = self.fixed_points_widget.stack_viewer.points_layer
         if layer is not None:
-            return layer.data
-    
-    
+            return layer.data.copy()

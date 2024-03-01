@@ -38,11 +38,15 @@ class PointSelection(QWidget):
         
         self.points_list_widget.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.stack_viewer.viewer.layers.events.removed.connect(self._on_remove_points_layer)
-
         
     @property
     def points_layer(self):
         return self.stack_viewer.points_layer
+    
+    def set_image_layer(self, image_layer):
+        self.stack_viewer.image_layer = image_layer
+        self.add_points_layer()
+        self.stack_viewer.activate_points_layer()
         
     def _on_click_add(self):
         if self.stack_viewer.image_layer is None:
@@ -50,13 +54,16 @@ class PointSelection(QWidget):
             return
         
         self.stack_viewer.show()
-        if self.stack_viewer.points_layer is None:
-            self.stack_viewer.add_points_layer()
-            layer = self.stack_viewer.points_layer
-            layer.events.data.connect(self._on_update_points)
+        self.add_points_layer()
 
         # select the points layer and set to add mode
         self.stack_viewer.activate_points_layer()
+        
+    def add_points_layer(self):
+        if self.stack_viewer.points_layer not in self.stack_viewer.viewer.layers:
+            self.stack_viewer.add_points_layer()
+            layer = self.stack_viewer.points_layer
+            layer.events.data.connect(self._on_update_points)
         
     def _on_click_remove(self):
         selected_row = self.points_list_widget.currentRow()
@@ -73,7 +80,7 @@ class PointSelection(QWidget):
         
         # remove the selected_row from the points list
         self.points_list_widget.takeItem(selected_row)
-        
+
         if not len(points_list):
             return
         
@@ -123,3 +130,4 @@ class PointSelection(QWidget):
             if layer.name == layer_name: 
                 return layer
         return None
+    
