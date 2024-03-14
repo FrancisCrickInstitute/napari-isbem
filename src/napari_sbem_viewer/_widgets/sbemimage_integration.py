@@ -12,7 +12,7 @@ class SBEMimageIntegration(QWidget):
         super().__init__()
         self.viewer = napari_viewer
         self.live_viewer = LiveViewer(self.viewer)
-        self.setLayout(QVBoxLayout())
+        self.setLayout(QVBoxLayout())        
         
         self.tcp_client = TCPClient('localhost', 8888)
         
@@ -28,3 +28,6 @@ class SBEMimageIntegration(QWidget):
         
         self.acquisition_controls = AcquisitionControls(self.viewer, self.tcp_client)
         self.layout().addWidget(self.acquisition_controls)
+        
+        self.layout().addStretch(1)
+        

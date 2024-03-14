@@ -25,6 +25,8 @@ class ImageRegistration(QWidget):
         self.manual_registration.register_button.clicked.connect(self._on_click_manual_register)
         self.layout().addWidget(self.manual_registration)
         
+        self.layout().addStretch(1)
+        
     def _on_select_moving_image(self):
         self.manual_registration.moving_points_widget.set_image_layer(self.select_images.get_moving_layer())
         
@@ -33,10 +35,8 @@ class ImageRegistration(QWidget):
         
     def _on_click_manual_register(self):
         self.manual_registration.register_button.setEnabled(False)
-        # moving_layer = self.manual_registration.moving_points_widget.stack_viewer.image_layer
         moving_layer = self.select_images.get_moving_layer()
         fixed_layer = self.select_images.get_fixed_layer()
-        # fixed_layer = self.manual_registration.fixed_points_widget.stack_viewer.image_layer
         if moving_layer is None or fixed_layer is None:
             raise ValueError("Select a moving image and a fixed image")
         
@@ -77,7 +77,7 @@ class ImageRegistration(QWidget):
         moving_layer.affine = T
             
         # reset the z-depth slider
-        self.viewer.dims.set_point(0, fixed_layer.data_to_world((fixed_slice, 1, 1))[0])
+        self.viewer.dims.set_point(0, fixed_layer.data_to_world((fixed_slice, 0, 0))[0])
         
         # enable the register button
         self._reset_ui()

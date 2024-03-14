@@ -4,6 +4,7 @@ from napari_sbem_viewer._widgets.select_roi_image import SelectROIImage
 from napari_sbem_viewer._widgets.acquisition_settings import AcquisitionSettings
 from napari_sbem_viewer._widgets.acquisition_controls import AcquisitionControls
 from napari_sbem_viewer._widgets.overview_directory import OverviewDirectory
+from napari_sbem_viewer._widgets.adjust_roi import AdjustROI
 from napari_sbem_viewer._widgets.tcp_settings import TCPSettings
 from napari_sbem_viewer._widgets.upload_xray_stack import UploadXrayStack
 from napari_sbem_viewer._widgets.select_images import SelectImages
