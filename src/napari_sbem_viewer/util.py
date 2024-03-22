@@ -18,6 +18,9 @@ class LiveViewer():
         self.watching = False
         self.time_interval = 1
         self.processed_files = set()
+        self.files_to_process = []
+        self.running = False
+        self.image_dir = None
         self.image_shape = None
         self.pixel_size_x = None
         self.pixel_size_y = None
@@ -35,6 +38,9 @@ class LiveViewer():
             else:
                 if self.image_shape != tiff.pages[0].shape:
                     raise ValueError("All images must have same shape.")
+            metadata_dict = xml2dict(xml_metadata)
+            self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
+            self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
             # self.pixel_size_x = convert_to_micrometers(
             #     tiff.pages[0].tags.get('PhysicalSizeX'),
             #     tiff.pages[0].tags.get('PhysicalSizeXUnits')
@@ -44,6 +50,17 @@ class LiveViewer():
             #     tiff.pages[0].tags.get('PhysicalSizeYUnits')
             # )
         tiff.close()
+        
+    def init_images(self, image_dir):
+        self.reset()
+        # add the existing images to the viewer
+        self.image_dir = image_dir
+        if os.path.exists(image_dir):
+            for image in sorted(os.listdir(image_dir)):
+                if image.endswith('.tif') or image.endswith('.tiff'):
+                    self.init_metadata(os.path.join(image_dir, image))
+                    self.append(delayed(imread)(os.path.join(image_dir, image)))
+                    self.processed_files.add(image)
         
     def append(self, delayed_image):
         if delayed_image is None:
@@ -63,48 +80,67 @@ class LiveViewer():
             ).reshape((1,) + image.shape)
             layer = self._create_layer(image)
 
-        if self.viewer.dims.point[0] >= layer.data.shape[0] - 2:
+        if self.viewer.dims.current_step[0] >= layer.data.shape[0] - 2:
             self.viewer.dims.set_point(0, layer.data.shape[0] - 1)
             
-    def watch_folder(self, path):
+    def wait_for_image(self):
+        if self.image_dir is None:
+            raise ValueError("Image directory is not set.")
+        self.running = True
+        while self.running and not len(self.files_to_process):
+            if os.path.exists(self.image_dir):
+                for filename in sorted(os.listdir(self.image_dir), reverse=True):
+                    if filename.endswith('.tif') or filename.endswith('.tiff'):
+                        if filename not in self.processed_files:
+                            self.files_to_process.append(filename)
+            time.sleep(self.time_interval)
+        self.running = False
+                
+        if len(self.files_to_process):
+            filename = self.files_to_process.pop()
+            self.processed_files.add(filename)
+            return delayed(imread)(os.path.join(self.image_dir, filename))
+
+    # def watch_folder(self, path):
         
-        @thread_worker(connect={'yielded': self.append})
-        def _watch_folder():
-            current_files = set()
-            while self.watching:
-                files_to_process = set()
-                # Get the all files in the directory at this time
-                current_files = set()
-                for file in os.listdir(path):
-                    if file.endswith('.tif') or file.endswith('.tiff'):
-                        current_files.add(file)
+    #     @thread_worker(connect={'yielded': self.append})
+    #     def _watch_folder():
+    #         current_files = set()
+    #         while self.watching:
+    #             files_to_process = set()
+    #             # Get the all files in the directory at this time
+    #             current_files = set()
+    #             for file in os.listdir(path):
+    #                 if file.endswith('.tif') or file.endswith('.tiff'):
+    #                     current_files.add(file)
 
-                if len(current_files):
-                    files_to_process = current_files - self.processed_files
+    #             if len(current_files):
+    #                 files_to_process = current_files - self.processed_files
                     
-                # yield every file to process as a dask.delayed function object.
-                for p in sorted(files_to_process, key=alphanumeric_key):
-                    self.init_metadata(os.path.join(path, p))
-                    yield delayed(imread)(os.path.join(path, p))
-                else:
-                    yield
+    #             # yield every file to process as a dask.delayed function object.
+    #             for p in sorted(files_to_process, key=alphanumeric_key):
+    #                 self.init_metadata(os.path.join(path, p))
+    #                 yield delayed(imread)(os.path.join(path, p))
+    #             else:
+    #                 yield
 
-                # add the files which we have yield to the processed list.
-                self.processed_files.update(files_to_process)
-                time.sleep(self.time_interval)
+    #             # add the files which we have yield to the processed list.
+    #             self.processed_files.update(files_to_process)
+    #             time.sleep(self.time_interval)
 
-        _watch_folder()
-        self.watching = True
+    #     _watch_folder()
+    #     self.watching = True
 
-    def stop_watching(self):
-        self.watching = False
+    # def stop_watching(self):
+    #     self.watching = False
     
     def reset(self):
-        self.watching = False
         self.processed_files = set()
+        self.files_to_process = []
         self.image_shape = None
         self.pixel_size = None
         self.res_unit = None
+        self.image_dir = None
         self._remove_layer()
         
     def _remove_layer(self):
@@ -141,6 +177,24 @@ class TCPClient:
     def __init__(self, host, port):
         self.host = host
         self.port = port
+        
+    def start(self):
+        return self.send('START')
+        
+    def pause(self):
+        return self.send('PAUSE', 2)
+    
+    def get_z_depth(self):
+        return self.send('GET Z DEPTH')
+    
+    def add_grid(self, x, y, w, h):
+        return self.send('ADD GRID', x, y, w, h)
+    
+    def find_overview_dirs(self):
+        return self.send('FIND OV DIRS')
+    
+    def get_overview_coords(self, ov_idx):
+        return self.send('GET OV COORDS', ov_idx)
         
     def send(self, msg, *args, **kwargs):
         if self.host is None or self.port is None:

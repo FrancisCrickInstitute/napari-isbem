@@ -1,5 +1,6 @@
 from napari_sbem_viewer._widgets.point_selection import PointSelection
 from napari_sbem_viewer._widgets.stack_viewer import StackViewer
+from napari_sbem_viewer._widgets.select_roi_layer import SelectROILayer
 from napari_sbem_viewer._widgets.select_roi_image import SelectROIImage
 from napari_sbem_viewer._widgets.acquisition_settings import AcquisitionSettings
 from napari_sbem_viewer._widgets.acquisition_controls import AcquisitionControls
