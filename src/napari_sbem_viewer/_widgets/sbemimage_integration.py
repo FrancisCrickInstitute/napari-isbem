@@ -6,7 +6,7 @@ from napari_sbem_viewer.util import TCPClient
 from napari_sbem_viewer._widgets.tcp_settings import TCPSettings
 from napari_sbem_viewer._widgets import OverviewDirectory, AcquisitionControls, AcquisitionSettings, SelectROILayer
 from napari_sbem_viewer.util import LiveViewer
-from napari_sbem_viewer.acquisition import Acquisition, StartAcquisitionError
+from napari_sbem_viewer.acquisition import Acquisition, StartAcquisitionError, CuttingDepthError
 
 
 class SBEMimageIntegration(QWidget):
@@ -47,10 +47,10 @@ class SBEMimageIntegration(QWidget):
         @thread_worker(connect={"errored": self._handle_start_acquisition_error, 
                                 "finished": self._on_click_pause,
                                 "yielded": self.live_viewer.append})
-        def start_acquisition():
-            yield from self.acquisition.start_acquisition()
+        def start_acquisition(coarse_cutting_depth, fine_cutting_depth):
+            yield from self.acquisition.start_acquisition(coarse_cutting_depth, fine_cutting_depth)
         self.acquisition_controls.reset_ui_pause()
-        start_acquisition()
+        start_acquisition(self.acquisition_settings.coarse_thickness_spinbox.value(), self.acquisition_settings.fine_thickness_spinbox.value())
         
     def _handle_start_acquisition_error(self, e):
         print(e)
@@ -64,6 +64,9 @@ class SBEMimageIntegration(QWidget):
             self.acquisition_controls.reset_ui_start()
         elif isinstance(e, FileNotFoundError):
             QMessageBox.warning(self, "Error starting acquisition", "Overview directory is not set.")
+            self.acquisition_controls.reset_ui_start()
+        elif isinstance(e, CuttingDepthError):
+            QMessageBox.warning(self, "Error starting acquisition", "Coarse cutting depth must be a multiple of fine cutting depth.")
             self.acquisition_controls.reset_ui_start()
         else:
             # if there is an error after the acquistion has started, the acquisition

@@ -187,14 +187,26 @@ class TCPClient:
     def get_z_depth(self):
         return self.send('GET Z DEPTH')
     
-    def add_grid(self, x, y, w, h):
-        return self.send('ADD GRID', x, y, w, h)
+    def add_grid(self, x, y, w, h, idx):
+        return self.send('ADD GRID', x, y, w, h, idx)
     
     def find_overview_dirs(self):
         return self.send('FIND OV DIRS')
     
     def get_overview_coords(self, ov_idx):
         return self.send('GET OV COORDS', ov_idx)
+
+    def set_cutting_depth(self, cutting_depth):
+        return self.send('SET SLICE THICKNESS', cutting_depth)
+    
+    def set_overview_interval(self, interval, ov_idx):
+        return self.send('SET OV INTERVAL', interval, ov_idx)
+    
+    def activate_roi(self, roi_idx):
+        return self.send('ACTIVATE GRID', roi_idx)
+    
+    def deactivate_roi(self, roi_idx):
+        return self.send('DEACTIVATE GRID', roi_idx)
         
     def send(self, msg, *args, **kwargs):
         if self.host is None or self.port is None:
