@@ -56,12 +56,7 @@ class ImageRegistration(QWidget):
             
         # get the points for the affine transform if they exist
         pts_moving = self.manual_registration.get_moving_points()
-        pts_moving[:, 0] = pts_moving[:, 0] / moving_layer.scale[-1]
-        pts_moving[:, 1] = pts_moving[:, 1] / moving_layer.scale[-2]
-        
         pts_fixed = self.manual_registration.get_fixed_points()
-        pts_fixed[:, 0] = pts_fixed[:, 0] / fixed_layer.scale[-1]
-        pts_fixed[:, 1] = pts_fixed[:, 1] / fixed_layer.scale[-2]
         
         if pts_moving is not None and pts_fixed is not None:
             if len(pts_fixed) != len(pts_moving):
@@ -73,7 +68,7 @@ class ImageRegistration(QWidget):
                 self._reset_ui()
                 return
         
-        T = get_transformation_matrix_3d(reverse, z_offset, pts_fixed, pts_moving, scale=(1/moving_layer.scale[-2], 1/moving_layer.scale[-1]))
+        T = get_transformation_matrix_3d(reverse, z_offset, pts_fixed, pts_moving, scale=None)
         moving_layer.affine = T
             
         # reset the z-depth slider

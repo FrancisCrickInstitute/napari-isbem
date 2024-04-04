@@ -13,18 +13,18 @@ class AcquisitionSettings(QGroupBox):
         self.viewer = viewer
         self.live_viewer = live_viewer
         self.setLayout(QGridLayout())
-        self.default_coarse_thickness = 250
+        self.default_coarse_thickness = 100
         self.default_fine_thickness = 50
         self.thickness_unit = 'nm'
         self.live_viewer.pixel_size_z = convert_to_micrometers(self.default_coarse_thickness, self.thickness_unit)
         
         self.layout().addWidget(QLabel("Cutting thickness coarse (nm)"), 0, 0)
-        self.coarse_thickness_spinbox = QSpinBox(maximum=999, value=100)
+        self.coarse_thickness_spinbox = QSpinBox(maximum=999, value=self.default_coarse_thickness)
         self.coarse_thickness_spinbox.valueChanged.connect(self._on_change_setting)
         self.layout().addWidget(self.coarse_thickness_spinbox, 0, 1)
         
         self.layout().addWidget(QLabel("Cutting thickness fine (nm)"), 1, 0)
-        self.fine_thickness_spinbox = QSpinBox(maximum=999, value=50)
+        self.fine_thickness_spinbox = QSpinBox(maximum=999, value=self.default_fine_thickness)
         self.fine_thickness_spinbox.valueChanged.connect(self._on_change_setting)
         self.layout().addWidget(self.fine_thickness_spinbox, 1, 1)
         
