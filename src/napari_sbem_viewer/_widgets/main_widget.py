@@ -1,7 +1,9 @@
 import napari
-from qtpy.QtWidgets import QVBoxLayout, QWidget, QVBoxLayout, QTabWidget, QSizePolicy
+from qtpy.QtWidgets import QVBoxLayout, QVBoxLayout, QTabWidget
 
-from napari_sbem_viewer._widgets import ImageRegistration, SBEMimageIntegration, ROISelection
+from napari_sbem_viewer._widgets.registration import Registration
+from napari_sbem_viewer._widgets.sbemimage_integration import SBEMimageIntegration
+from napari_sbem_viewer._widgets.select_rois import SelectROIs
 
 
 class MainWidget(QTabWidget):
@@ -13,9 +15,9 @@ class MainWidget(QTabWidget):
         self.sbem_image_integration = SBEMimageIntegration(napari_viewer)
         self.insertTab(0, self.sbem_image_integration, "Config")
            
-        self.image_registration = ImageRegistration(napari_viewer)
+        self.image_registration = Registration(napari_viewer)
         self.insertTab(1, self.image_registration, "Registration")
         
-        self.roi_selection = ROISelection(napari_viewer)
+        self.roi_selection = SelectROIs(napari_viewer)
         self.insertTab(2, self.roi_selection, "ROIs")
         

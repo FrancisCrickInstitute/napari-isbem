@@ -5,10 +5,10 @@ from napari_bbox.boundingbox.napari_0_4_18._bounding_box_constants import Mode
 
 import numpy as np
 
-from napari_sbem_viewer._widgets import ROIList, StackViewer, SelectROIImage, AdjustROI
+from napari_sbem_viewer._widgets.select_rois import ROIList, SelectROIImage, AdjustROI
 
 
-class ROISelection(QWidget):
+class SelectROIs(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
         self.viewer = napari_viewer

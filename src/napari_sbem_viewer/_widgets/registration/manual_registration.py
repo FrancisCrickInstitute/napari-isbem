@@ -3,7 +3,7 @@ from napari.layers.base._base_constants import ActionType
 from napari.layers.points._points_constants import Mode
 from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QGroupBox, QCheckBox, QProgressBar
 
-from napari_sbem_viewer._widgets import PointSelection
+from napari_sbem_viewer._widgets.registration import PointSelection
 
 
 class ManualRegistration(QGroupBox):

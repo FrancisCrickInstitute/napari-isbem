@@ -1,15 +1,10 @@
-from skimage.io.collection import alphanumeric_key
-from napari.qt import thread_worker
 import os
 import dask.array as da
 from dask import delayed
 import time
-from tifffile import imread, TiffFile, TiffWriter, xml2dict
-import socket
-import json
-import cv2
-import numpy as np
-from qtpy.QtWidgets import QErrorMessage
+from tifffile import imread, TiffFile, xml2dict
+
+from napari_sbem_viewer.utils import get_ome_pixel_size
 
 
 class LiveViewer():
@@ -171,117 +166,3 @@ class LiveViewer():
     def _remove_layer(self):
         if layer := self._get_layer():
             self.viewer.layers.remove(layer)
-        
-        
-class TCPClient:
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-        
-    def start(self):
-        return self.send('START')
-        
-    def pause(self):
-        return self.send('PAUSE', 2)
-    
-    def get_z_depth(self):
-        return self.send('GET Z DEPTH')
-    
-    def add_grid(self, x, y, w, h, idx):
-        return self.send('ADD GRID', x, y, w, h, idx)
-    
-    def find_overview_dirs(self):
-        return self.send('FIND OV DIRS')
-    
-    def get_overview_coords(self, ov_idx):
-        return self.send('GET OV COORDS', ov_idx)
-
-    def set_cutting_depth(self, cutting_depth):
-        return self.send('SET SLICE THICKNESS', cutting_depth)
-    
-    def set_overview_interval(self, interval, ov_idx):
-        return self.send('SET OV INTERVAL', interval, ov_idx)
-    
-    def activate_roi(self, roi_idx):
-        return self.send('ACTIVATE GRID', roi_idx)
-    
-    def deactivate_roi(self, roi_idx):
-        return self.send('DEACTIVATE GRID', roi_idx)
-        
-    def send(self, msg, *args, **kwargs):
-        if self.host is None or self.port is None:
-            raise ValueError("Host and port must be set before sending a message.")
-        
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((self.host, self.port))
-
-            command = {'msg': msg, 'args': args, 'kwargs': kwargs}
-
-            s.sendall(json.dumps(command).encode('utf-8'))
-            response = json.loads((s.recv(1024)))
-            return response['response']
-
-
-def save_tiff(filename, image, metadata=None, compression=None, pyramid_levels=3, bigtiff=True):
-    if len(image.shape) == 3:
-        h, w, s = image.shape
-        photometric = "RGB"
-    else:
-        h, w = image.shape
-        photometric = "minisblack"
-    with TiffWriter(filename, bigtiff=bigtiff) as tif:
-        if metadata is not None:
-            tif.write(
-                image,
-                tile=(256, 256),
-                photometric=photometric,
-                subifds=pyramid_levels,
-                compression=compression,
-                metadata=metadata
-            )
-        else:
-            tif.write(
-                image,
-                tile=(256, 256),
-                photometric=photometric,
-                subifds=pyramid_levels,
-                compression=compression,
-            )
-
-        for i in range(pyramid_levels):
-            w = int(np.round(w / 4))
-            h = int(np.round(h / 4))
-            image = cv2.resize(image, dsize=(w, h), interpolation=cv2.INTER_LINEAR)
-
-            tif.write(
-                image,
-                tile=(256, 256),
-                photometric=photometric,
-                compression=compression,
-                subfiletype=i+1
-            )
-            
-            
-def convert_to_micrometers(value, unit):
-    conversions = {'nm': 1e-3, 'µm': 1, 'um': 1, 'mm': 1e3, 'cm': 1e4, 'm': 1e6}
-    value = value * conversions.get(unit, 1)
-    return value
-
-
-def get_ome_pixel_size(metadata, axis):
-    axis = axis.upper()
-    if axis not in ['X', 'Y', 'Z']:
-        raise ValueError("Invalid axis. Must be one of 'X', 'Y', 'Z'")
-    pixel_size = metadata['OME']['Image']['Pixels'][f'PhysicalSize{axis}']
-    units = metadata['OME']['Image']['Pixels'][f'PhysicalSize{axis}Unit']
-    return convert_to_micrometers(pixel_size, units)
-    
-
-def display_qt_error(parent, error):
-        """Handle when an error occurs
-
-        Show the error in an error message window.
-        """
-        em = QErrorMessage(parent)
-        em.showMessage(str(error))
-        

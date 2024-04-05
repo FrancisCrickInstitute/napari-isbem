@@ -5,7 +5,7 @@ from napari.layers.base._base_constants import ActionType
 import numpy as np
 from qtpy.QtWidgets import QPushButton, QListWidget, QWidget, QGridLayout, QLabel, QAbstractScrollArea, QMessageBox, QSpinBox
 
-from napari_sbem_viewer._widgets.stack_viewer import StackViewer
+from napari_sbem_viewer._widgets.registration import StackViewer
 
 
 class PointSelection(QWidget):
