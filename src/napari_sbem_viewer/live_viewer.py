@@ -3,6 +3,8 @@ import dask.array as da
 from dask import delayed
 import time
 from tifffile import imread, TiffFile, xml2dict
+from napari.qt import thread_worker
+from skimage.io.collection import alphanumeric_key
 
 from napari_sbem_viewer.utils import get_ome_pixel_size
 
@@ -36,14 +38,6 @@ class LiveViewer():
             metadata_dict = xml2dict(xml_metadata)
             self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
             self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
-            # self.pixel_size_x = convert_to_micrometers(
-            #     tiff.pages[0].tags.get('PhysicalSizeX'),
-            #     tiff.pages[0].tags.get('PhysicalSizeXUnits')
-            # )
-            # self.pixel_size_y = convert_to_micrometers(
-            #     tiff.pages[0].tags.get('PhysicalSizeY'),
-            #     tiff.pages[0].tags.get('PhysicalSizeYUnits')
-            # )
         tiff.close()
         
     def init_images(self, image_dir):
@@ -96,38 +90,38 @@ class LiveViewer():
             self.processed_files.add(filename)
             return delayed(imread)(os.path.join(self.image_dir, filename))
 
-    # def watch_folder(self, path):
+    def watch_folder(self, path):
         
-    #     @thread_worker(connect={'yielded': self.append})
-    #     def _watch_folder():
-    #         current_files = set()
-    #         while self.watching:
-    #             files_to_process = set()
-    #             # Get the all files in the directory at this time
-    #             current_files = set()
-    #             for file in os.listdir(path):
-    #                 if file.endswith('.tif') or file.endswith('.tiff'):
-    #                     current_files.add(file)
+        @thread_worker(connect={'yielded': self.append})
+        def _watch_folder():
+            current_files = set()
+            while self.watching:
+                files_to_process = set()
+                # Get the all files in the directory at this time
+                current_files = set()
+                for file in os.listdir(path):
+                    if file.endswith('.tif') or file.endswith('.tiff'):
+                        current_files.add(file)
 
-    #             if len(current_files):
-    #                 files_to_process = current_files - self.processed_files
+                if len(current_files):
+                    files_to_process = current_files - self.processed_files
                     
-    #             # yield every file to process as a dask.delayed function object.
-    #             for p in sorted(files_to_process, key=alphanumeric_key):
-    #                 self.init_metadata(os.path.join(path, p))
-    #                 yield delayed(imread)(os.path.join(path, p))
-    #             else:
-    #                 yield
+                # yield every file to process as a dask.delayed function object.
+                for p in sorted(files_to_process, key=alphanumeric_key):
+                    self.init_metadata(os.path.join(path, p))
+                    yield delayed(imread)(os.path.join(path, p))
+                else:
+                    yield
 
-    #             # add the files which we have yield to the processed list.
-    #             self.processed_files.update(files_to_process)
-    #             time.sleep(self.time_interval)
+                # add the files which we have yield to the processed list.
+                self.processed_files.update(files_to_process)
+                time.sleep(self.time_interval)
 
-    #     _watch_folder()
-    #     self.watching = True
+        _watch_folder()
+        self.watching = True
 
-    # def stop_watching(self):
-    #     self.watching = False
+    def stop_watching(self):
+        self.watching = False
     
     def reset(self):
         self.processed_files = set()
@@ -136,6 +130,7 @@ class LiveViewer():
         self.pixel_size = None
         self.res_unit = None
         self.image_dir = None
+        self.watching = False
         self._remove_layer()
         
     def _remove_layer(self):

@@ -82,7 +82,7 @@ class AcquisitionSettings(QGroupBox):
         if self.overview_combo_box.currentIndex() == 0:
             self._on_reset_overview()
             return
-        self.live_viewer.init_images(self.overview_combo_box.currentText())
+        self.live_viewer.watch_folder(self.overview_combo_box.currentText())
         
     def _on_reset_overview(self):
         self.live_viewer.reset()

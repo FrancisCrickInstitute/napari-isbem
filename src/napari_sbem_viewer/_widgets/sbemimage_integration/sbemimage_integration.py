@@ -29,7 +29,9 @@ class SBEMimageIntegration(QWidget):
         request = self.trigger.queue.get()
         # validate_request(request)
         commands = []
-        ov_dirs = request['ov_dirs']
+        slice_thickness = request['slice_thickness']
+        self.live_viewer.pixel_size_z = slice_thickness
+        ov_dirs = request['overviews']['ov_dirs']
         self.acquisition_settings._update_overview_dirs(ov_dirs)
         self.response_queue.put({'commands': commands})
         
