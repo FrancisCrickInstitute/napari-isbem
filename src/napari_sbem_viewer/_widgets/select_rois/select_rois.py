@@ -23,7 +23,9 @@ class SelectROIs(QWidget):
         self.roi_list = ROIList(self.viewer, parent=self)
         self.roi_list.add_button.clicked.connect(self._on_click_add)
         self.roi_list.remove_button.clicked.connect(self._on_click_remove)
-        self.roi_list.roi_list_widget.itemClicked.connect(self._on_select_roi_list)
+        # self.roi_list.roi_list_widget.itemClicked.connect(self._on_select_roi_list)
+        self.roi_list.roi_list_widget.currentItemChanged.connect(self._on_select_roi_list)
+        
         # self.roi_list.roi_list_widget.currentRowChanged.connect(self._on_change_roi_list)
         self.layout().addWidget(self.roi_list)
         
@@ -51,27 +53,6 @@ class SelectROIs(QWidget):
     #     self.adjust_roi.ending_slice.setValue(ending_slice)
     #     self.adjust_roi.setVisible(True)
         
-    # def _on_click_remove(self):
-    #     selected_row = self.roi_list.roi_list_widget.currentRow()
-        
-    #     # if no row is selected, do nothing
-    #     if selected_row == -1:
-    #         return
-        
-    #     # remove the selected_row from napari
-    #     self.bbox_layer.remove_selected()
-        
-    #     # shapes_list = self.bbox_layer.data
-    #     # shapes_list = np.delete(shapes_list, selected_row, axis=0)
-    #     # self.bbox_layer._set_data(shapes_list)
-        
-    #     # remove the selected_row from the shapes list
-    #     self.roi_list.roi_list_widget.takeItem(selected_row)
-
-    #     self.roi_list.roi_list_widget.clearSelection()
-    #     self.bbox_layer.selected_data = []
-    #     # self.viewer.m
-        
     def _on_adjust_roi_starting_z(self, value):
         z_data = self.bbox_layer.world_to_data((value, 0, 0))[0]
         self.bbox_layer.data[self.roi_list.roi_list_widget.currentRow()][::2, 0] = z_data
@@ -92,6 +73,8 @@ class SelectROIs(QWidget):
             
     def _on_click_remove(self, selected_row):
         selected_row = self.roi_list.roi_list_widget.currentRow()
+        if selected_row != self.roi_list.roi_list_widget.count() - 1:
+            return
         # camera_center_z = self.viewer.dims.point[0]
         
         # if no row is selected, do nothing
@@ -120,6 +103,7 @@ class SelectROIs(QWidget):
         # reset the z slice of the viewer to the center of the removed ROI
         self.roi_list._reset_z_viewer(z_coord)
         self.roi_list.roi_list_widget.clearSelection()
+        self.roi_list.roi_list_widget.setCurrentRow(-1)
         
     def _on_remove_bbox_layer(self, event):
         if event.value == self.bbox_layer:
@@ -133,6 +117,11 @@ class SelectROIs(QWidget):
         if current_row == -1:
             self.roi_list.remove_button.setEnabled(False)
             return
+
+        if current_row == self.roi_list.roi_list_widget.count() - 1:
+            self.roi_list.remove_button.setEnabled(True)
+        else:
+            self.roi_list.remove_button.setEnabled(False)
         
         # highlight the current point in the viewer
         if current_row < len(self.bbox_layer.data):
@@ -145,8 +134,6 @@ class SelectROIs(QWidget):
         
         self.bbox_layer.selected_data = [current_row]
         self.bbox_layer._set_highlight(force=True)
-        
-        self.roi_list.remove_button.setEnabled(True)
         
         
 def get_roi_center(coords_list):
