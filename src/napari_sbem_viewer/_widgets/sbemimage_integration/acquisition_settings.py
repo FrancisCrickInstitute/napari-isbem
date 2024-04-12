@@ -1,6 +1,7 @@
 import napari
-from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox
+from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox, QMessageBox
 from napari_bbox import BoundingBoxLayer
+from napari.qt import create_worker
 
 from napari_sbem_viewer.live_viewer import LiveViewer
 
@@ -33,6 +34,7 @@ class AcquisitionSettings(QGroupBox):
         self.viewer.layers.events.removed.connect(self._update_roi_selections)
         self.viewer.layers.events.inserted.connect(self._update_roi_selections)
         self._update_roi_selections()
+        self.roi_layer = None
         
         # ------- Cutting depth settings-------
         cutting_depth_layout = QGridLayout()
@@ -79,11 +81,17 @@ class AcquisitionSettings(QGroupBox):
             self.overview_dirs = overview_dirs
 
     def _on_select_overview_dir(self):
-        if self.overview_combo_box.currentIndex() == 0:
-            self._on_reset_overview()
+        self._on_reset_overview()
+        if self.overview_combo_box.currentIndex() < 1:
             return
-        self.live_viewer.watch_folder(self.overview_combo_box.currentText())
+        create_worker(self.live_viewer.watch_folder, 
+                                             self.overview_combo_box.currentText(), 
+                                             _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error})
         
     def _on_reset_overview(self):
         self.live_viewer.reset()
-        
+    
+    def _handle_overview_error(self, error):
+        if isinstance(error, ValueError):
+            QMessageBox.warning(self, "Error adding images", "One or more images are missing OME metadata.")
+        self.overview_combo_box.setCurrentIndex(0)

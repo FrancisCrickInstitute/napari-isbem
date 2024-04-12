@@ -10,6 +10,32 @@ class TCPServer:
         self.response_queue = response_queue
 
         self.is_running = False
+        self.response_commands = []
+        
+    def pause_acquisition(self):
+        self.response_commands.append({'msg': 'PAUSE', 'args': [1], 'kwargs': {}})
+    
+    def delete_all_grids(self):
+        self.response_commands.append({'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}})
+        
+    def add_grid(self, roi_id, x, y, w, h):
+        self.response_commands.append({'msg': 'ADD ARRAY GRID', 'args': [None, roi_id, [x, y], [w, h], 0], 'kwargs': {}})
+        
+    def activate_grid(self, roi_id):
+        self.response_commands.append({'msg': 'ACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}})
+        
+    def deactivate_grid(self, roi_id):
+        self.response_commands.append({'msg': 'DEACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}})
+        
+    def set_slice_thickness(self, thickness):
+        self.response_commands.append({'msg': 'SET SLICE THICKNESS', 'args': [thickness], 'kwargs': {}})
+    
+    def set_overview_interval(self, ov_idx, interval):
+        self.response_commands.append({'msg': 'SET OV INTERVAL', 'args': [ov_idx, interval], 'kwargs': {}})
+        
+    def send_response(self):
+        self.response_queue.put({'commands': self.response_commands})
+        self.response_commands = []
 
     def run(self):
         self.is_running = True

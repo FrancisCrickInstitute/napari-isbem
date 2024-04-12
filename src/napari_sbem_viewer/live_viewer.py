@@ -40,6 +40,10 @@ class LiveViewer():
             self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
         tiff.close()
         
+    @property
+    def image_layer(self):
+        return self._get_layer()
+        
     def init_images(self, image_dir):
         self.reset()
         # add the existing images to the viewer
@@ -54,7 +58,8 @@ class LiveViewer():
     def append(self, delayed_image):
         if delayed_image is None:
             return
-        
+        # wait a short time until the image is written to disk
+        time.sleep(0.1)
         if layer:= self._get_layer():
             shape = layer.data.shape[1:]
             dtype = layer.data.dtype
@@ -89,36 +94,37 @@ class LiveViewer():
             filename = self.files_to_process.pop()
             self.processed_files.add(filename)
             return delayed(imread)(os.path.join(self.image_dir, filename))
-
-    def watch_folder(self, path):
         
-        @thread_worker(connect={'yielded': self.append})
-        def _watch_folder():
-            current_files = set()
-            while self.watching:
-                files_to_process = set()
-                # Get the all files in the directory at this time
-                current_files = set()
-                for file in os.listdir(path):
-                    if file.endswith('.tif') or file.endswith('.tiff'):
-                        current_files.add(file)
-
-                if len(current_files):
-                    files_to_process = current_files - self.processed_files
-                    
-                # yield every file to process as a dask.delayed function object.
-                for p in sorted(files_to_process, key=alphanumeric_key):
-                    self.init_metadata(os.path.join(path, p))
-                    yield delayed(imread)(os.path.join(path, p))
-                else:
-                    yield
-
-                # add the files which we have yield to the processed list.
-                self.processed_files.update(files_to_process)
-                time.sleep(self.time_interval)
-
-        _watch_folder()
+    def get_current_z_depth(self):
+        layer = self.image_layer
+        return layer.data_to_world((layer.data.shape[0] - 1, 0, 0))[0]
+        
+    def watch_folder(self, path):
         self.watching = True
+        current_files = set()
+        while self.watching:
+            files_to_process = set()
+            # Get the all files in the directory at this time
+            current_files = set()
+            for file in os.listdir(path):
+                if file.endswith('.tif') or file.endswith('.tiff'):
+                    current_files.add(file)
+
+            if len(current_files):
+                files_to_process = current_files - self.processed_files
+                
+            # yield every file to process as a dask.delayed function object.
+            for p in sorted(files_to_process, key=alphanumeric_key):
+                self.init_metadata(os.path.join(path, p))
+                yield delayed(imread)(os.path.join(path, p))
+            else:
+                yield
+
+            # add the files which we have yield to the processed list.
+            self.processed_files.update(files_to_process)
+            time.sleep(self.time_interval)
+
+        # _watch_folder()
 
     def stop_watching(self):
         self.watching = False
@@ -134,7 +140,7 @@ class LiveViewer():
         self._remove_layer()
         
     def _remove_layer(self):
-        if layer := self._get_layer():
+        if layer:= self.image_layer:
             self.viewer.layers.remove(layer)
     
     def _create_layer(self, image):
@@ -146,7 +152,7 @@ class LiveViewer():
             scale = (self.pixel_size_z, 1, 1)
         
         self.viewer.add_image(image, rendering='attenuated_mip', name=self.layer_name, scale=scale)
-        return self._get_layer()
+        return self.image_layer
     
     def _append_to_layer(self, image):
         layer = self.viewer.layers[self.layer_name]
@@ -159,5 +165,5 @@ class LiveViewer():
         return None
     
     def _remove_layer(self):
-        if layer := self._get_layer():
+        if layer := self.image_layer:
             self.viewer.layers.remove(layer)

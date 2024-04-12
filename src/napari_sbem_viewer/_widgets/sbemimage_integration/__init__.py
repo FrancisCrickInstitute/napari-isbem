@@ -1,3 +1,4 @@
 from napari_sbem_viewer._widgets.sbemimage_integration.acquisition_settings import AcquisitionSettings
 from napari_sbem_viewer._widgets.sbemimage_integration.tcp_settings import TCPSettings
+from napari_sbem_viewer._widgets.sbemimage_integration.acquisition_info import AcquisitionInfo
 from napari_sbem_viewer._widgets.sbemimage_integration.sbemimage_integration import SBEMimageIntegration
