@@ -61,8 +61,8 @@ class SBEMimageIntegration(QWidget):
         # check if the z-depth calculated in napari is within a tolerance of the z-depth displayed in sbemimage
         z_depth = request['z_depth']
         napari_z_depth = self.live_viewer.get_current_z_depth()        
-        if not math.isclose(z_depth, napari_z_depth):
-            QMessageBox.warning(self, "Z-depth error", f"Missmatch between Napari ({napari_z_depth:.2f}µm) and SBEMimage ({z_depth}µm) Z-depths.\n Check if the Z-depth in SBEMimage is correct and the correct number of overview images are available.")
+        if napari_z_depth is not None and not math.isclose(z_depth, napari_z_depth):
+            QMessageBox.warning(self, "Z-depth error", f"Missmatch between Napari ({napari_z_depth:.2f}µm) and SBEMimage ({z_depth:.2f}µm) Z-depths.\n Check if the Z-depth in SBEMimage is correct and the correct number of overview images are available.")
             self.tcp_server.pause_acquisition()
             self.tcp_server.send_response()
             return
@@ -147,4 +147,3 @@ class SBEMimageIntegration(QWidget):
         elif event.action == ActionType.CHANGED:
             for idx in event.data_indices:
                 self.roi_data.edit(idx, self.bbox_layer.data[idx])
-    

@@ -97,7 +97,9 @@ class LiveViewer():
         
     def get_current_z_depth(self):
         layer = self.image_layer
-        return layer.data_to_world((layer.data.shape[0] - 1, 0, 0))[0]
+        if layer is None:
+            return None
+        return layer.data_to_world((layer.data.shape[0], 0, 0))[0]
         
     def watch_folder(self, path):
         self.watching = True
