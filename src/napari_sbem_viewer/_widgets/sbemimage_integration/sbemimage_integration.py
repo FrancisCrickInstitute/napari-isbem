@@ -29,6 +29,9 @@ class SBEMimageIntegration(QWidget):
         
         self.acquisition_settings = AcquisitionSettings(self.viewer, self.live_viewer)
         self.acquisition_settings.roi_combo_box.currentIndexChanged.connect(self._on_change_roi_layer)
+        self._update_roi_selections()
+        self.viewer.layers.events.removed.connect(self._update_roi_selections)
+        self.viewer.layers.events.inserted.connect(self._update_roi_selections)
         self.layout().addWidget(self.acquisition_settings)
         
         self.acquisition_info = AcquisitionInfo()
@@ -147,3 +150,18 @@ class SBEMimageIntegration(QWidget):
         elif event.action == ActionType.CHANGED:
             for idx in event.data_indices:
                 self.roi_data.edit(idx, self.bbox_layer.data[idx])
+                
+    def _update_roi_selections(self):
+        layer_names = self.acquisition_settings._get_bbox_layer_names()
+        bbox_layer = self.acquisition_settings.roi_combo_box.currentText()
+        self.acquisition_settings.roi_combo_box.clear()
+        self.acquisition_settings.roi_combo_box.addItem("")
+        self.acquisition_settings.roi_combo_box.addItems(layer_names)
+    
+        # if the selected layer has been deleted, unselect from the combo boxes
+        if self.acquisition_settings.roi_combo_box.currentText() not in layer_names:
+            self.acquisition_settings.roi_combo_box.setCurrentIndex(0)
+            self.roi_data.clear()
+        else:
+            self.acquisition_settings.roi_combo_box.setCurrentText(bbox_layer)
+    

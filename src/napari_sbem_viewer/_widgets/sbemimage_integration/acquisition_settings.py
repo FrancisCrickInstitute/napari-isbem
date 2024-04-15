@@ -31,9 +31,6 @@ class AcquisitionSettings(QGroupBox):
         self.layout().addWidget(QLabel("ROI layer"))
         self.roi_combo_box = QComboBox()
         self.layout().addWidget(self.roi_combo_box)
-        self.viewer.layers.events.removed.connect(self._update_roi_selections)
-        self.viewer.layers.events.inserted.connect(self._update_roi_selections)
-        self._update_roi_selections()
         self.roi_layer = None
         
         # ------- Cutting depth settings-------
@@ -49,19 +46,6 @@ class AcquisitionSettings(QGroupBox):
     def get_bbox_layer(self):
         layer_name = self.roi_combo_box.currentText()
         return self._get_layer(layer_name)
-        
-    def _update_roi_selections(self):
-        layer_names = self._get_bbox_layer_names()
-        bbox_layer = self.roi_combo_box.currentText()
-        self.roi_combo_box.clear()
-        self.roi_combo_box.addItem("")
-        self.roi_combo_box.addItems(layer_names)
-    
-        # if the selected layer has been deleted, unselect from the combo boxes
-        if self.roi_combo_box.currentText() not in layer_names:
-            self.roi_combo_box.setCurrentIndex(0)
-        else:
-            self.roi_combo_box.setCurrentText(bbox_layer)
         
     def _get_bbox_layer_names(self):
         return [x.name for x in self.viewer.layers if isinstance(x, BoundingBoxLayer)]
