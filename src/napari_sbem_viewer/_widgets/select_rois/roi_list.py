@@ -55,7 +55,6 @@ class ROIList(QGroupBox):
         
         self.focus_viewer_on_roi(current_row)
         bbox_layer.selected_data = [current_row]
-        print(bbox_layer.selected_data)
         bbox_layer._set_highlight(force=True)
             
     def _on_update_bbox(self, event):
