@@ -29,7 +29,7 @@ class ROIList(QGroupBox):
     def focus_viewer_on_roi(self, roi_idx):
         center_coords = self.parent.bbox_layer.data_to_world(get_roi_center(self.parent.bbox_layer.data[roi_idx]))
         self.viewer.camera.center = center_coords
-        self.viewer.dims.set_point(0, center_coords[0])
+        self._reset_z_viewer(center_coords[0])
         
     def _reset_z_viewer(self, z: int):
         # reset the z viewer to the z slice of the ROI in world coords
