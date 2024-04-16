@@ -73,9 +73,9 @@ class LiveViewer():
                 delayed_image, shape=image.shape, dtype=image.dtype,
             ).reshape((1,) + image.shape)
             layer = self._create_layer(image)
-
-        if self.viewer.dims.current_step[0] >= layer.data.shape[0] - 2:
-            self.viewer.dims.set_point(0, layer.data.shape[0] - 1)
+            
+        latest_z_value_um = self.image_layer.data_to_world((layer.data.shape[0] - 1, 0, 0))[0]
+        self.viewer.dims.set_point(0, latest_z_value_um)
             
     def wait_for_image(self):
         if self.image_dir is None:
