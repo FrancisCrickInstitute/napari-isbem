@@ -10,13 +10,11 @@ class AdjustROI(QGroupBox):
         self.setLayout(QGridLayout())
         
         self.layout().addWidget(QLabel("From slice:"), 0, 0)
-        self.starting_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2)
-        self.starting_slice.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+        self.starting_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2, singleStep=0.01)
         self.layout().addWidget(self.starting_slice, 0, 1)
         
         self.layout().addWidget(QLabel("To slice:"), 1, 0)
-        self.ending_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2)
-        self.ending_slice.setStepType(QAbstractSpinBox.AdaptiveDecimalStepType)
+        self.ending_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2, singleStep=0.01)
         self.layout().addWidget(self.ending_slice, 1, 1)
         
         self.layout().addWidget(QLabel("Current Z depth:"), 2, 0)
