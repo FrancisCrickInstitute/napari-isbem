@@ -1,7 +1,6 @@
 import napari
 from qtpy.QtWidgets import QLabel, QLineEdit, QPushButton, QSpinBox, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout
 from qtpy.QtCore import Qt
-from threading import Thread
 
 
 class TCPSettings(QGroupBox):
@@ -35,15 +34,15 @@ class TCPSettings(QGroupBox):
     def _on_click_start_server(self):
         self.tcp_server.host = self.host_line_edit.text()
         self.tcp_server.port = self.port_spinbox.value()
+        self.tcp_server.start()
         self.start_server_button.setEnabled(False)
         self.stop_server_button.setEnabled(True)
         self.host_line_edit.setEnabled(False)
         self.port_spinbox.setEnabled(False)
-        thread = Thread(target=self.tcp_server.run)
-        thread.start()
         
     def _on_click_stop_server(self):
         self.tcp_server.close()
+        self.tcp_server.wait()
         self.stop_server_button.setEnabled(False)
         self.start_server_button.setEnabled(True)
         self.host_line_edit.setEnabled(True)

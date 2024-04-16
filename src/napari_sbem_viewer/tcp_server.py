@@ -1,9 +1,11 @@
+from qtpy.QtCore import QThread
 import socket
 import json
 
 
-class TCPServer:
-    def __init__(self, host, port, command_trigger, response_queue):
+class TCPServer(QThread):
+    def __init__(self, host, port, command_trigger, response_queue, parent=None):
+        super().__init__(parent)
         self.host = host
         self.port = port
         self.request_trigger = command_trigger
