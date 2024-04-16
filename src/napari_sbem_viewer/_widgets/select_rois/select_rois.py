@@ -5,7 +5,7 @@ from napari_bbox.boundingbox.napari_0_4_18._bounding_box_constants import Mode
 
 import numpy as np
 
-from napari_sbem_viewer._widgets.select_rois import ROIList, SelectROIImage, AdjustROI
+from napari_sbem_viewer._widgets.select_rois import ROIList, AdjustROI
 
 
 class SelectROIs(QWidget):
@@ -41,11 +41,17 @@ class SelectROIs(QWidget):
         self.layout().addStretch(1)
         
     def _on_adjust_roi_starting_z(self, value):
+        if value > self.adjust_roi.ending_slice.value():
+            self.adjust_roi.starting_slice.setValue(self.adjust_roi.ending_slice.value())
+            return
         z_data = self.bbox_layer.world_to_data((value, 0, 0))[0]
         self.bbox_layer.data[self.roi_list.roi_list_widget.currentRow()][::2, 0] = z_data
         self.bbox_layer.data = self.bbox_layer.data
     
     def _on_adjust_roi_ending_z(self, value):
+        if value < self.adjust_roi.starting_slice.value():
+            self.adjust_roi.ending_slice.setValue(self.adjust_roi.starting_slice.value())
+            return
         z_data = self.bbox_layer.world_to_data((value, 0, 0))[0]
         self.bbox_layer.data[self.roi_list.roi_list_widget.currentRow()][1::2, 0] = z_data
         self.bbox_layer.data = self.bbox_layer.data
