@@ -30,8 +30,8 @@ class SelectROIs(QWidget):
         self.adjust_roi = AdjustROI(self.viewer)
         self.adjust_roi.setVisible(False)
         self.layout().addWidget(self.adjust_roi)
-        self.adjust_roi.starting_slice.valueChanged.connect(self._on_adjust_roi_starting_z)
-        self.adjust_roi.ending_slice.valueChanged.connect(self._on_adjust_roi_ending_z)
+        self.adjust_roi.starting_slice.editingFinished.connect(self._on_adjust_roi_starting_z)
+        self.adjust_roi.ending_slice.editingFinished.connect(self._on_adjust_roi_ending_z)
         
         # self.stack_viewer = StackViewer(napari.Viewer(show=False))
         # self.layout().addWidget(self.stack_viewer)
@@ -40,7 +40,8 @@ class SelectROIs(QWidget):
         
         self.layout().addStretch(1)
         
-    def _on_adjust_roi_starting_z(self, value):
+    def _on_adjust_roi_starting_z(self):
+        value = self.adjust_roi.starting_slice.value()
         if value > self.adjust_roi.ending_slice.value():
             self.adjust_roi.starting_slice.setValue(self.adjust_roi.ending_slice.value())
             return
@@ -48,7 +49,8 @@ class SelectROIs(QWidget):
         self.bbox_layer.data[self.roi_list.roi_list_widget.currentRow()][::2, 0] = z_data
         self.bbox_layer.data = self.bbox_layer.data
     
-    def _on_adjust_roi_ending_z(self, value):
+    def _on_adjust_roi_ending_z(self):
+        value = self.adjust_roi.ending_slice.value()
         if value < self.adjust_roi.starting_slice.value():
             self.adjust_roi.ending_slice.setValue(self.adjust_roi.starting_slice.value())
             return
