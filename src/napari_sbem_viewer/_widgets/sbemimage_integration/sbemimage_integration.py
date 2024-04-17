@@ -8,7 +8,7 @@ from napari_sbem_viewer._widgets.sbemimage_integration import TCPSettings, Acqui
 from napari_sbem_viewer.live_viewer import LiveViewer
 from napari_sbem_viewer.tcp_server import TCPServer
 from napari_sbem_viewer.roi_data import ROIData
-from napari_sbem_viewer.utils import Trigger
+from napari_sbem_viewer.utils import Trigger, is_multiple
 
 
 class SBEMimageIntegration(QWidget):
@@ -21,6 +21,7 @@ class SBEMimageIntegration(QWidget):
         self.response_queue = Queue()
         self.roi_data = ROIData()
         self.bbox_layer = None
+        self.is_cutting_thin = False
         self.tcp_server = TCPServer('localhost', 8888, self.trigger, self.response_queue)
             
         self.setLayout(QVBoxLayout())
@@ -63,8 +64,9 @@ class SBEMimageIntegration(QWidget):
         
         # check if the z-depth calculated in napari is within a tolerance of the z-depth displayed in sbemimage
         z_depth = request['z_depth']
+        self.roi_data.update_z_depth(z_depth)
         napari_z_depth = self.live_viewer.get_current_z_depth()        
-        if napari_z_depth is not None and not math.isclose(z_depth, napari_z_depth):
+        if not self.is_cutting_thin and napari_z_depth is not None and not math.isclose(z_depth, napari_z_depth):
             QMessageBox.warning(self, "Z-depth error", f"Missmatch between Napari ({napari_z_depth:.2f}µm) and SBEMimage ({z_depth:.2f}µm) Z-depths.\n Check if the Z-depth in SBEMimage is correct and the correct number of overview images are available.")
             self.tcp_server.pause_acquisition()
             self.tcp_server.send_response()
@@ -80,7 +82,6 @@ class SBEMimageIntegration(QWidget):
             return
 
         # update ROI data
-        self.roi_data.update_z_depth(z_depth)
         self.tcp_server.delete_all_grids()
         for roi in self.roi_data.rois:
             x, y = roi.center[:2] + ov_coords[ov_idx]
@@ -101,11 +102,24 @@ class SBEMimageIntegration(QWidget):
                     
         # update cutting depths
         if self.roi_data.acquiring_rois:
+            self.is_cutting_thin = True
+        print('is_cutting_thin:', self.is_cutting_thin)
+        print('acquiring_rois:', self.roi_data.acquiring_rois)
+        print('remaining_rois:', self.roi_data.remaining_rois)
+        if self.roi_data.acquiring_rois:
             self.tcp_server.set_slice_thickness(self.acquisition_settings.fine_thickness_spinbox.value())
-            self.tcp_server.set_overview_interval(ov_idx, overview_interval)
-        else:
+            # self.tcp_server.set_overview_interval(ov_idx, overview_interval)
+        # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
+        elif is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
             self.tcp_server.set_slice_thickness(self.acquisition_settings.coarse_thickness_spinbox.value())
-            self.tcp_server.set_overview_interval(ov_idx, 1)
+            self.is_cutting_thin = False
+            # self.tcp_server.set_overview_interval(ov_idx, 1)
+            
+        # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
+        if is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
+            self.tcp_server.activate_overview(ov_idx)
+        else:
+            self.tcp_server.deactivate_overview(ov_idx)
         
         # update acquisition info
         is_paused = request['paused']

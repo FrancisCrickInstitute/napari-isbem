@@ -29,6 +29,12 @@ class TCPServer(QThread):
     def deactivate_grid(self, roi_id):
         self.response_commands.append({'msg': 'DEACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}})
         
+    def activate_overview(self, ov_id):
+        self.response_commands.append({'msg': 'ACTIVATE OV', 'args': [ov_id], 'kwargs': {}})
+        
+    def deactivate_overview(self, ov_id):
+        self.response_commands.append({'msg': 'DEACTIVATE OV', 'args': [ov_id], 'kwargs': {}})
+        
     def set_slice_thickness(self, thickness):
         self.response_commands.append({'msg': 'SET SLICE THICKNESS', 'args': [thickness], 'kwargs': {}})
     

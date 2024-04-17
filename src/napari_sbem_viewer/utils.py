@@ -6,6 +6,7 @@ import numpy as np
 from qtpy.QtWidgets import QErrorMessage
 from qtpy.QtCore import QObject, Signal
 from queue import Queue
+import math
 
 
 def save_tiff(filename, image, metadata=None, compression=None, pyramid_levels=3, bigtiff=True):
@@ -86,3 +87,12 @@ class Trigger(QObject):
         self.queue.put(req)
         self.signal.emit()
         
+
+def is_multiple(a, b):
+    """
+    Returns True if b is a multiple of a, False otherwise.
+    """
+    print(a, b)
+    ratio = a / b
+    print(ratio)
+    return math.isclose(ratio, round(ratio))
