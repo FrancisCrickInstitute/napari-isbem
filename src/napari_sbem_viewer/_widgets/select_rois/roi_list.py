@@ -90,18 +90,23 @@ class ROIList(QGroupBox):
         """
         # event with no action attribute is called when the shape has finished drawing (???) 
         # - use this to focus on the ROI after it has been added.
-        if not hasattr(event, 'action'):
+        if not hasattr(event, 'action'):          
             if hasattr(event, 'data_indices'):
-                self._on_add_bbox()
+                self._on_click_roi_list(self.roi_list_widget.item(self.roi_list_widget.count() - 1))
             return
+        
+        if event.action == ActionType.ADDED:
+            for i in range(self.roi_list_widget.count(), len(event.value)):
+                self.roi_list_widget.addItem(f'ROI {i+1}')
+            self.roi_list_widget.setCurrentRow(len(event.value) - 1)
+    
         if event.action == ActionType.REMOVED:
             for idx in event.data_indices:
                 self._on_remove_bbox(idx)
 
-    def _on_add_bbox(self):
-        self.roi_list_widget.addItem(f'ROI {self.roi_list_widget.count()}')
-        self.roi_list_widget.setCurrentRow(self.roi_list_widget.count() - 1)
-        self._on_click_roi_list(self.roi_list_widget.item(self.roi_list_widget.count() - 1))
+    def _on_add_bbox(self, idx):
+        self.roi_list_widget.addItem(f'ROI {idx}')
+        self.roi_list_widget.setCurrentRow(idx)
     
     def _on_remove_bbox(self, idx):
         self.roi_list_widget.takeItem(idx)

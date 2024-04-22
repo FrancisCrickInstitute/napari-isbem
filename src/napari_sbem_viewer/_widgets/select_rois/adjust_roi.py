@@ -9,12 +9,12 @@ class AdjustROI(QGroupBox):
         
         self.setLayout(QGridLayout())
         
-        self.layout().addWidget(QLabel("From slice:"), 0, 0)
+        self.layout().addWidget(QLabel("From depth:"), 0, 0)
         self.starting_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2, singleStep=0.01)
         self.starting_slice.editingFinished.connect(self._on_adjust_roi_starting_z)
         self.layout().addWidget(self.starting_slice, 0, 1)
         
-        self.layout().addWidget(QLabel("To slice:"), 1, 0)
+        self.layout().addWidget(QLabel("To depth:"), 1, 0)
         self.ending_slice = QDoubleSpinBox(minimum=-9999, maximum=9999, decimals=2, singleStep=0.01)
         self.ending_slice.editingFinished.connect(self._on_adjust_roi_ending_z)
         self.layout().addWidget(self.ending_slice, 1, 1)
@@ -56,8 +56,8 @@ class AdjustROI(QGroupBox):
             self.setVisible(False)
             return
         roi_coords = self.bbox_layer.data[idx]
-        starting_slice = int(self.bbox_layer.data_to_world(roi_coords[0])[0])
-        ending_slice = int(self.bbox_layer.data_to_world(roi_coords[1])[0])
+        starting_slice = self.bbox_layer.data_to_world(roi_coords[0])[0]
+        ending_slice = self.bbox_layer.data_to_world(roi_coords[1])[0]
         self.starting_slice.setValue(starting_slice)
         self.ending_slice.setValue(ending_slice)
         self.setVisible(True)
