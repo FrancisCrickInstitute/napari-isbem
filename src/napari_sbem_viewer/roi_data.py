@@ -11,7 +11,7 @@ class ROIData:
         """converts the ROIs from bbox layer to SBEMimage coordinates and
         updates the list of ROIs"""
         for coords in bbox_layer.data:
-            roi = ROI(coords, len(self.rois))
+            roi = ROI(coords, len(self.rois)+1)
             self.rois.append(roi)
     
     def add(self, coords):
@@ -26,6 +26,8 @@ class ROIData:
     
     def clear(self):
         self.rois = []
+        self.acquiring_rois = set()
+        self.acquired_rois = set()
     
     def update_z_depth(self, z_depth):
         self.z_depth = z_depth
