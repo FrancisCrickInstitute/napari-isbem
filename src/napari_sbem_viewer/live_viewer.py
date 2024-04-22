@@ -59,7 +59,6 @@ class LiveViewer():
         if delayed_image is None:
             return
         # wait a short time until the image is written to disk
-        time.sleep(0.1)
         if layer:= self._get_layer():
             shape = layer.data.shape[1:]
             dtype = layer.data.dtype
@@ -115,6 +114,9 @@ class LiveViewer():
             if len(current_files):
                 files_to_process = current_files - self.processed_files
                 
+            # add an extra delay to ensure the image is correctly written to disk before processing
+            if files_to_process:
+                time.sleep(self.time_interval)
             # yield every file to process as a dask.delayed function object.
             for p in sorted(files_to_process, key=alphanumeric_key):
                 self.init_metadata(os.path.join(path, p))
