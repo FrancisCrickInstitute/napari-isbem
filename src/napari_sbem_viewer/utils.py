@@ -98,21 +98,24 @@ def is_multiple(a, b):
     """
     Returns True if b is a multiple of a, False otherwise.
     """
-    print(a, b)
     ratio = a / b
-    print(ratio)
     return math.isclose(ratio, round(ratio))
 
 
-def load_as_dask(tiff):
+def load_as_dask(tiff, dtype):
     arrays = []
     for level in range(len(tiff.pages)):
-        data = da.from_zarr(tiff.aszarr(level=level))
-        if data.chunksize == data.shape:
-            data = data.rechunk()
-        arrays.append(data)
+        data = dask.delayed(load_pyramid_slice)(tiff, level)
+        arrays.append(da.from_delayed(data, shape=tiff.pages[level].shape, dtype=dtype))
     return arrays
 
+
+def load_pyramid_slice(tiff, level):
+    data = da.from_zarr(tiff.aszarr(level=level))
+    if data.chunksize == data.shape:
+        data = data.rechunk()
+    return data
+        
 
 def get_dask_stack(image_dir, ext='tif'):
     filenames = sorted(glob(os.path.join(image_dir, f'*.{ext}')), key=alphanumeric_key)
