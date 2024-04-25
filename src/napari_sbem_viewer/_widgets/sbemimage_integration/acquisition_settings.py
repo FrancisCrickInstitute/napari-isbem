@@ -68,9 +68,11 @@ class AcquisitionSettings(QGroupBox):
         self._on_reset_overview()
         if self.overview_combo_box.currentIndex() < 1:
             return
+        image_dir = self.overview_combo_box.currentText()
+        self.live_viewer.init_images(image_dir)
         create_worker(self.live_viewer.watch_folder, 
-                                             self.overview_combo_box.currentText(), 
-                                             _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error})
+                      image_dir, 
+                      _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error})
         
     def _on_reset_overview(self):
         self.live_viewer.reset()

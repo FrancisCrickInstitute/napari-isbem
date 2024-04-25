@@ -7,6 +7,12 @@ from qtpy.QtWidgets import QErrorMessage
 from qtpy.QtCore import QObject, Signal
 from queue import Queue
 import math
+import dask.array as da
+import dask
+import os
+import glob
+from skimage.io.collection import alphanumeric_key
+from tifffile import imread
 
 
 def save_tiff(filename, image, metadata=None, compression=None, pyramid_levels=3, bigtiff=True):
@@ -96,3 +102,29 @@ def is_multiple(a, b):
     ratio = a / b
     print(ratio)
     return math.isclose(ratio, round(ratio))
+
+
+def load_as_dask(tiff):
+    arrays = []
+    for level in range(len(tiff.pages)):
+        data = da.from_zarr(tiff.aszarr(level=level))
+        if data.chunksize == data.shape:
+            data = data.rechunk()
+        arrays.append(data)
+    return arrays
+
+
+def get_dask_stack(image_dir, ext='tif'):
+    filenames = sorted(glob(os.path.join(image_dir, f'*.{ext}')), key=alphanumeric_key)
+    # read the first file to get the shape and dtype
+    # ASSUMES THAT ALL FILES SHARE THE SAME SHAPE/TYPE
+    sample = imread(filenames[0])
+
+    lazy_imread = dask.delayed(imread)  # lazy reader
+    lazy_arrays = [lazy_imread(fn) for fn in filenames]
+    dask_arrays = [
+        da.from_delayed(delayed_reader, shape=sample.shape, dtype=sample.dtype)
+        for delayed_reader in lazy_arrays
+    ]
+    # Stack into one large dask.array
+    return da.stack(dask_arrays, axis=0)
