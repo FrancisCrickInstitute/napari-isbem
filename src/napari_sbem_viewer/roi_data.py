@@ -1,21 +1,19 @@
 import numpy as np
+from enum import Enum
 
+class ROIState(Enum):
+    ACQUIRING = 1
+    ACQUIRED = 2
+    REMAINING = 3
 
 class ROIData:
     def __init__(self):
         self.rois = []
         self.acquiring_rois = set()
         self.remaining_rois = set()
-
-    def initialize(self, bbox_layer):
-        """converts the ROIs from bbox layer to SBEMimage coordinates and
-        updates the list of ROIs"""
-        for coords in bbox_layer.data:
-            roi = ROI(coords, len(self.rois)+1)
-            self.rois.append(roi)
     
     def add(self, coords):
-        roi = ROI(coords, len(self.rois))
+        roi = ROI(coords, len(self.rois)+1)
         self.rois.append(roi)
         
     def edit(self, idx, coords):
@@ -33,15 +31,18 @@ class ROIData:
         self.z_depth = z_depth
         self.remaining_rois = set()
         for roi in self.rois:
-            roi.active = roi.z1 <= self.z_depth <= roi.z2
-            if z_depth < roi.z2:
-                self.remaining_rois.add(roi.id)
+            if roi.z1 <= self.z_depth <= roi.z2:
+                roi.state = ROIState.ACQUIRING
+            elif self.z_depth > roi.z2:
+                roi.state = ROIState.ACQUIRED
+            else:
+                roi.state = ROIState.REMAINING
 
 class ROI:
     def __init__(self, coords, id_=None):
         self.id = id_
         self.update_coords(coords)
-        self.active = False
+        self.state = ROIState.REMAINING
         
     def update_coords(self, coords):
         assert self.check_cube(coords)

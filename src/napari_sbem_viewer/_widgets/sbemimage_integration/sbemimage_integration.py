@@ -7,7 +7,7 @@ from queue import Queue
 from napari_sbem_viewer._widgets.sbemimage_integration import TCPSettings, AcquisitionSettings, AcquisitionInfo
 from napari_sbem_viewer.live_viewer import LiveViewer
 from napari_sbem_viewer.tcp_server import TCPServer
-from napari_sbem_viewer.roi_data import ROIData
+from napari_sbem_viewer.roi_data import ROIData, ROIState
 from napari_sbem_viewer.utils import Trigger, is_multiple
 
 
@@ -23,6 +23,7 @@ class SBEMimageIntegration(QWidget):
         self.bbox_layer = None
         self.is_cutting_thin = False
         self.tcp_server = TCPServer('localhost', 8888, self.trigger, self.response_queue)
+        self.acquisition_info = AcquisitionInfo()
             
         self.setLayout(QVBoxLayout())
         self.tcp_settings = TCPSettings(self.viewer, self.tcp_server)
@@ -35,7 +36,6 @@ class SBEMimageIntegration(QWidget):
         self.viewer.layers.events.inserted.connect(self._update_roi_selections)
         self.layout().addWidget(self.acquisition_settings)
         
-        self.acquisition_info = AcquisitionInfo()
         self.layout().addWidget(self.acquisition_info)
         
         self.layout().addStretch(1)
@@ -87,7 +87,7 @@ class SBEMimageIntegration(QWidget):
             x, y = roi.center[:2] + ov_coords[ov_idx]
             w, h = roi.size[:2]
             self.tcp_server.add_grid(roi.id, x, y, w, h)
-            if roi.active:
+            if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
                 # if new roi is reached
                 if roi.id not in self.roi_data.acquiring_rois:
@@ -103,17 +103,14 @@ class SBEMimageIntegration(QWidget):
         # update cutting depths
         if self.roi_data.acquiring_rois:
             self.is_cutting_thin = True
-        print('is_cutting_thin:', self.is_cutting_thin)
-        print('acquiring_rois:', self.roi_data.acquiring_rois)
-        print('remaining_rois:', self.roi_data.remaining_rois)
+
         if self.roi_data.acquiring_rois:
             self.tcp_server.set_slice_thickness(self.acquisition_settings.fine_thickness_spinbox.value())
-            # self.tcp_server.set_overview_interval(ov_idx, overview_interval)
+            
         # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
         elif is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
             self.tcp_server.set_slice_thickness(self.acquisition_settings.coarse_thickness_spinbox.value())
             self.is_cutting_thin = False
-            # self.tcp_server.set_overview_interval(ov_idx, 1)
             
         # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
         if is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
@@ -123,9 +120,8 @@ class SBEMimageIntegration(QWidget):
         
         # update acquisition info
         is_paused = request['paused']
-        depth_until_roi_reached = min([roi.z1 - float(z_depth) for roi in self.roi_data.rois if roi.z1 > z_depth], default=None)
-        depth_until_roi_acquired = min([roi.z2 - z_depth for roi in self.roi_data.rois if roi.z2 > z_depth and roi.id in self.roi_data.acquiring_rois], default=None)
-        self.acquisition_info.update(len(self.roi_data.remaining_rois), z_depth, slice_thickness, is_paused, depth_until_roi_reached, depth_until_roi_acquired)
+        self.acquisition_info.update_acquisition_info(z_depth, slice_thickness, is_paused)
+        self.acquisition_info.update_roi_info(self.roi_data)
             
         self.tcp_server.send_response()
     
@@ -145,12 +141,14 @@ class SBEMimageIntegration(QWidget):
         # get the new roi layer
         self.bbox_layer = self.acquisition_settings.get_bbox_layer()
         if self.bbox_layer is None:
+            self.acquisition_info.update_roi_info(self.roi_data)
             return
         
         # if the roi layer exists, update the roi data
         self.bbox_callback = self.bbox_layer.events.data.connect(self._update_rois)
         for roi in self.bbox_layer.data:
             self.roi_data.add(roi)
+        self.acquisition_info.update_roi_info(self.roi_data)
             
     def _update_rois(self, event):
         if not hasattr(event, 'action'):
@@ -164,6 +162,7 @@ class SBEMimageIntegration(QWidget):
         elif event.action == ActionType.CHANGED:
             for idx in event.data_indices:
                 self.roi_data.edit(idx, self.bbox_layer.data[idx])
+        self.acquisition_info.update_roi_info(self.roi_data)
                 
     def _update_roi_selections(self):
         layer_names = self.acquisition_settings._get_bbox_layer_names()
