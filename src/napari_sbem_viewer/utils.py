@@ -131,3 +131,62 @@ def get_dask_stack(image_dir, ext='tif'):
     ]
     # Stack into one large dask.array
     return da.stack(dask_arrays, axis=0)
+
+
+def get_transformation_matrix_2d(moving_points, fixed_points):
+    # convert coordinates from (y, x) to (x, y)
+    fixed_points = fixed_points[:, ::-1]
+    moving_points = moving_points[:, ::-1]
+    Rt, _ = cv2.estimateAffine2D(moving_points, fixed_points)
+    Rt = np.vstack([[Rt[0, 0], Rt[0, 1], Rt[1, 2]], 
+                    [Rt[1, 0], Rt[1, 1], Rt[0, 2]], 
+                    [0, 0, 1]])
+    return Rt
+
+
+def get_transformation_matrix_3d(reverse, z_offset, pts_fixed, pts_moving, scale=None):
+    pass
+
+
+def get_transformation_matrix_slices(reverse, z_offset, pts_fixed, pts_moving, scale=None):
+    T = np.eye(4)
+    
+    # scale transformation to offset the x and y scaling
+    if scale is not None:
+        T[1, 1] = scale[0]
+        T[2, 2] = scale[1]
+    
+    if reverse:
+        T[0, 0] *= -1  # flip z-axis
+    
+    if z_offset != 0:
+        T[0, 3] -= z_offset  # shift image to align with fixed image
+    
+    if pts_fixed is not None and pts_moving is not None:
+        T_2d = get_transformation_matrix_2d(pts_moving, pts_fixed)
+        print(T_2d)
+        rotation = np.arctan2(T_2d[1, 0], T_2d[0, 0])
+        scale_x = T_2d[0, 0] / np.cos(rotation)
+        scale_y = T_2d[1, 1] / np.cos(rotation)
+        translation_x = T_2d[1, 2]
+        translation_y = T_2d[0, 2]
+        
+        rotate_T = np.eye(4)
+        rotate_T[1, 1] = np.cos(rotation)
+        rotate_T[1, 2] = np.sin(rotation)
+        rotate_T[2, 1] = -np.sin(rotation)
+        rotate_T[2, 2] = np.cos(rotation)
+        
+        scale_T = np.eye(4)
+        scale_T[1, 1] = scale_y
+        scale_T[2, 2] = scale_x
+        
+        translate_T = np.eye(4)
+        translate_T[2, 3] = translation_x
+        translate_T[1, 3] = translation_y
+
+        T = np.matmul(scale_T, T)
+        T = np.matmul(rotate_T, T)
+        T = np.matmul(translate_T, T)
+    
+    return T

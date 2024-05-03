@@ -10,8 +10,9 @@ from napari_sbem_viewer.utils import get_ome_pixel_size, display_qt_error
 class UploadXrayStack(QGroupBox):
     def __init__(self,
                  viewer: napari.Viewer,
+                 parent=None
                  ):
-        super().__init__("Upload X-ray stack")
+        super().__init__("Upload X-ray stack", parent=parent)
         self.viewer = viewer
         self.setLayout(QGridLayout())
         

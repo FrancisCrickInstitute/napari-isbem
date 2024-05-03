@@ -39,7 +39,7 @@ class ROIData:
                 roi.state = ROIState.REMAINING
 
 class ROI:
-    def __init__(self, coords, id_=None):
+    def __init__(self, coords, id_):
         self.id = id_
         self.update_coords(coords)
         self.state = ROIState.REMAINING

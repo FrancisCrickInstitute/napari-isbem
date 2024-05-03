@@ -6,8 +6,9 @@ from qtpy.QtWidgets import QGridLayout, QGroupBox, QComboBox, QLabel
 class SelectImages(QGroupBox):
     def __init__(self,
                  viewer: napari.Viewer,
+                 parent=None
                  ):
-        super().__init__("Select images")
+        super().__init__("Select images", parent=parent)
         self.viewer = viewer
         self.setLayout(QGridLayout())
         
