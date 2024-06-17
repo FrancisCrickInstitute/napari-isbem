@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QVBoxLayout, QWidget, QVBoxLayout
 
-from napari_sbem_viewer._widgets.registration import UploadXrayStack, ManualRegistration, SelectImages, AlignPlanes, RegistrationOptions
+from napari_sbem_viewer._widgets.registration import UploadXrayStack, SelectImages, RegistrationOptions
 
 
 class Registration(QWidget):
