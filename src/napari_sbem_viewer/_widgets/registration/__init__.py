@@ -1,3 +1,4 @@
+from napari_sbem_viewer._widgets.registration.select_dir import SelectDir
 from napari_sbem_viewer._widgets.registration.stack_viewer import StackViewer
 from napari_sbem_viewer._widgets.registration.point_selection import PointSelection
 from napari_sbem_viewer._widgets.registration.manual_registration import ManualRegistration

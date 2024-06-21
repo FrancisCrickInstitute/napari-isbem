@@ -1,17 +1,25 @@
+import os
+import time
+
 import napari
 from napari.layers import Layer
-from napari.layers.base._base_constants import ActionType
-from napari.layers.points._points_constants import Mode
-from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QWidget, QSlider, QProgressBar
+from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QWidget, QSlider, QProgressBar, QFileDialog, QLineEdit, QLabel, QMessageBox
 from qtpy.QtCore import Qt
 import numpy as np
 from napari.qt import QtViewer
 from copy import copy
 from scipy.spatial.transform import Rotation
-import cv2
 from scipy.ndimage import affine_transform
-import time
 import SimpleITK as sitk
+import zarr
+import cv2
+from ome_zarr.io import parse_url
+from ome_zarr.writer import write_multiscale
+import napari_ome_zarr
+from skimage.transform import downscale_local_mean
+
+from napari_sbem_viewer.utils import log_memory_usage
+from napari_sbem_viewer._widgets.registration import SelectDir
 
 
 class AlignPlanes(QWidget):
@@ -56,34 +64,57 @@ class AlignPlanes(QWidget):
         self.position_slider.valueChanged.connect(self._on_update_position)
         self.layout().addWidget(self.position_slider, 3, 1)
         
+        self.layout().addWidget(QLabel("Select save location"), 4, 0, 1, 2)
+        self.select_dir = SelectDir(self)
+        self.select_dir.dir_line.textChanged.connect(self._on_select_dir)
+        self.layout().addWidget(self.select_dir, 5, 0, 1, 2)
+        
         self.register_button = QPushButton("Register")
         self.register_button.clicked.connect(self._on_click_register)
-        self.layout().addWidget(self.register_button, 4, 0, 1, 2)
+        self.layout().addWidget(self.register_button, 6, 0, 1, 2)
         
         # self.progress_bar = QProgressBar(value=0)
         # self.layout().addWidget(self.progress_bar, 5, 0, 1, 2)
         self.layout().setRowStretch(self.layout().rowCount(), 1)
         
+    def _on_select_dir(self):
+        if self._get_save_path() is None:
+            self.select_dir.dir_line.setText('')
+            
+    def _get_save_path(self):
+        save_path = self.select_dir.dir_line.text()
+        if not os.path.exists(save_path):
+            QMessageBox.warning(self, "Invalid save location", "Selected folder does not exist.")
+            return None
+        if len(os.listdir(save_path)):
+            QMessageBox.warning(self, "Invalid save location", "Selected folder is not empty.")
+            return None
+        if not save_path.endswith('.ome.zarr'):
+            QMessageBox.warning(self, "Invalid save location", "Selected folder must end with '.ome.zarr'.")
+            return None
+        return save_path
         
     def _on_change_angle(self):
-        normal = [[1], 
-                  [0], 
-                  [0]]
-        transform_matrix_zy = [
+        normal = self._calculate_normal()
+        self.align_planes_window.viewer.layers['plane'].plane.normal = normal
+        self.update_position_slider()
+        
+    def _calculate_normal(self):
+        normal = np.asarray([[1], [0], [0]])
+        transform_matrix_zy = np.asarray([
             [np.cos(np.radians(self.zy_degrees_slider.value())), -np.sin(np.radians(self.zy_degrees_slider.value())), 0],
             [np.sin(np.radians(self.zy_degrees_slider.value())), np.cos(np.radians(self.zy_degrees_slider.value())), 0],
             [0, 0, 1]
-        ]
-        transform_matrix_zx = [
+        ])
+        transform_matrix_zx = np.asarray([
             [np.cos(np.radians(self.zx_degrees_slider.value())), 0, np.sin(np.radians(self.zx_degrees_slider.value()))],
             [0, 1, 0],
             [-np.sin(np.radians(self.zx_degrees_slider.value())), 0, np.cos(np.radians(self.zx_degrees_slider.value()))],
-        ]
+        ])
         normal = np.matmul(transform_matrix_zy, normal)
         normal = np.matmul(transform_matrix_zx, normal)
-        self.align_planes_window.viewer.layers['plane'].plane.normal = normal
         
-        self.update_position_slider()
+        return normal.T[0]
 
     def update_position_slider(self):
         layer = self.align_planes_window.viewer.layers['plane']
@@ -133,10 +164,82 @@ class AlignPlanes(QWidget):
         self.align_planes_window.viewer.dims.ndisplay = 3
         
     def _on_click_register(self):
-        normal = self.align_planes_window.viewer.layers['plane'].plane.normal
-        axis, angle = axis_angle_from_vectors(np.asarray([1, 0, 0]), np.asarray(normal))
-        rotated_layer = rotate_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer(), angle, axis[::-1])
+        save_path = self._get_save_path()
+        if save_path is None:
+            return
+        
+        # normal = self.align_planes_window.viewer.layers['plane'].plane.normal
+        normal = self._calculate_normal()
+        # axis, angle = axis_angle_from_vectors(np.asarray([1, 0, 0]), np.asarray(normal))
+        quaternion = quaternion_from_vectors(np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
+
+        image_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
+        rotated_image = rotate_image_3d_sitk(image_layer.data[1].compute(), quaternion)
+        rotated_image_pyramid = create_image_pyramid(rotated_image, 2, 3)
+        
+        # layer = Layer.create(rotated_image_pyramid, {'scale': image_layer.scale, 'name': image_layer.name + ' (rotated)'}, 'image')
+        # self.viewer.add_layer(layer)
+        # return
+        
+        # save the rotated image
+        store = parse_url(save_path, mode="w").store
+        root = zarr.group(store=store)
+        chunks = image_layer.data[0].chunksize
+        write_multiscale(pyramid=rotated_image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunks))
+        metadata = create_ome_metadata(image_layer.name, image_layer.scale)
+        root.attrs["multiscales"] = metadata
+        
+        # load the saved image
+        reader = napari_ome_zarr.napari_get_reader(save_path)
+        rotated_layer = Layer.create(*reader(save_path)[0])
         self.viewer.add_layer(rotated_layer)
+        
+
+def rotate_image_3d_new(image, angle, axis):
+    image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
+
+    euler_transform = sitk.Euler3DTransform()
+    # print(euler_transform.GetMaxtrix())
+    
+    image_center = np.array(image_sitk.GetSize()) / 2.0
+    euler_transform.SetCenter(image_center)
+    
+    np_rot_mat = matrix_from_axis_angle(angle, axis)
+    euler_transform.SetMatrix(np_rot_mat.flatten().tolist())
+    
+    # print(euler_transform.GetMatrix())
+    image_rotated = sitk.Resample(image_sitk, euler_transform, sitk.sitkLinear, 0.0, image_sitk.GetPixelID())
+    return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
+        
+
+def create_ome_metadata(name, scale):
+    metadata = {"name": name,
+                "axes": [
+                    {
+                    "name": "z",
+                    "type": "space",
+                    "unit": "micrometer"
+                    },
+                    {
+                    "name": "y",
+                    "type": "space",
+                    "unit": "micrometer"
+                    },
+                    {
+                    "name": "x",
+                    "type": "space",
+                    "unit": "micrometer"
+                    }
+                ], 
+                "datasets": []}
+    scale = [1/scale[-1], 1/scale[-2], 1/scale[-3]]
+    for i in range(3):
+        dataset_metadata = {"path": f"{i}", 
+                            "coordinateTransformations": [{"type": "scale",
+                                                            "scale": [scale[0], scale[1], scale[2]]}]}
+        scale[0], scale[1], scale[2] = scale[1] * 2, scale[2] * 2, scale[0] * 2
+        metadata["datasets"].append(dataset_metadata)
+    return [metadata]
         
         
 def rotate_layer(layer, angle, axis):
@@ -147,10 +250,11 @@ def rotate_layer(layer, angle, axis):
     return rotated_layer
         
         
-def rotate_image_3d_sitk(image, angle, axis):
+def rotate_image_3d_sitk(image, quaternion):
     image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
-    transform = sitk.VersorRigid3DTransform()
-    transform.SetRotation(axis, angle)
+    transform = sitk.VersorTransform(list(quaternion))
+    # transform.SetRotation(axis, angle)
+    print(transform.GetVersor())
     image_center = np.array(image_sitk.GetSize()) / 2.0
     transform.SetCenter(image_center)
     image_rotated = sitk.Resample(image_sitk, transform, sitk.sitkLinear, 0.0, image_sitk.GetPixelID())
@@ -165,6 +269,37 @@ def convert_to_uint8(image):
     if image.dtype == np.float32:
         image = (image * 255)
     return image.astype(np.uint8)
+
+
+def matrix_from_axis_angle(angle, axis):
+    """ Compute rotation matrix from axis-angle.
+    This is called exponential map or Rodrigues' formula.
+    Returns
+    -------
+    R : array-like, shape (3, 3)
+        Rotation matrix
+    """
+    ux, uy, uz = axis
+    c = np.cos(angle)
+    s = np.sin(angle)
+    ci = 1.0 - c
+    R = np.array([[ci * ux * ux + c,
+                   ci * ux * uy - uz * s,
+                   ci * ux * uz + uy * s],
+                  [ci * uy * ux + uz * s,
+                   ci * uy * uy + c,
+                   ci * uy * uz - ux * s],
+                  [ci * uz * ux - uy * s,
+                   ci * uz * uy + ux * s,
+                   ci * uz * uz + c],
+                  ])
+
+    # This is equivalent to
+    # R = (np.eye(3) * np.cos(angle) +
+    #      (1.0 - np.cos(angle)) * a[:3, np.newaxis].dot(a[np.newaxis, :3]) +
+    #      cross_product_matrix(a[:3]) * np.sin(angle))
+
+    return R
         
         
 def rotate_image_3d(image, angle, axis):
@@ -203,13 +338,58 @@ def rotate_image_3d(image, angle, axis):
     return rotated_image
 
 
+def create_image_pyramid(image, downsample_factor, pyramid_levels):
+    pyramid = [image]
+    for i in range(pyramid_levels):
+        pyramid.append(downsample_3d_image_sitk(pyramid[i], downsample_factor))
+        # pyramid.append(downsample_3d_image(pyramid[i], downsample_factor))
+    return pyramid
+
+
+def downsample_3d_image_sitk(image, downsample_factor):
+    if isinstance(downsample_factor, int):
+        downsample_factor = (downsample_factor, downsample_factor, downsample_factor)
+    elif len(downsample_factor) != 3:
+        raise ValueError("downsample_factor must be an int or a tuple of three ints.")
+
+    sitk_image = sitk.GetImageFromArray(image.astype(np.float32))
+    original_spacing = sitk_image.GetSpacing()
+    new_spacing = [original_spacing[i] * downsample_factor[i] for i in range(3)]
+    original_size = sitk_image.GetSize()
+    new_size = [int(original_size[i] / downsample_factor[i]) for i in range(3)]
+
+    resample = sitk.ResampleImageFilter()
+    resample.SetOutputSpacing(new_spacing)
+    resample.SetSize(new_size)
+    resample.SetInterpolator(sitk.sitkLinear)
+    downsampled_image_sitk = resample.Execute(sitk_image)
+
+    return sitk.GetArrayFromImage(downsampled_image_sitk).astype(image.dtype)
+
+
+def downsample_3d_image(image, downsample_factor):
+    if isinstance(downsample_factor, int):
+        downsample_factor = (downsample_factor, downsample_factor, downsample_factor)
+    elif len(downsample_factor) != 3:
+        raise ValueError("Factor must be an int or a tuple of three ints.")
+
+    downsampled_image = downscale_local_mean(image, factors=downsample_factor)
+    return downsampled_image
+
+
+def quaternion_from_vectors(v1, v2):
+    k_cos_theta = np.dot(v1, v2)
+    k = np.linalg.norm(v1) * np.linalg.norm(v2)
+    return (*np.cross(v1, v2), k + k_cos_theta)
+
+
 def axis_angle_from_vectors(v1, v2):
     # Calculate the rotation axis
     axis = np.cross(v1, v2)
     axis /= np.linalg.norm(axis)
 
     # Calculate the angle of rotation
-    angle = np.arccos(np.dot(v1, v2))
+    angle = np.arccos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2)))
 
     return axis, angle
 
