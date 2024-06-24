@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QGroupBox, QGridLayout, QLabel, QTableView, QHeaderVi
 from qtpy.QtGui import QStandardItemModel, QStandardItem, QColor
 from qtpy.QtCore import Qt
 
-from napari_sbem_viewer.roi_data import ROIState
+from napari_sbem_viewer._utils.roi_data import ROIState
 
 
 class AcquisitionInfo(QGroupBox):

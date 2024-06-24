@@ -1,7 +1,6 @@
+import napari
 from napari_bbox import BoundingBoxLayer
 from napari_bbox.boundingbox.napari_0_4_18._bounding_box_constants import Mode
-
-import napari
 from napari.layers.base._base_constants import ActionType
 from qtpy.QtWidgets import QGroupBox, QListWidget, QPushButton, QGridLayout
 import numpy as np

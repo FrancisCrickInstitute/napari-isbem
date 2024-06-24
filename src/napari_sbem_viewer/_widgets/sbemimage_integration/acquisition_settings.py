@@ -3,7 +3,8 @@ from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout
 from napari_bbox import BoundingBoxLayer
 from napari.qt import create_worker
 
-from napari_sbem_viewer.live_viewer import LiveViewer
+from napari_sbem_viewer._utils.live_viewer import LiveViewer
+
 
 DEFAULT_COARSE_THICKNESS = 100
 DEFAULT_FINE_THICKNESS = 50

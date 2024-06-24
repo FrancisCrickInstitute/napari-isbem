@@ -1,6 +1,7 @@
-from qtpy.QtCore import QThread
 import socket
 import json
+
+from qtpy.QtCore import QThread
 
 
 class TCPServer(QThread):

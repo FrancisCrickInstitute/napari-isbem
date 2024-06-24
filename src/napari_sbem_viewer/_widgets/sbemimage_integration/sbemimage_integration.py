@@ -1,14 +1,15 @@
+import math
+
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 from napari.layers.base._base_constants import ActionType
-import math
 from queue import Queue
 
 from napari_sbem_viewer._widgets.sbemimage_integration import TCPSettings, AcquisitionSettings, AcquisitionInfo
-from napari_sbem_viewer.live_viewer import LiveViewer
-from napari_sbem_viewer.tcp_server import TCPServer
-from napari_sbem_viewer.roi_data import ROIData, ROIState
-from napari_sbem_viewer.utils import Trigger, is_multiple
+from napari_sbem_viewer._utils.live_viewer import LiveViewer
+from napari_sbem_viewer._utils.tcp_server import TCPServer
+from napari_sbem_viewer._utils.roi_data import ROIData, ROIState
+from napari_sbem_viewer._utils.general_utils import Trigger, is_multiple
 
 
 class SBEMimageIntegration(QWidget):

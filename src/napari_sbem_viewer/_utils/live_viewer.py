@@ -1,12 +1,13 @@
 import os
+import time
+
 import dask.array as da
 from dask import delayed
-import time
 from tifffile import imread, TiffFile, xml2dict
 from skimage.io.collection import alphanumeric_key
 import numpy as np
 
-from napari_sbem_viewer.utils import get_ome_pixel_size, load_as_dask
+from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, load_as_dask
 
 
 class LiveViewer():

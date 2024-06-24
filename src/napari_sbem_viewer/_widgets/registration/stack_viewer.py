@@ -1,9 +1,9 @@
+from copy import copy
+
 import napari
 from napari.qt import QtViewer
 from napari.layers.points._points_constants import Mode
 from qtpy.QtCore import Qt
-
-from copy import copy
 
 
 class StackViewer(QtViewer):
@@ -80,3 +80,4 @@ class StackViewer(QtViewer):
         
     def _on_change_layer_name(self, event):
         self.points_layer_name = self.viewer.layers[event.index].name
+        

@@ -1,7 +1,6 @@
 from qtpy.QtWidgets import QWidget, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog
 
 
-
 class SelectDir(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)

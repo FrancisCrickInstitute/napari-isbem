@@ -1,10 +1,11 @@
 import napari
-from qtpy.QtWidgets import QGridLayout, QGroupBox, QErrorMessage, QLineEdit
+from qtpy.QtWidgets import QGridLayout, QGroupBox
 from magicgui.widgets import FileEdit
 from magicgui.types import FileDialogMode
 from tifffile import TiffFile, xml2dict
 
-from napari_sbem_viewer.utils import get_ome_pixel_size, display_qt_error
+from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size
+from napari_sbem_viewer._utils.general_utils import display_qt_error
 
 
 class UploadXrayStack(QGroupBox):

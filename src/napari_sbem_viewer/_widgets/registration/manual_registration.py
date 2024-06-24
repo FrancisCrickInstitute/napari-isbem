@@ -2,7 +2,7 @@ import napari
 from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QGroupBox, QCheckBox, QMessageBox, QWidget
 
 from napari_sbem_viewer._widgets.registration import PointSelection
-from napari_sbem_viewer.utils import get_transformation_matrix_slices
+from napari_sbem_viewer._utils.registration_utils import get_transformation_matrix_slices
 
 
 class ManualRegistration(QWidget):
@@ -49,8 +49,8 @@ class ManualRegistration(QWidget):
         self.register_button.clicked.connect(self._on_click_manual_register)
         self.layout().addWidget(self.register_button, 6, 0, 1, 2)
         
-        # self.progress_bar = QProgressBar(value=0)
-        # self.layout().addWidget(self.progress_bar, 6, 0, 1, 2)
+        self.parentWidget().parentWidget().select_images.moving_combo_box.currentTextChanged.connect(self._on_select_moving_image)
+        self.parentWidget().parentWidget().select_images.fixed_combo_box.currentTextChanged.connect(self._on_select_fixed_image)
         
     def get_moving_points(self):
         layer = self.moving_points_widget.stack_viewer.points_layer
@@ -101,7 +101,7 @@ class ManualRegistration(QWidget):
             # T = get_transformation_matrix_3d(reverse, z_offset, pts_fixed, pts_moving, scale=None)
         else:
             T = get_transformation_matrix_slices(reverse, z_offset, pts_fixed, pts_moving, scale=None)
-        print(T)
+            
         moving_layer.affine = T
             
         # reset the z-depth slider
@@ -120,3 +120,4 @@ class ManualRegistration(QWidget):
         
     def _on_select_fixed_image(self):
         self.fixed_points_widget.set_image_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_fixed_layer())
+        
