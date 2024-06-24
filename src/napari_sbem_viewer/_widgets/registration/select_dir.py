@@ -6,6 +6,7 @@ class SelectDir(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setLayout(QHBoxLayout())
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.dir_line = QLineEdit()
         self.dir_line.setReadOnly(True)

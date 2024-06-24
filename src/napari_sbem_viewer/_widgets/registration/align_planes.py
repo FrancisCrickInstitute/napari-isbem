@@ -64,14 +64,14 @@ class AlignPlanes(QWidget):
         self.position_slider.valueChanged.connect(self._on_update_position)
         self.layout().addWidget(self.position_slider, 3, 1)
         
-        self.layout().addWidget(QLabel("Select save location"), 4, 0, 1, 2)
-        self.select_dir = SelectDir(self)
-        self.select_dir.dir_line.textChanged.connect(self._on_select_dir)
-        self.layout().addWidget(self.select_dir, 5, 0, 1, 2)
+        # self.layout().addWidget(QLabel("Select save location"), 4, 0, 1, 2)
+        # self.select_dir = SelectDir(self)
+        # self.select_dir.dir_line.textChanged.connect(self._on_select_dir)
+        # self.layout().addWidget(self.select_dir, 5, 0, 1, 2)
         
         self.register_button = QPushButton("Register")
         self.register_button.clicked.connect(self._on_click_register)
-        self.layout().addWidget(self.register_button, 6, 0, 1, 2)
+        self.layout().addWidget(self.register_button, 5, 0, 1, 2)
         
         # self.progress_bar = QProgressBar(value=0)
         # self.layout().addWidget(self.progress_bar, 5, 0, 1, 2)
@@ -164,52 +164,10 @@ class AlignPlanes(QWidget):
         self.align_planes_window.viewer.dims.ndisplay = 3
         
     def _on_click_register(self):
-        save_path = self._get_save_path()
-        if save_path is None:
-            return
-        
-        # normal = self.align_planes_window.viewer.layers['plane'].plane.normal
         normal = self._calculate_normal()
-        # axis, angle = axis_angle_from_vectors(np.asarray([1, 0, 0]), np.asarray(normal))
-        quaternion = quaternion_from_vectors(np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
-
         image_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
-        rotated_image = rotate_image_3d_sitk(image_layer.data[1].compute(), quaternion)
-        rotated_image_pyramid = create_image_pyramid(rotated_image, 2, 3)
-        
-        # layer = Layer.create(rotated_image_pyramid, {'scale': image_layer.scale, 'name': image_layer.name + ' (rotated)'}, 'image')
-        # self.viewer.add_layer(layer)
-        # return
-        
-        # save the rotated image
-        store = parse_url(save_path, mode="w").store
-        root = zarr.group(store=store)
-        chunks = image_layer.data[0].chunksize
-        write_multiscale(pyramid=rotated_image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunks))
-        metadata = create_ome_metadata(image_layer.name, image_layer.scale)
-        root.attrs["multiscales"] = metadata
-        
-        # load the saved image
-        reader = napari_ome_zarr.napari_get_reader(save_path)
-        rotated_layer = Layer.create(*reader(save_path)[0])
+        rotated_layer = rotate_layer(image_layer, np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
         self.viewer.add_layer(rotated_layer)
-        
-
-def rotate_image_3d_new(image, angle, axis):
-    image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
-
-    euler_transform = sitk.Euler3DTransform()
-    # print(euler_transform.GetMaxtrix())
-    
-    image_center = np.array(image_sitk.GetSize()) / 2.0
-    euler_transform.SetCenter(image_center)
-    
-    np_rot_mat = matrix_from_axis_angle(angle, axis)
-    euler_transform.SetMatrix(np_rot_mat.flatten().tolist())
-    
-    # print(euler_transform.GetMatrix())
-    image_rotated = sitk.Resample(image_sitk, euler_transform, sitk.sitkLinear, 0.0, image_sitk.GetPixelID())
-    return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
         
 
 def create_ome_metadata(name, scale):
@@ -242,10 +200,11 @@ def create_ome_metadata(name, scale):
     return [metadata]
         
         
-def rotate_layer(layer, angle, axis):
+def rotate_layer(layer, v1, v2):
+    quaternion = quaternion_from_vectors(v1, v2)
     rotated_data = []
-    for pyramid_level in layer.data[1:]:
-        rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), angle, axis))
+    for pyramid_level in layer.data:
+        rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
     rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, 'image')
     return rotated_layer
         
@@ -253,8 +212,6 @@ def rotate_layer(layer, angle, axis):
 def rotate_image_3d_sitk(image, quaternion):
     image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
     transform = sitk.VersorTransform(list(quaternion))
-    # transform.SetRotation(axis, angle)
-    print(transform.GetVersor())
     image_center = np.array(image_sitk.GetSize()) / 2.0
     transform.SetCenter(image_center)
     image_rotated = sitk.Resample(image_sitk, transform, sitk.sitkLinear, 0.0, image_sitk.GetPixelID())
