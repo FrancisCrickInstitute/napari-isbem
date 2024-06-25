@@ -146,3 +146,33 @@ def convert_to_uint8(image):
     if image.dtype == np.float32:
         image = (image * 255)
     return image.astype(np.uint8)
+
+
+def create_ome_metadata(name, scale):
+    metadata = {"name": name,
+                "axes": [
+                    {
+                    "name": "z",
+                    "type": "space",
+                    "unit": "micrometer"
+                    },
+                    {
+                    "name": "y",
+                    "type": "space",
+                    "unit": "micrometer"
+                    },
+                    {
+                    "name": "x",
+                    "type": "space",
+                    "unit": "micrometer"
+                    }
+                ], 
+                "datasets": []}
+    scale = [1/scale[-1], 1/scale[-2], 1/scale[-3]]
+    for i in range(3):
+        dataset_metadata = {"path": f"{i}", 
+                            "coordinateTransformations": [{"type": "scale",
+                                                            "scale": [scale[0], scale[1], scale[2]]}]}
+        scale[0], scale[1], scale[2] = scale[1] * 2, scale[2] * 2, scale[0] * 2
+        metadata["datasets"].append(dataset_metadata)
+    return [metadata]

@@ -8,7 +8,7 @@ import numpy as np
 from napari.qt import QtViewer
 from copy import copy
 
-from napari_sbem_viewer._widgets.registration import SelectDir
+from napari_sbem_viewer._widgets.registration import SelectDir, StackViewer
 from napari_sbem_viewer._utils.registration_utils import quaternion_from_vectors, line_parametric_equation, find_intersections, calculate_t, rotate_image_3d_sitk
 
 
@@ -178,36 +178,6 @@ class AlignPlanes(QWidget):
         image_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
         rotated_layer = rotate_layer(image_layer, np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
         self.viewer.add_layer(rotated_layer)
-        
-
-def create_ome_metadata(name, scale):
-    metadata = {"name": name,
-                "axes": [
-                    {
-                    "name": "z",
-                    "type": "space",
-                    "unit": "micrometer"
-                    },
-                    {
-                    "name": "y",
-                    "type": "space",
-                    "unit": "micrometer"
-                    },
-                    {
-                    "name": "x",
-                    "type": "space",
-                    "unit": "micrometer"
-                    }
-                ], 
-                "datasets": []}
-    scale = [1/scale[-1], 1/scale[-2], 1/scale[-3]]
-    for i in range(3):
-        dataset_metadata = {"path": f"{i}", 
-                            "coordinateTransformations": [{"type": "scale",
-                                                            "scale": [scale[0], scale[1], scale[2]]}]}
-        scale[0], scale[1], scale[2] = scale[1] * 2, scale[2] * 2, scale[0] * 2
-        metadata["datasets"].append(dataset_metadata)
-    return [metadata]
         
         
 def rotate_layer(layer, v1, v2):

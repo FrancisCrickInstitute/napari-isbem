@@ -53,12 +53,12 @@ class ManualRegistration(QWidget):
         self.parentWidget().parentWidget().select_images.fixed_combo_box.currentTextChanged.connect(self._on_select_fixed_image)
         
     def get_moving_points(self):
-        layer = self.moving_points_widget.stack_viewer.points_layer
+        layer = self.moving_points_widget.points_layer
         if layer is not None:
             return layer.data.copy()
         
     def get_fixed_points(self):
-        layer = self.fixed_points_widget.stack_viewer.points_layer
+        layer = self.fixed_points_widget.points_layer
         if layer is not None:
             return layer.data.copy()
 
@@ -116,8 +116,8 @@ class ManualRegistration(QWidget):
         self.moving_points_widget.stack_viewer.hide()
         
     def _on_select_moving_image(self):
-        self.moving_points_widget.set_image_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer())
+        self.moving_points_widget._on_change_image_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer())
         
     def _on_select_fixed_image(self):
-        self.fixed_points_widget.set_image_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_fixed_layer())
+        self.fixed_points_widget._on_change_image_layer(self.parentWidget().parentWidget().parentWidget().select_images.get_fixed_layer())
         
