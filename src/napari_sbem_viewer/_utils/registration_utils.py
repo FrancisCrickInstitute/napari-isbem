@@ -208,20 +208,26 @@ def rotate_image_3d(image, angle, axis):
     return rotated_image
 
 
-def get_z_offset_matrix(z_offset, reverse_stack, z_shape):
+def offset_transform_matrix_z(mat, offset):
     """
     Create a transformation matrix to offset the z-axis of an image.
     Params:
         z_offset: float, the amount to offset the z-axis by
-        reverse_stack: bool, whether to reverse the z-axis
-        z_shape: int, the size of the z-axis in world coordinates
     Returns:
         mat: np.ndarray, a 4x4 transformation matrix
     """
-    mat = np.identity(4)
-    if reverse_stack:
-        mat[0, 0] = -1
-        mat[0,3] += z_shape
-    mat[0, 3] -= z_offset
+    mat[0, 3] -= offset
     return mat
     
+
+def flip_transform_matrix(mat, z_shape):
+    """
+    Create a transformation matrix to flip the z-axis of an image.
+    Returns:
+        mat: np.ndarray, a 4x4 transformation matrix
+    """
+    mat_flip = np.eye(4)
+    mat_flip[0, 0] = -1
+    mat_flip[0, 3] += z_shape
+    mat = mat @ mat_flip
+    return mat

@@ -4,7 +4,7 @@ import napari
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QHBoxLayout, QComboBox, QLabel, QSpinBox, QGroupBox, QCheckBox, QMessageBox, QWidget
 from affinder.affinder import AffineTransformChoices, close_affinder, remove_pts_layers, convert_affine_to_ndims, reset_view, next_layer_callback
 
-from napari_sbem_viewer._utils.registration_utils import get_z_offset_matrix
+from napari_sbem_viewer._utils.registration_utils import flip_transform_matrix, offset_transform_matrix_z
 
 
 class ManualRegistration2(QWidget):
@@ -22,13 +22,17 @@ class ManualRegistration2(QWidget):
         self.moving_points = None
         self.layout().setContentsMargins(0, 0, 0, 0)
         
-        self.layout().addWidget(QLabel("Z-offset:"))
-        self.z_offset_spinbox = QSpinBox(maximum=10000, minimum=-10000)
-        self.z_offset_spinbox.valueChanged.connect(self._on_z_offset_changed)
-        self.layout().addWidget(self.z_offset_spinbox)
+        horizontal_layout = QHBoxLayout()
+        self.move_down_button = QPushButton("Move down")
+        self.move_down_button.clicked.connect(functools.partial(self._offset_z, 1))
+        horizontal_layout.addWidget(self.move_down_button)
+        self.move_up_button = QPushButton("Move up")
+        self.move_up_button.clicked.connect(functools.partial(self._offset_z, -1))
+        horizontal_layout.addWidget(self.move_up_button)
+        self.layout().addLayout(horizontal_layout)
         
         self.reverse_checkbox = QCheckBox("Reverse Z direction")
-        self.reverse_checkbox.stateChanged.connect(self._on_z_offset_changed)
+        self.reverse_checkbox.stateChanged.connect(self._flip_z)
         self.layout().addWidget(self.reverse_checkbox)
 
         self.layout().addWidget(QLabel("Model:"))
@@ -55,29 +59,33 @@ class ManualRegistration2(QWidget):
         return self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
     
     def _on_click_reset(self):
-        self.z_offset_spinbox.setValue(0)
         self.reverse_checkbox.setChecked(False)
         if self.moving_layer is not None:
             self.moving_layer.affine = None
         if self.moving_points is not None:
             self.moving_points.affine = None
 
-    def _on_z_offset_changed(self):
-        if self.fixed_layer is not None and self.moving_layer is not None:
-            z_size_um = self.moving_layer.data.shape[-3] * self.moving_layer.scale[-3]
-            # get z offset matrix
-            mat_z = get_z_offset_matrix(
-                    self.z_offset_spinbox.value(), 
-                    self.reverse_checkbox.isChecked(),
-                    z_size_um
-                    )
-            # get existing affine matrix
-            mat_affine = convert_affine_to_ndims(convert_affine_to_ndims(self.moving_layer.affine.affine_matrix, 2), 3)
-            mat = mat_z @ mat_affine
+    def _offset_z(self, offset):
+        if self.moving_layer is not None:
+            mat = convert_affine_to_ndims(self.moving_layer.affine.affine_matrix, 3)
+            offset_transform_matrix_z(mat, offset)
             ref_mat = convert_affine_to_ndims(self.fixed_layer.affine.affine_matrix, 3)
             self.moving_layer.affine = convert_affine_to_ndims(
                     (ref_mat @ mat), self.moving_layer.ndim
                     )
+            if self.moving_points is not None:
+                self.moving_points.affine = convert_affine_to_ndims(
+                        (ref_mat @ mat), self.moving_points.ndim
+                        )
+                
+    def _flip_z(self):
+        if self.moving_layer is not None:
+            mat = convert_affine_to_ndims(self.moving_layer.affine.affine_matrix, 3) 
+            mat = flip_transform_matrix(mat, self.moving_layer.data.shape[-3] * self.moving_layer.scale[-3])
+            ref_mat = convert_affine_to_ndims(self.fixed_layer.affine.affine_matrix, 3)
+            self.moving_layer.affine = convert_affine_to_ndims(
+                    (ref_mat @ mat), self.moving_layer.ndim
+                    )           
             if self.moving_points is not None:
                 self.moving_points.affine = convert_affine_to_ndims(
                         (ref_mat @ mat), self.moving_points.ndim
