@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QVBoxLayout, QVBoxLayout, QGroupBox, QComboBox, QStackedWidget
 
-from napari_sbem_viewer._widgets.registration import AlignPlanes, ManualRegistration, PrecomputedTransformation
+from napari_sbem_viewer._widgets.registration import AlignPlanes, ManualRegistration2, PrecomputedTransformation
 
 
 class RegistrationOptions(QGroupBox):
@@ -20,7 +20,8 @@ class RegistrationOptions(QGroupBox):
         self.widgets_combo_box.addItem('Precomputed transformation')
         self.stacked_widget.addWidget(self.precomputed_transformation)
         
-        self.manual_registration = ManualRegistration(self.viewer, parent=self)
+        self.manual_registration = ManualRegistration2(self.viewer, parent=self)
+        self.manual_registration.layout().setContentsMargins(0, 0, 0, 0)
         self.widgets_combo_box.addItem('Manual registration')
         self.stacked_widget.addWidget(self.manual_registration)
         

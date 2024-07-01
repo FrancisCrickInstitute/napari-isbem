@@ -206,3 +206,22 @@ def rotate_image_3d(image, angle, axis):
     rotated_image = affine_transform(image, transformation_matrix, output_shape=output_shape).astype(image.dtype)
     rotated_image = rotated_image / 65535
     return rotated_image
+
+
+def get_z_offset_matrix(z_offset, reverse_stack, z_shape):
+    """
+    Create a transformation matrix to offset the z-axis of an image.
+    Params:
+        z_offset: float, the amount to offset the z-axis by
+        reverse_stack: bool, whether to reverse the z-axis
+        z_shape: int, the size of the z-axis in world coordinates
+    Returns:
+        mat: np.ndarray, a 4x4 transformation matrix
+    """
+    mat = np.identity(4)
+    if reverse_stack:
+        mat[0, 0] = -1
+        mat[0,3] += z_shape
+    mat[0, 3] -= z_offset
+    return mat
+    

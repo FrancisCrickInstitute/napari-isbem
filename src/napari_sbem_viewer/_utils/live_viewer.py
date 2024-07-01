@@ -28,8 +28,14 @@ class LiveViewer():
         
     def init_metadata(self, tiff):
         xml_metadata = tiff.ome_metadata
-        if xml_metadata is None:
-            raise ValueError("File does not contain OME metadata.")
+        if xml_metadata is not None:
+            metadata_dict = xml2dict(xml_metadata)
+            self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
+            self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
+        else:
+            self.pixel_size_x = 1
+            self.pixel_size_y = 1
+            # raise ValueError("File does not contain OME metadata.")
         if not self.image_shapes:
             for page in tiff.pages:
                 self.image_shapes.append(page.shape)
@@ -39,9 +45,6 @@ class LiveViewer():
             for shape, page in zip(self.image_shapes, tiff.pages):
                 if shape != page.shape:
                     raise ValueError("All images must have same shape.")
-        metadata_dict = xml2dict(xml_metadata)
-        self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
-        self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
         if self.dtype is None:
             self.dtype = tiff.pages[0].asarray().dtype
         
