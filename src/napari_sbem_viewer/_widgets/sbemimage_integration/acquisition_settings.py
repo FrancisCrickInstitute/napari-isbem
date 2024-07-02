@@ -4,6 +4,7 @@ from napari_bbox import BoundingBoxLayer
 from napari.qt import create_worker
 
 from napari_sbem_viewer._utils.live_viewer import LiveViewer
+from napari_sbem_viewer._widgets.select_dir import SelectDir
 
 
 DEFAULT_COARSE_THICKNESS = 100
@@ -25,8 +26,11 @@ class AcquisitionSettings(QGroupBox):
         self.layout().addWidget(QLabel("Overview directory"))
         self.overview_combo_box = QComboBox()
         self.overview_combo_box.addItem("")
-        self.overview_combo_box.currentTextChanged.connect(self._on_select_overview_dir)
+        self.overview_combo_box.currentIndexChanged.connect(self._on_change_ov_combo)
         self.layout().addWidget(self.overview_combo_box)
+        self.overview_dir_widget = SelectDir(self)
+        self.overview_dir_widget.dir_line.textChanged.connect(self._on_change_ov_text)
+        self.layout().addWidget(self.overview_dir_widget)
         
         # --------- ROI layer settings---------
         self.layout().addWidget(QLabel("ROI layer"))
@@ -65,11 +69,17 @@ class AcquisitionSettings(QGroupBox):
             self.overview_combo_box.addItems(overview_dirs)
             self.overview_dirs = overview_dirs
 
-    def _on_select_overview_dir(self):
+    def _on_change_ov_combo(self):
         self._on_reset_overview()
         if self.overview_combo_box.currentIndex() < 1:
             return
-        image_dir = self.overview_combo_box.currentText()
+        self._on_select_overview_dir(self.overview_combo_box.currentText())
+        
+    def _on_change_ov_text(self):
+        self.live_viewer.pixel_size_z = self.coarse_thickness_spinbox.value() * 1e-3
+        self._on_select_overview_dir(self.overview_dir_widget.dir_line.text())
+        
+    def _on_select_overview_dir(self, image_dir):
         self.live_viewer.init_images(image_dir)
         create_worker(self.live_viewer.watch_folder, 
                       image_dir, 
@@ -82,3 +92,4 @@ class AcquisitionSettings(QGroupBox):
         if isinstance(error, ValueError):
             QMessageBox.warning(self, "Error adding images", "One or more images are missing OME metadata.")
         self.overview_combo_box.setCurrentIndex(0)
+        

@@ -8,7 +8,6 @@ import numpy as np
 from napari.qt import QtViewer
 from copy import copy
 
-from napari_sbem_viewer._widgets.registration import SelectDir, StackViewer
 from napari_sbem_viewer._utils.registration_utils import quaternion_from_vectors, line_parametric_equation, find_intersections, calculate_t, rotate_image_3d_sitk
 
 
