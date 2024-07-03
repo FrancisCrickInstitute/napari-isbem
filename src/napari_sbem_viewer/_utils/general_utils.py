@@ -1,10 +1,13 @@
 import os
 from queue import Queue
+import warnings
 
+import numpy as np
 from qtpy.QtWidgets import QErrorMessage
 import math
 import psutil
 from qtpy.QtCore import QObject, Signal
+import napari
 
 
 class Trigger(QObject):
@@ -48,4 +51,19 @@ def log_memory_usage():
     process = psutil.Process(os.getpid())
     print(f"Memory usage: {process.memory_info().rss / 1024 ** 2} MB")
     
+    
+def reset_view(viewer: napari.Viewer, layer: napari.layers.Layer):
+    if viewer.dims.ndisplay != 2:
+        return
+    if len(viewer.dims.displayed) == layer.extent.world.shape[1]:
+        extent = layer.extent.world
+    else:
+        extent = layer.extent.world[:, viewer.dims.displayed]
+    size = extent[1] - extent[0]
+    center = extent[0] + size/2
+    viewer.camera.center = center
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        canvas_size = viewer._canvas_size
+    viewer.camera.zoom = np.min(canvas_size) / np.max(size)
     

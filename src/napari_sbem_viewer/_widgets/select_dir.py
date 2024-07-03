@@ -27,3 +27,25 @@ class SelectDir(QWidget):
         # self.dir_line.returnPressed.emit()
         # self.dir_line.selectionChanged.emit()
         self.dir_line.update()
+        
+
+class SelectFile(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setLayout(QHBoxLayout())
+        self.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.dir_line = QLineEdit()
+        self.dir_line.setReadOnly(True)
+        self.layout().addWidget(self.dir_line)
+
+        self.btn = QPushButton("...")
+        self.layout().addWidget(self.btn)
+
+        self.btn.clicked.connect(self.select_dir)
+
+    def select_dir(self):
+        file_path = QFileDialog.getSaveFileName(self, "Select File")
+        self.dir_line.setText(file_path)
+        self.dir_line.update()
+        

@@ -231,3 +231,75 @@ def flip_transform_matrix(mat, z_shape):
     mat_flip[0, 3] += z_shape
     mat = mat @ mat_flip
     return mat
+
+
+def calculate_transform(src, dst, ndim, model_class):
+    """Calculate transformation matrix from matched coordinate pairs.
+
+    Parameters
+    ----------
+    src : ndarray
+        Matched row, column coordinates from source image.
+    dst : ndarray
+        Matched row, column coordinates from destination image.
+    model_class : scikit-image transformation class, optional.
+        By default, model=AffineTransform().
+
+    Returns
+    -------
+    transform
+        scikit-image Transformation object
+    """
+    # convert points to correct dimension (from right bottom corner)
+    # pos_val = lambda x: x if x > 0 else 0
+
+    # do transform
+    model = model_class(dimensionality=ndim)
+    model.estimate(dst, src)  # we want
+    # the inverse
+    return model
+
+
+def calculate_z_transform(reference_points_layer, moving_points_layer, reverse_stack):
+    """Calculate the transformation matrix required to shift the image in the Z-direction.
+
+    Parameters
+    ----------
+    reference_points_layer : Points
+        Napaari points layer containing the points in the reference image.
+    moving_points_layer : Points
+        Napari points layer containing the matched points in the moving image.
+    reverse_stack : bool
+        Whether or not the reverse the stack in the Z-direction.
+
+    Returns
+    -------
+    transform matrix : ndarray
+    """
+    reference_z = reference_points_layer.data[-1][0]  # z value of the latest point
+    moving_z = moving_points_layer.data[-1][0]
+    if reverse_stack:
+        z_offset = - moving_z - reference_z
+    else:
+        z_offset = moving_z - reference_z
+    mat = np.identity(4)
+    if reverse_stack:
+        mat[0, 0] = -1
+    mat[0, 3] -= z_offset
+    return mat
+
+
+def convert_affine_to_ndims(affine, target_ndim):
+    """Either embed or slice an affine matrix to match the target ndims."""
+    affine_matrix = np.asarray(affine)
+    diff = np.shape(affine_matrix)[0] - 1 - target_ndim
+    if diff == 0:
+        out = affine_matrix
+    elif diff < 0:
+        # target is larger, so embed
+        out = np.identity(target_ndim + 1)
+        out[-diff:, -diff:] = affine_matrix
+    else:  # diff > 0
+        out = affine_matrix[diff:, diff:]
+
+    return out
