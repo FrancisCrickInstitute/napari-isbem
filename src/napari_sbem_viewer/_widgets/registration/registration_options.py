@@ -10,15 +10,15 @@ class RegistrationOptions(QGroupBox):
         self.viewer = viewer
         self.setLayout(QVBoxLayout())
         self.widgets_combo_box = QComboBox()
-        self.stacked_widget =  QStackedWidget()
+        self.stacked_widget = QStackedWidget()
         
         self.align_planes = AlignPlanes(self.viewer, parent=self)
         self.widgets_combo_box.addItem('Align planes')
         self.stacked_widget.addWidget(self.align_planes)
         
-        self.precomputed_transformation = PrecomputedTransformation(self.viewer, parent=self)
-        self.widgets_combo_box.addItem('Precomputed transformation')
-        self.stacked_widget.addWidget(self.precomputed_transformation)
+        # self.precomputed_transformation = PrecomputedTransformation(self.viewer, parent=self)
+        # self.widgets_combo_box.addItem('Precomputed transformation')
+        # self.stacked_widget.addWidget(self.precomputed_transformation)
         
         self.manual_registration = ManualRegistration2(self.viewer, parent=self)
         self.manual_registration.layout().setContentsMargins(0, 0, 0, 0)

@@ -11,6 +11,9 @@ from tifffile import imread
 import SimpleITK as sitk
 import cv2
 from skimage.transform import downscale_local_mean
+import zarr
+from ome_zarr.io import parse_url
+from ome_zarr.writer import write_multiscale
 
 
 def save_tiff(filename, image, metadata=None, compression=None, pyramid_levels=3, bigtiff=True):
@@ -168,11 +171,20 @@ def create_ome_metadata(name, scale):
                     }
                 ], 
                 "datasets": []}
-    scale = [1/scale[-1], 1/scale[-2], 1/scale[-3]]
+    scale = [scale[-1], scale[-2], scale[-3]]
     for i in range(3):
         dataset_metadata = {"path": f"{i}", 
                             "coordinateTransformations": [{"type": "scale",
                                                             "scale": [scale[0], scale[1], scale[2]]}]}
-        scale[0], scale[1], scale[2] = scale[1] * 2, scale[2] * 2, scale[0] * 2
+        scale[0], scale[1], scale[2] = scale[0] * 2, scale[1] * 2, scale[2] * 2
         metadata["datasets"].append(dataset_metadata)
     return [metadata]
+
+
+def save_ome_zarr(save_path, image_pyramid, chunksize, metadata):
+    store = parse_url(save_path, mode="w").store
+    root = zarr.group(store=store)
+    write_multiscale(pyramid=image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunksize))
+    metadata = create_ome_metadata(**metadata)
+    root.attrs["multiscales"] = metadata
+    

@@ -1,14 +1,23 @@
 import os
+from copy import copy
 
 import napari
+from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers import Layer
-from qtpy.QtWidgets import QPushButton, QGridLayout, QLabel, QSpinBox, QWidget, QSlider, QProgressBar, QLabel, QMessageBox
+from qtpy.QtWidgets import QPushButton, QFormLayout, QLineEdit, QFileDialog, QGridLayout, QLabel, QSpinBox, QWidget, QSlider, QProgressBar, QLabel, QMessageBox
+from qtpy.QtGui import QDoubleValidator
 from qtpy.QtCore import Qt
 import numpy as np
 from napari.qt import QtViewer
-from copy import copy
 
-from napari_sbem_viewer._utils.registration_utils import quaternion_from_vectors, line_parametric_equation, find_intersections, calculate_t, rotate_image_3d_sitk
+from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vectors, 
+                                                          line_parametric_equation, 
+                                                          find_intersections, 
+                                                          calculate_t, 
+                                                          rotate_image_3d_sitk, 
+                                                          matrix_from_axis_angle,
+                                                          axis_angle_from_vectors)
+from napari_sbem_viewer._utils.image_utils import save_ome_zarr
 
 
 class AlignPlanes(QWidget):
@@ -23,65 +32,119 @@ class AlignPlanes(QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.align_planes_window = self._init_align_planes_window()
         self.intersection_points = None
+        self.rotated_layer = None
+        
+        self.align_planes_button = QPushButton("Upload transform")
+        self.align_planes_button.clicked.connect(self._on_click_upload_transform)
+        self.layout().addWidget(self.align_planes_button, 0, 0, 1, 2)
         
         self.show_button = QPushButton("Show")
         self.show_button.clicked.connect(self._on_click_show)
-        self.layout().addWidget(self.show_button, 0, 0, 1, 2)
+        self.layout().addWidget(self.show_button, 1, 0, 1, 2)
         
-        self.layout().addWidget(QLabel("Rotate Z-Y"), 1, 0)
-        self.zy_degrees_slider = QSlider(Qt.Horizontal)
+        form_layout = QFormLayout()
+        self.zy_degrees_slider = QDoubleSlider(Qt.Horizontal)
         self.zy_degrees_slider.setRange(-90, 90)
+        self.zy_degrees_slider.setDecimals(0)
         self.zy_degrees_slider.valueChanged.connect(self._on_change_angle)
-        self.layout().addWidget(self.zy_degrees_slider, 1, 1)
-        # self.zy_degrees_spinbox = QSpinBox(minimum=-180, maximum=180)
-        # self.zy_degrees_spinbox.valueChanged.connect(self._on_change_angle)
-        # self.layout().addWidget(self.zy_degrees_spinbox, 1, 1)
-        
-        self.layout().addWidget(QLabel("Rotate Z-X"), 2, 0)
-        self.zx_degrees_slider = QSlider(Qt.Horizontal)
+        form_layout.addRow(QLabel("Rotate Z-Y"), self.zy_degrees_slider)
+        self.zx_degrees_slider = QDoubleSlider(Qt.Horizontal)
         self.zx_degrees_slider.setRange(-90, 90)
+        self.zx_degrees_slider.setDecimals(0)
         self.zx_degrees_slider.valueChanged.connect(self._on_change_angle)
-        self.layout().addWidget(self.zx_degrees_slider, 2, 1)
-        # self.zx_degrees_spinbox = QSpinBox(minimum=-180, maximum=180)
-        # self.zx_degrees_spinbox.valueChanged.connect(self._on_change_angle)
-        # self.layout().addWidget(self.zx_degrees_spinbox, 2, 1)
-        
-        self.layout().addWidget(QLabel("Position"), 3, 0)
-        self.position_slider = QSlider(Qt.Horizontal)
-        self.position_slider.setRange(0, 1000)
-        self.position_slider.setSingleStep(1)
+        form_layout.addRow(QLabel("Rotate Z-X"), self.zx_degrees_slider)
+        self.position_slider = QDoubleSlider(Qt.Horizontal)
+        self.position_slider.setRange(0, 1)
+        self.position_slider.setSingleStep(0.01)
         self.position_slider.valueChanged.connect(self._on_update_position)
-        self.layout().addWidget(self.position_slider, 3, 1)
+        form_layout.addRow(QLabel("Position"), self.position_slider)
+        form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.layout().addLayout(form_layout, 2, 0, 1, 2)
         
-        # self.layout().addWidget(QLabel("Select save location"), 4, 0, 1, 2)
-        # self.select_dir = SelectDir(self)
-        # self.select_dir.dir_line.textChanged.connect(self._on_select_dir)
-        # self.layout().addWidget(self.select_dir, 5, 0, 1, 2)
-        
-        self.register_button = QPushButton("Register")
+        self.register_button = QPushButton("Apply transform")
         self.register_button.clicked.connect(self._on_click_register)
-        self.layout().addWidget(self.register_button, 5, 0, 1, 2)
+        self.layout().addWidget(self.register_button, 3, 0, 1, 2)
+        
+        self.save_transform_button = QPushButton("Save transform")
+        self.save_transform_button.clicked.connect(self._on_click_save_transform)
+        self.layout().addWidget(self.save_transform_button, 4, 0)
+        
+        self.save_ome_zarr_button = QPushButton("Save as OME-Zarr")
+        self.save_ome_zarr_button.clicked.connect(self._on_click_save_ome_zarr)
+        self.layout().addWidget(self.save_ome_zarr_button, 4, 1)
         
         # self.progress_bar = QProgressBar(value=0)
         # self.layout().addWidget(self.progress_bar, 5, 0, 1, 2)
 
         self.parentWidget().parentWidget().select_images.moving_combo_box.currentTextChanged.connect(self._on_select_moving_image)
         self.parentWidget().parentWidget().select_images.fixed_combo_box.currentTextChanged.connect(self._on_select_fixed_image)
-        self.layout().setRowStretch(self.layout().rowCount(), 1)
         
-    def _on_select_dir(self):
-        if self._get_save_path() is None:
-            self.select_dir.dir_line.setText('')
+    @property
+    def moving_image_layer(self):
+        return self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
+        
+    def _on_click_save_ome_zarr(self):
+        if self.rotated_layer is None:
+            QMessageBox.warning(self, "Error saving image", "Apply transformation before saving as OME-Zarr.")
+            return
+        save_path = self._get_save_path()
+        if save_path is not None:
+            try:
+                save_ome_zarr(save_path, 
+                              self.rotated_layer.data,
+                              chunksize=self.moving_image_layer.data[0].chunksize,
+                              metadata={'name': self.moving_image_layer.name, 
+                                        'scale': self.moving_image_layer.scale})
+                QMessageBox.information(self, "Success", f"Image saved successfully")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save image: {e}")
+    
+    def _on_click_save_transform(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, 
+                                                   "Save File", 
+                                                   "", 
+                                                   "Text Files (*.txt);;All Files (*)", 
+                                                   options=options)
+        if file_path:
+            try:
+                normal = self._calculate_normal()
+                angle, axis = axis_angle_from_vectors(np.asarray([0, 0, 1]), self._calculate_normal())
+                rotation_matrix = matrix_from_axis_angle(axis, angle)
+                np.savetxt(file_path, rotation_matrix, delimiter=',')
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
+        
+    def _on_click_upload_transform(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(self, 
+                                                   "Open File", 
+                                                   "", 
+                                                   "Text Files (*.txt);;All Files (*)", 
+                                                   options=options)
+        
+        if file_path:
+            try:
+                transform = np.loadtxt(file_path, delimiter=',')
+                print(transform)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
             
     def _get_save_path(self):
-        save_path = self.select_dir.dir_line.text()
-        if not os.path.exists(save_path):
+        options = QFileDialog.Options()
+        save_path = QFileDialog.getExistingDirectory(self, 
+                                                   "Select Save Location", 
+                                                   "", 
+                                                   options=options)
+        if not save_path:
+            return None
+        elif not os.path.exists(save_path):
             QMessageBox.warning(self, "Invalid save location", "Selected folder does not exist.")
             return None
-        if len(os.listdir(save_path)):
+        elif len(os.listdir(save_path)):
             QMessageBox.warning(self, "Invalid save location", "Selected folder is not empty.")
             return None
-        if not save_path.endswith('.ome.zarr'):
+        elif not save_path.endswith('.ome.zarr'):
             QMessageBox.warning(self, "Invalid save location", "Selected folder must end with '.ome.zarr'.")
             return None
         return save_path
@@ -115,14 +178,17 @@ class AlignPlanes(QWidget):
             return
         self.intersection_points = [points[0], points[1]]
         t = calculate_t(points[0], points[1], np.array(layer.plane.position))
-        self.position_slider.setValue(int(t * 1000))
+        self.position_slider.setValue(t)
         
     def _on_update_position(self):
-        if self.intersection_points is None or len(self.intersection_points) != 2:
-            return
-        t = self.position_slider.value() / 1000
         layer = self.align_planes_window.viewer.layers['plane']
-        layer.plane.position = line_parametric_equation(self.intersection_points[0], self.intersection_points[1], t)
+        if self.intersection_points is None:
+            layer.plane.position = [layer.data.shapes[-1][i] // 2 for i in range(len(layer.data.shape))]
+        elif len(self.intersection_points) != 2:
+            return
+        else:
+            t = self.position_slider.value()
+            layer.plane.position = line_parametric_equation(self.intersection_points[0], self.intersection_points[1], t)
         
     def _on_click_show(self):
         moving_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
@@ -149,9 +215,9 @@ class AlignPlanes(QWidget):
         self.zy_degrees_slider.setValue(0)
         self.zx_degrees_slider.setValue(0)
         self._on_change_angle()
-        self.position_slider.setValue(500)
+        self.position_slider.setValue(0.5)
+        self.intersection_points = None
         self._on_update_position()
-        
 
         self.update_position_slider()
         self.align_planes_window.show()
@@ -174,9 +240,8 @@ class AlignPlanes(QWidget):
         
     def _on_click_register(self):
         normal = self._calculate_normal()
-        image_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
-        rotated_layer = rotate_layer(image_layer, np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
-        self.viewer.add_layer(rotated_layer)
+        self.rotated_layer = rotate_layer(self.moving_image_layer, np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
+        self.viewer.add_layer(self.rotated_layer)
         
         
 def rotate_layer(layer, v1, v2):
@@ -186,3 +251,25 @@ def rotate_layer(layer, v1, v2):
         rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
     rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, 'image')
     return rotated_layer
+
+
+class RangeValidator(QDoubleValidator):
+    def __init__(self, bottom, top, decimals, parent=None):
+        super().__init__(bottom, top, decimals, parent)
+    
+    def validate(self, input_str, pos):
+        if input_str in ('-', '.', '-.', ''):
+            return (QDoubleValidator.Intermediate, input_str, pos)
+        
+        state, input_str, pos = super().validate(input_str, pos)
+        if state == QDoubleValidator.Invalid:
+            return (QDoubleValidator.Invalid, input_str, pos)
+        
+        try:
+            value = float(input_str)
+            if value < self.bottom() or value > self.top():
+                return (QDoubleValidator.Invalid, input_str, pos)
+        except ValueError:
+            return (QDoubleValidator.Invalid, input_str, pos)
+        
+        return (QDoubleValidator.Acceptable, input_str, pos)
