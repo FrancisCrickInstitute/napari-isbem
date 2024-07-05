@@ -74,10 +74,10 @@ class ManualRegistration(QWidget):
         self.save_button.setEnabled(False)
         self.layout().addWidget(self.save_button, 5, 0)
         
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.clicked.connect(self._on_click_cancel)
-        self.cancel_button.setEnabled(False)
-        self.layout().addWidget(self.cancel_button, 5, 1)
+        self.close_button = QPushButton("Close")
+        self.close_button.clicked.connect(self._on_click_close)
+        self.close_button.setEnabled(False)
+        self.layout().addWidget(self.close_button, 5, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
         
@@ -88,14 +88,6 @@ class ManualRegistration(QWidget):
     @property
     def moving_image_layer(self):
         return self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
-    
-    def _on_click_cancel(self):
-        moving_points_layer = self.points_layers[1]
-        self.reverse_checkbox.setChecked(False)
-        if self.moving_image_layer is not None:
-            self.moving_image_layer.affine = None
-        if moving_points_layer is not None:
-            moving_points_layer.affine = None
 
     def _offset_z(self, offset):
         moving_points_layer = self.points_layers[1]
@@ -194,7 +186,7 @@ class ManualRegistration(QWidget):
         self.save_button.setEnabled(True)
         self.move_up_button.setEnabled(True)
         self.move_down_button.setEnabled(True)
-        self.cancel_button.setEnabled(True)
+        self.close_button.setEnabled(True)
         self.reverse_checkbox.setEnabled(True)
         self.model_combobox.setEnabled(True)
         self.model_label.setEnabled(True)
@@ -204,7 +196,7 @@ class ManualRegistration(QWidget):
         self.save_button.setEnabled(False)
         self.move_up_button.setEnabled(False)
         self.move_down_button.setEnabled(False)
-        self.cancel_button.setEnabled(False)
+        self.close_button.setEnabled(False)
         self.reverse_checkbox.setEnabled(False)
         self.model_combobox.setEnabled(False)
         self.model_label.setEnabled(False)       
@@ -229,9 +221,9 @@ class ManualRegistration(QWidget):
             
     def _on_click_save(self):
         self._save_transform(self.moving_image_layer.affine.affine_matrix)
-        self._on_stop()
+        self.initial_transform = self.moving_image_layer.affine.affine_matrix
         
-    def _on_click_cancel(self):
+    def _on_click_close(self):
         self.moving_image_layer.affine = self.initial_transform
         self._on_stop()
         
