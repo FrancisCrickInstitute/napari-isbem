@@ -15,8 +15,10 @@ from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vector
                                                           find_intersections, 
                                                           calculate_t, 
                                                           rotate_image_3d_sitk, 
-                                                          matrix_from_axis_angle,
-                                                          axis_angle_from_vectors)
+                                                          rotation_matrix_from_zy_zx_angles,
+                                                          is_rotation_matrix,
+                                                          decompose_rotation_matrix,
+                                                          rotation_matrix_from_zy_zx_angles)
 from napari_sbem_viewer._utils.image_utils import save_ome_zarr
 
 
@@ -108,9 +110,9 @@ class AlignPlanes(QWidget):
                                                    options=options)
         if file_path:
             try:
-                normal = self._calculate_normal()
-                angle, axis = axis_angle_from_vectors(np.asarray([0, 0, 1]), self._calculate_normal())
-                rotation_matrix = matrix_from_axis_angle(axis, angle)
+                rotation_matrix = rotation_matrix_from_zy_zx_angles(self.zy_degrees_slider.value(), self.zx_degrees_slider.value())
+                # normal = self._calculate_normal()
+                # rotation_matrix = rotation_matrix_from_vectors(np.asarray([1, 0, 0]), normal)
                 np.savetxt(file_path, rotation_matrix, delimiter=',')
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
@@ -125,8 +127,12 @@ class AlignPlanes(QWidget):
         
         if file_path:
             try:
-                transform = np.loadtxt(file_path, delimiter=',')
-                print(transform)
+                rotation_matrix = np.loadtxt(file_path, delimiter=',')
+                if not is_rotation_matrix(rotation_matrix):
+                    raise ValueError("Invalid rotation matrix")
+                angle_zy, angle_zx = decompose_rotation_matrix(rotation_matrix)
+                self.zy_degrees_slider.setValue(np.degrees(angle_zy))
+                self.zx_degrees_slider.setValue(np.degrees(angle_zx))
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
             
@@ -156,19 +162,8 @@ class AlignPlanes(QWidget):
         
     def _calculate_normal(self):
         normal = np.asarray([[1], [0], [0]])
-        transform_matrix_zy = np.asarray([
-            [np.cos(np.radians(self.zy_degrees_slider.value())), -np.sin(np.radians(self.zy_degrees_slider.value())), 0],
-            [np.sin(np.radians(self.zy_degrees_slider.value())), np.cos(np.radians(self.zy_degrees_slider.value())), 0],
-            [0, 0, 1]
-        ])
-        transform_matrix_zx = np.asarray([
-            [np.cos(np.radians(self.zx_degrees_slider.value())), 0, np.sin(np.radians(self.zx_degrees_slider.value()))],
-            [0, 1, 0],
-            [-np.sin(np.radians(self.zx_degrees_slider.value())), 0, np.cos(np.radians(self.zx_degrees_slider.value()))],
-        ])
-        normal = np.matmul(transform_matrix_zy, normal)
-        normal = np.matmul(transform_matrix_zx, normal)
-        
+        rotation_matrix = rotation_matrix_from_zy_zx_angles(self.zy_degrees_slider.value(), self.zx_degrees_slider.value())
+        normal = rotation_matrix[:3, :3] @ normal
         return normal.T[0]
 
     def update_position_slider(self):
@@ -251,25 +246,3 @@ def rotate_layer(layer, v1, v2):
         rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
     rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, 'image')
     return rotated_layer
-
-
-class RangeValidator(QDoubleValidator):
-    def __init__(self, bottom, top, decimals, parent=None):
-        super().__init__(bottom, top, decimals, parent)
-    
-    def validate(self, input_str, pos):
-        if input_str in ('-', '.', '-.', ''):
-            return (QDoubleValidator.Intermediate, input_str, pos)
-        
-        state, input_str, pos = super().validate(input_str, pos)
-        if state == QDoubleValidator.Invalid:
-            return (QDoubleValidator.Invalid, input_str, pos)
-        
-        try:
-            value = float(input_str)
-            if value < self.bottom() or value > self.top():
-                return (QDoubleValidator.Invalid, input_str, pos)
-        except ValueError:
-            return (QDoubleValidator.Invalid, input_str, pos)
-        
-        return (QDoubleValidator.Acceptable, input_str, pos)

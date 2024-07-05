@@ -14,6 +14,9 @@ def quaternion_from_vectors(v1, v2):
 def axis_angle_from_vectors(v1, v2):
     # Calculate the rotation axis
     axis = np.cross(v1, v2)
+    if np.linalg.norm(axis) == 0:
+        return np.array(v1), 0
+    
     axis /= np.linalg.norm(axis)
 
     # Calculate the angle of rotation
@@ -56,57 +59,95 @@ def rotation_matrix_from_vectors(vec1, vec2):
     vec1 = vec1 / np.linalg.norm(vec1)
     vec2 = vec2 / np.linalg.norm(vec2)
 
-    # Compute the rotation axis
-    axis = np.cross(vec1, vec2)
-    axis /= np.linalg.norm(axis)
+    axis, angle = axis_angle_from_vectors(vec1, vec2)
 
-    # Compute the rotation angle (in radians)
-    angle = np.arccos(np.dot(vec1, vec2))
-
-    # Compute the rotation matrix
-    cos_theta = np.cos(angle)
-    sin_theta = np.sin(angle)
-    rot_mat = np.array([[cos_theta + axis[0]**2 * (1 - cos_theta), 
-                         axis[0] * axis[1] * (1 - cos_theta) - axis[2] * sin_theta,
-                         axis[0] * axis[2] * (1 - cos_theta) + axis[1] * sin_theta],
-                        [axis[1] * axis[0] * (1 - cos_theta) + axis[2] * sin_theta,
-                         cos_theta + axis[1]**2 * (1 - cos_theta),
-                         axis[1] * axis[2] * (1 - cos_theta) - axis[0] * sin_theta],
-                        [axis[2] * axis[0] * (1 - cos_theta) - axis[1] * sin_theta,
-                         axis[2] * axis[1] * (1 - cos_theta) + axis[0] * sin_theta,
-                         cos_theta + axis[2]**2 * (1 - cos_theta)]])
-    return rot_mat
+    return rotation_matrix_from_axis_angle(axis, angle)
 
 
-def matrix_from_axis_angle(angle, axis):
-    """ Compute rotation matrix from axis-angle.
-    This is called exponential map or Rodrigues' formula.
-    Returns
-    -------
-    R : array-like, shape (3, 3)
-        Rotation matrix
+def rotation_matrix_from_zy_zx_angles(zy_angle, zx_angle):
+    transform_matrix_zy = np.asarray([
+    [np.cos(np.radians(zy_angle)), -np.sin(np.radians(zy_angle)), 0, 0],
+    [np.sin(np.radians(zy_angle)), np.cos(np.radians(zy_angle)), 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
+    ])
+    transform_matrix_zx = np.asarray([
+        [np.cos(np.radians(zx_angle)), 0, np.sin(np.radians(zx_angle)), 0],
+        [0, 1, 0, 0],
+        [-np.sin(np.radians(zx_angle)), 0, np.cos(np.radians(zx_angle)), 0],
+        [0, 0, 0, 1]
+    ])
+    return transform_matrix_zy @ transform_matrix_zx
+
+
+def rotation_matrix_from_axis_angle(axis, angle):
     """
-    ux, uy, uz = axis
+    Convert an axis and an angle into a 4x4 transformation matrix.
+    
+    Parameters:
+    axis (array-like): A 3-element array-like structure representing the rotation axis.
+    angle (float): The rotation angle in radians.
+    
+    Returns:
+    np.ndarray: A 4x4 transformation matrix.
+    """
+    axis = np.array(axis)
+    axis = axis / np.linalg.norm(axis)  # Normalize the axis
+    x, y, z = axis
     c = np.cos(angle)
     s = np.sin(angle)
-    ci = 1.0 - c
-    R = np.array([[ci * ux * ux + c,
-                   ci * ux * uy - uz * s,
-                   ci * ux * uz + uy * s],
-                  [ci * uy * ux + uz * s,
-                   ci * uy * uy + c,
-                   ci * uy * uz - ux * s],
-                  [ci * uz * ux - uy * s,
-                   ci * uz * uy + ux * s,
-                   ci * uz * uz + c],
-                  ])
+    t = 1 - c
+    
+    # Create the rotation matrix
+    rotation_matrix = np.array([
+        [t*x*x + c,   t*x*y - s*z, t*x*z + s*y, 0],
+        [t*x*y + s*z, t*y*y + c,   t*y*z - s*x, 0],
+        [t*x*z - s*y, t*y*z + s*x, t*z*z + c,   0],
+        [0,           0,           0,           1]
+    ])
+    
+    return rotation_matrix
 
-    # This is equivalent to
-    # R = (np.eye(3) * np.cos(angle) +
-    #      (1.0 - np.cos(angle)) * a[:3, np.newaxis].dot(a[np.newaxis, :3]) +
-    #      cross_product_matrix(a[:3]) * np.sin(angle))
 
-    return R
+def is_rotation_matrix(matrix):
+    """
+    Check if the supplied 4x4 matrix is a pure rotation matrix.
+    
+    Parameters:
+    matrix (np.ndarray): A 4x4 transformation matrix.
+    
+    Returns:
+    bool: True if the matrix represents only a rotation, False otherwise.
+    """
+    if matrix.shape != (4, 4):
+        return False
+
+    # Extract the upper-left 3x3 submatrix
+    rotation_matrix = matrix[:3, :3]
+    
+    # Check if the upper-left 3x3 submatrix is orthogonal
+    should_be_identity = np.dot(rotation_matrix.T, rotation_matrix)
+    identity = np.eye(3)
+    if not np.allclose(should_be_identity, identity):
+        return False
+    
+    # Check if the determinant of the upper-left 3x3 submatrix is 1
+    if not np.isclose(np.linalg.det(rotation_matrix), 1.0):
+        return False
+    
+    # Check the last row and last column
+    if not np.allclose(matrix[3, :], [0, 0, 0, 1]):
+        return False
+    
+    if not np.allclose(matrix[:, 3], [0, 0, 0, 1]):
+        return False
+    
+    return True
+
+
+def decompose_rotation_matrix(matrix):
+    # return the angles of rotation around the x-axis (zy direction) and around the y-axis (zx direction)
+    return -np.arcsin(matrix[0, 1]), -np.arcsin(matrix[2, 0])
         
         
 def get_transformation_matrix_2d(moving_points, fixed_points):
