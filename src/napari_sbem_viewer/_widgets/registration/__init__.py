@@ -1,7 +1,6 @@
 from napari_sbem_viewer._widgets.registration.stack_viewer import StackViewer
 from napari_sbem_viewer._widgets.registration.point_selection import PointSelection
 from napari_sbem_viewer._widgets.registration.manual_registration import ManualRegistration
-from napari_sbem_viewer._widgets.registration.affinder_3d import ManualRegistration2
 from napari_sbem_viewer._widgets.registration.align_planes import AlignPlanes
 from napari_sbem_viewer._widgets.registration.precomputed_transformation import PrecomputedTransformation
 from napari_sbem_viewer._widgets.registration.registration_options import RegistrationOptions

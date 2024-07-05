@@ -145,6 +145,23 @@ def is_rotation_matrix(matrix):
     return True
 
 
+def is_2d_affine_matrix(matrix):
+    if matrix.shape != (4, 4):
+        return False
+    
+    # Check if the matrix doesn't include rotation through z-axis
+    if not np.allclose(matrix[0, :3], [1, 0, 0]):
+        return False
+    
+    if not np.allclose(matrix[:, 0], [1, 0, 0, 0]):
+        return False
+    
+    if not np.allclose(matrix[3, :], [0, 0, 0, 1]):
+        return False
+
+    return True
+
+
 def decompose_rotation_matrix(matrix):
     # return the angles of rotation around the x-axis (zy direction) and around the y-axis (zx direction)
     return -np.arcsin(matrix[0, 1]), -np.arcsin(matrix[2, 0])
