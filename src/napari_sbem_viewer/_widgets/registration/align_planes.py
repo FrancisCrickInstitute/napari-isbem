@@ -10,6 +10,7 @@ from qtpy.QtCore import Qt
 import numpy as np
 from napari.qt import QtViewer
 
+from napari_sbem_viewer._widgets.registration import StackViewer
 from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vectors, 
                                                           line_parametric_equation, 
                                                           find_intersections, 
@@ -79,7 +80,6 @@ class AlignPlanes(QWidget):
         # self.layout().addWidget(self.progress_bar, 5, 0, 1, 2)
 
         self.parentWidget().parentWidget().select_images.moving_combo_box.currentTextChanged.connect(self._on_select_moving_image)
-        self.parentWidget().parentWidget().select_images.fixed_combo_box.currentTextChanged.connect(self._on_select_fixed_image)
         
     @property
     def moving_image_layer(self):
@@ -111,8 +111,6 @@ class AlignPlanes(QWidget):
         if file_path:
             try:
                 rotation_matrix = rotation_matrix_from_zy_zx_angles(self.zy_degrees_slider.value(), self.zx_degrees_slider.value())
-                # normal = self._calculate_normal()
-                # rotation_matrix = rotation_matrix_from_vectors(np.asarray([1, 0, 0]), normal)
                 np.savetxt(file_path, rotation_matrix, delimiter=',')
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
@@ -156,6 +154,8 @@ class AlignPlanes(QWidget):
         return save_path
         
     def _on_change_angle(self):
+        if 'plane' not in self.align_planes_window.viewer.layers:
+            return
         normal = self._calculate_normal()
         self.align_planes_window.viewer.layers['plane'].plane.normal = normal
         self.update_position_slider()
@@ -176,6 +176,8 @@ class AlignPlanes(QWidget):
         self.position_slider.setValue(t)
         
     def _on_update_position(self):
+        if 'plane' not in self.align_planes_window.viewer.layers:
+            return
         layer = self.align_planes_window.viewer.layers['plane']
         if self.intersection_points is None:
             layer.plane.position = [layer.data.shapes[-1][i] // 2 for i in range(len(layer.data.shape))]
@@ -188,10 +190,10 @@ class AlignPlanes(QWidget):
     def _on_click_show(self):
         moving_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
         if self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer() is None:
+            QMessageBox.warning(self, "Error showing image", "Select a moving image first.")
             return
         
         self.align_planes_window.viewer.layers.clear()
-        
         moving_layer = copy(moving_layer)
         moving_layer.affine = None
         moving_layer.name = 'image'
@@ -201,33 +203,27 @@ class AlignPlanes(QWidget):
         moving_layer_plane.name = 'plane'
         moving_layer_plane.depiction = 'plane'
         moving_layer_plane.colormap = 'cyan'
-        
         shape = moving_layer.data.shapes[-1]
         moving_layer_plane.plane.position = moving_layer_plane.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
-        
         self.align_planes_window.viewer.add_layer(moving_layer)
         self.align_planes_window.viewer.add_layer(moving_layer_plane)
+        self.align_planes_window.show()
+        self._on_update_position()
+        self._on_change_angle()
+        
+    def reset_ui(self):
         self.zy_degrees_slider.setValue(0)
         self.zx_degrees_slider.setValue(0)
-        self._on_change_angle()
         self.position_slider.setValue(0.5)
         self.intersection_points = None
-        self._on_update_position()
-
-        self.update_position_slider()
-        self.align_planes_window.show()
-        
-    def _update_3d_viewer(self):
-        pass
         
     def _on_select_moving_image(self):
-        pass
-    
-    def _on_select_fixed_image(self):
-        pass
+        self.align_planes_window.close()
+        self.align_planes_window.viewer.layers.clear()
+        self.reset_ui()
         
     def _init_align_planes_window(self):
-        window = QtViewer(napari.Viewer(show=False))
+        window = StackViewer(napari.Viewer(show=False))
         window.setParent(self)
         window.setWindowFlags(Qt.Tool | Qt.WindowStaysOnTopHint)
         window.viewer.dims.ndisplay = 3

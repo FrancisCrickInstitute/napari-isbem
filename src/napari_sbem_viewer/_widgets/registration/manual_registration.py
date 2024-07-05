@@ -134,7 +134,7 @@ class ManualRegistration(QWidget):
         # make points layer if it was not specified
         estimation_ndim = min(self.fixed_image_layer.ndim, self.moving_image_layer.ndim)
         for i in range(len(self.points_layers)):
-            if self.points_layers[i] is None:
+            if self.points_layers[i] not in self.viewer.layers:
                 layer, color = points_layers_to_add[i]
                 new_layer = self.viewer.add_points(
                         ndim=estimation_ndim, # ndims of all points layers same lowest ndim of fixed or moving
