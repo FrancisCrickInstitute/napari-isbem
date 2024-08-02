@@ -153,8 +153,10 @@ class ROIList(QGroupBox):
             return
         counter = item.column() - 1
         self.bbox_layer.data[item.row()][counter::2, 0] = float(item.data())
+        self.current_z = self.viewer.dims.point[0]
         self.bbox_layer.data = self.bbox_layer.data
-            
+        self.viewer.dims.set_point(0, self.current_z)
+        
     def _on_update_bbox(self, event):
         """
         Called when the shapes layer is updated by either adding or removing
@@ -167,12 +169,14 @@ class ROIList(QGroupBox):
                 for r in range(self.model.rowCount(), len(event.value)):
                     self._add_roi_to_table(event.value[r], r)
                 self.table_view.clearSelection()
+                self.viewer.dims.set_point(0, self.current_z)
             return
         
-        # if event.action == ActionType.ADDING:
-        #     for idx in event.data_indices:
-        #         df = self.bbox_layer.features
-        #         self.bbox_layer.features.loc[idx, "name"] = f'ROI {idx+1}'
+        if event.action == ActionType.ADDING:
+            self.current_z = self.viewer.dims.point[0]
+            # for idx in event.data_indices:
+            #     df = self.bbox_layer.features
+            #     self.bbox_layer.features.loc[idx, "name"] = f'ROI {idx+1}'
         
         # if event.action == ActionType.ADDED:
         #     for r in range(self.model.rowCount(), len(event.value)):
