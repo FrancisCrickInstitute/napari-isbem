@@ -2,8 +2,8 @@ import napari
 from napari_bbox import BoundingBoxLayer
 from napari_bbox.boundingbox.napari_0_4_18._bounding_box_constants import Mode
 from napari.layers.base._base_constants import ActionType
-from qtpy.QtWidgets import QGroupBox, QListWidget, QPushButton, QGridLayout, QTableView, QHeaderView, QStyledItemDelegate, QLineEdit
-from qtpy.QtGui import QStandardItemModel, QStandardItem, QDoubleValidator
+from qtpy.QtWidgets import QGroupBox, QPushButton, QGridLayout, QTableView, QHeaderView, QStyledItemDelegate, QLabel
+from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Qt, QItemSelection, QItemSelectionModel
 import numpy as np
 import pandas as pd
@@ -54,11 +54,15 @@ class ROIList(QGroupBox):
         self.bbox_layer_config = bbox_layer_config
         self.adding_row = False
         
+        self.current_z_depth_label = QLabel('Current Z: ')
+        self.viewer.dims.events.current_step.connect(self._on_change_z_depth)
+        self.layout().addWidget(self.current_z_depth_label, 0, 0, 1, 2)
+        
         self.table_view = QTableView()
         self.table_view.setSelectionBehavior(
             QTableView.SelectionBehavior.SelectRows
         )
-        self.layout().addWidget(self.table_view, 0, 0, 1, 2)
+        self.layout().addWidget(self.table_view, 1, 0, 1, 2)
         self.model = QStandardItemModel()
         self.model.setHorizontalHeaderLabels(['z1 (µm)', 'z2 (µm)'])
         self.table_view.setModel(self.model)
@@ -74,11 +78,11 @@ class ROIList(QGroupBox):
         
         self.add_button = QPushButton("Add")
         self.add_button.clicked.connect(self._on_click_add)
-        self.layout().addWidget(self.add_button, 1, 0)
+        self.layout().addWidget(self.add_button, 2, 0)
         
         self.remove_button = QPushButton("Remove")
         self.remove_button.clicked.connect(self._on_click_remove)
-        self.layout().addWidget(self.remove_button, 1, 1)
+        self.layout().addWidget(self.remove_button, 2, 1)
         
     @property
     def bbox_layer(self):
@@ -122,6 +126,10 @@ class ROIList(QGroupBox):
         for idx in indices:
             selected_rows.add(idx.row())
         return list(selected_rows)
+    
+    def _on_change_z_depth(self):
+        z_depth = self.viewer.dims.point[0]
+        self.current_z_depth_label.setText(f"Current Z: {z_depth:.2f}µm")
         
     def _reset_z_viewer(self, z: int):
         # reset the z viewer to the z slice of the ROI in world coords
@@ -176,9 +184,6 @@ class ROIList(QGroupBox):
             #     df = self.bbox_layer.features
             #     self.bbox_layer.features.loc[idx, "name"] = f'ROI {idx+1}'
         
-        if event.action == ActionType.REMOVING:
-            self.curent_z = self.viewer.dims.point[0]
-        
         # if event.action == ActionType.ADDED:
         #     for r in range(self.model.rowCount(), len(event.value)):
         #         self._add_roi_to_table(event.value[r], r)
@@ -186,7 +191,6 @@ class ROIList(QGroupBox):
     
         if event.action == ActionType.REMOVED:
             self._remove_rois_from_table(event.data_indices)
-            # self.viewer.dims.set_point(0, self.current_z)
                 
     def _on_select_bbox(self, layer, event):
         yield
