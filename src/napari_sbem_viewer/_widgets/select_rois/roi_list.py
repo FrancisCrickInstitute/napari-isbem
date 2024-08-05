@@ -149,13 +149,11 @@ class ROIList(QGroupBox):
     def _on_change_roi_table(self, item):
         if self.adding_row:
             return
-        # if item.column() == 0:
-        #     return
         counter = item.column()
         self.bbox_layer.data[item.row()][counter::2, 0] = float(item.data())
-        self.current_z = self.viewer.dims.point[0]
+        current_z = self.viewer.dims.point[0]
         self.bbox_layer.data = self.bbox_layer.data
-        self.viewer.dims.set_point(0, self.current_z)
+        self.viewer.dims.set_point(0, current_z)
 
     def _on_update_bbox(self, event):
         """
@@ -170,13 +168,16 @@ class ROIList(QGroupBox):
                     self._add_roi_to_table(event.value[r], r)
                 self.table_view.clearSelection()
                 self.viewer.dims.set_point(0, self.current_z)
-             
+            return
         
         if event.action == ActionType.ADDING:
             self.current_z = self.viewer.dims.point[0]
             # for idx in event.data_indices:
             #     df = self.bbox_layer.features
             #     self.bbox_layer.features.loc[idx, "name"] = f'ROI {idx+1}'
+        
+        if event.action == ActionType.REMOVING:
+            self.curent_z = self.viewer.dims.point[0]
         
         # if event.action == ActionType.ADDED:
         #     for r in range(self.model.rowCount(), len(event.value)):
@@ -185,6 +186,7 @@ class ROIList(QGroupBox):
     
         if event.action == ActionType.REMOVED:
             self._remove_rois_from_table(event.data_indices)
+            # self.viewer.dims.set_point(0, self.current_z)
                 
     def _on_select_bbox(self, layer, event):
         yield
