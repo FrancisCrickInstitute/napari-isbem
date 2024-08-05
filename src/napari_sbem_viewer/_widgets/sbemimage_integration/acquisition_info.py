@@ -22,7 +22,7 @@ class AcquisitionInfo(QGroupBox):
         self.table_view = QTableView()
         self.layout().addWidget(self.table_view, 5, 0, 1, 2)
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1', 'z2'])
+        
         self.table_view.setModel(self.model)
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -35,9 +35,9 @@ class AcquisitionInfo(QGroupBox):
 
     def update_roi_info(self, roi_data):
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(['ROI', 'z1', 'z2'])
+        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
         for r, roi in enumerate(roi_data.rois):
-            for c, val in enumerate([f'{roi.id}', f'{roi.z1:.2f}µm', f'{roi.z2:.2f}µm']):
+            for c, val in enumerate([f'{roi.id}', f'{roi.z1:.2f}', f'{roi.z2:.2f}']):
                 item = QStandardItem(val)
                 item.setEditable(False)
                 item.setCheckable(False)

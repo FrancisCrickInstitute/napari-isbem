@@ -27,11 +27,11 @@ class FloatValidationDelegate(QStyledItemDelegate):
             z = float(new_value)
             
             # Check if z1 is less than z2
-            if index.column() == 1:
+            if index.column() == 0:
                 z1 = z
-                z2 = float(model.item(index.row(), 2).text())
-            elif index.column() == 2:
-                z1 = float(model.item(index.row(), 1).text())
+                z2 = float(model.item(index.row(), 1).text())
+            elif index.column() == 1:
+                z1 = float(model.item(index.row(), 0).text())
                 z2 = z
             if z1 > z2:
                 raise ValueError('z1 must be less than z2')
@@ -60,14 +60,14 @@ class ROIList(QGroupBox):
         )
         self.layout().addWidget(self.table_view, 0, 0, 1, 2)
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.model.setHorizontalHeaderLabels(['z1 (µm)', 'z2 (µm)'])
         self.table_view.setModel(self.model)
         selection_model = self.table_view.selectionModel()
         selection_model.selectionChanged.connect(self._on_change_table_selection)
         self.table_view.clicked.connect(self._on_click_roi_table)
         validation = FloatValidationDelegate()
+        self.table_view.setItemDelegateForColumn(0, validation)
         self.table_view.setItemDelegateForColumn(1, validation)
-        self.table_view.setItemDelegateForColumn(2, validation)
         self.model.dataChanged.connect(self._on_change_roi_table)
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -149,14 +149,14 @@ class ROIList(QGroupBox):
     def _on_change_roi_table(self, item):
         if self.adding_row:
             return
-        if item.column() == 0:
-            return
-        counter = item.column() - 1
+        # if item.column() == 0:
+        #     return
+        counter = item.column()
         self.bbox_layer.data[item.row()][counter::2, 0] = float(item.data())
         self.current_z = self.viewer.dims.point[0]
         self.bbox_layer.data = self.bbox_layer.data
         self.viewer.dims.set_point(0, self.current_z)
-        
+
     def _on_update_bbox(self, event):
         """
         Called when the shapes layer is updated by either adding or removing
@@ -170,7 +170,7 @@ class ROIList(QGroupBox):
                     self._add_roi_to_table(event.value[r], r)
                 self.table_view.clearSelection()
                 self.viewer.dims.set_point(0, self.current_z)
-            return
+             
         
         if event.action == ActionType.ADDING:
             self.current_z = self.viewer.dims.point[0]
@@ -204,7 +204,7 @@ class ROIList(QGroupBox):
     def _add_roi_to_table(self, coords, row):
         self.adding_row = True
         z1, z2 = coords.min(axis=0)[0], coords.max(axis=0)[0]
-        for c, val in enumerate([f'ROI {row+1}', f'{z1:.2f}', f'{z2:.2f}']):
+        for c, val in enumerate([f'{z1:.2f}', f'{z2:.2f}']):
             item = QStandardItem(val)
             self.model.setItem(row, c, item)
         self.adding_row = False
