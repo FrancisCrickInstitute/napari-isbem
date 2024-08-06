@@ -166,9 +166,6 @@ class ManualRegistration(QWidget):
     def _on_click_start(self):
         self.moving_image_layer.mode = Mode.TRANSFORM
         self.moving_image_layer.events.affine.connect(self._affine_callback)
-        
-        # focus on the fixed layer
-        # reset_view(self.viewer, self.moving_image_layer)
 
         self._create_points_layers()
         pts_layer0 = self.points_layers[0]
@@ -180,7 +177,7 @@ class ManualRegistration(QWidget):
         for layer in [self.fixed_image_layer, pts_layer0, self.moving_image_layer, pts_layer1]:
             self.viewer.layers.move(self.viewer.layers.index(layer), -1)
 
-        self._focus_moving_layer()
+        self._focus_fixed_layer()
         self._enable_ui()
         
     def _on_toggle_manual_adjustment(self):
@@ -272,10 +269,10 @@ class ManualRegistration(QWidget):
         pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
         n0, n1 = len(pts0), len(pts1)
         ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
-        reset_camera = n0 <= ndim or n1 <= ndim  # only reset the view for the inital points
-        if moving_points_layer in self.viewer.layers.selection:
-            self._focus_fixed_layer(reset_camera=reset_camera)
-        elif fixed_points_layer in self.viewer.layers.selection:
+        reset_camera = n0 <= ndim + 1  # only reset the view for the inital points
+        if fixed_points_layer in self.viewer.layers.selection:
+            self._focus_moving_layer(reset_camera=reset_camera)
+        elif moving_points_layer in self.viewer.layers.selection:
             if n0 == n1:
                 # we just added enough points:
                 # estimate transform, go back to layer0
@@ -300,7 +297,7 @@ class ManualRegistration(QWidget):
                     moving_points_layer.affine = convert_affine_to_ndims(
                             (ref_mat @ mat), moving_points_layer.ndim
                             )
-            self._focus_moving_layer(reset_camera=reset_camera)
+            self._focus_fixed_layer(reset_camera=reset_camera)
                 
                 
 class AffineTransformChoices(Enum):
