@@ -3,7 +3,7 @@ import os
 from enum import Enum
 
 import napari
-from napari.layers.base._base_constants import Mode
+from napari.layers.base._base_constants import Mode, ActionType
 from qtpy.QtWidgets import QGridLayout, QPushButton, QFileDialog, QHBoxLayout, QHBoxLayout, QComboBox, QLabel, QCheckBox, QWidget, QMessageBox
 import numpy as np
 from skimage.transform import (
@@ -176,9 +176,7 @@ class ManualRegistration(QWidget):
         for layer in [self.fixed_image_layer, pts_layer0, self.moving_image_layer, pts_layer1]:
             self.viewer.layers.move(self.viewer.layers.index(layer), -1)
 
-        self.viewer.layers.selection.active = pts_layer1
-        pts_layer1.mode = 'add'
-
+        self._focus_moving_layer()
         self._enable_ui()
 
     def _enable_ui(self):
@@ -245,8 +243,24 @@ class ManualRegistration(QWidget):
         moving_points_layer.affine = convert_affine_to_ndims(
             self.moving_image_layer.affine.affine_matrix, moving_points_layer.ndim
             )
+    
+    def _focus_fixed_layer(self):
+        self.viewer.layers.selection.active = self.points_layers[0]
+        self.viewer.layers.move(self.viewer.layers.index(self.fixed_image_layer), -1)
+        self.viewer.layers.move(self.viewer.layers.index(self.points_layers[0]), -1)
+        self.points_layers[0].mode = 'add'
+        reset_view(self.viewer, self.fixed_image_layer)
         
-    def _next_layer_callback(self):
+    def _focus_moving_layer(self):
+        self.viewer.layers.selection.active = self.points_layers[1]
+        self.viewer.layers.move(self.viewer.layers.index(self.moving_image_layer), -1)
+        self.viewer.layers.move(self.viewer.layers.index(self.points_layers[1]), -1)
+        self.points_layers[1].mode = 'add'
+        reset_view(self.viewer, self.moving_image_layer)               
+        
+    def _next_layer_callback(self, event):
+        if not event.action == ActionType.ADDED:
+            return
         fixed_points_layer, moving_points_layer = self.points_layers
         pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
         ndim_raw = pts0.shape[1]  # shape of raw points
@@ -254,15 +268,7 @@ class ManualRegistration(QWidget):
         n0, n1 = len(pts0), len(pts1)
         ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
         if moving_points_layer in self.viewer.layers.selection:
-            if n1 < ndim + 1:
-                return
-            if n1 == ndim + 1:
-                reset_view(self.viewer, self.fixed_image_layer)
-            if n1 > n0:
-                self.viewer.layers.selection.active = fixed_points_layer
-                self.viewer.layers.move(self.viewer.layers.index(self.fixed_image_layer), -1)
-                self.viewer.layers.move(self.viewer.layers.index(fixed_points_layer), -1)
-                fixed_points_layer.mode = 'add'
+            self._focus_fixed_layer()
         elif fixed_points_layer in self.viewer.layers.selection:
             if n0 == n1:
                 # we just added enough points:
@@ -288,11 +294,7 @@ class ManualRegistration(QWidget):
                     moving_points_layer.affine = convert_affine_to_ndims(
                             (ref_mat @ mat), moving_points_layer.ndim
                             )
-                self.viewer.layers.selection.active = moving_points_layer
-                fixed_points_layer.mode = 'add'
-                self.viewer.layers.move(self.viewer.layers.index(self.moving_image_layer), -1)
-                self.viewer.layers.move(self.viewer.layers.index(moving_points_layer), -1)
-                reset_view(self.viewer, self.moving_image_layer)
+            self._focus_moving_layer()
                 
                 
 class AffineTransformChoices(Enum):
