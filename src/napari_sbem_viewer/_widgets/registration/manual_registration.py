@@ -33,51 +33,57 @@ class ManualRegistration(QWidget):
         self.setLayout(QGridLayout())
         self.delete_pts = True
         self.points_layers = [None, None]
-        self.initial_transform = None
         self.layout().setContentsMargins(0, 0, 0, 0)
         
         self.upload_transform_button = QPushButton("Upload transform")
         self.upload_transform_button.clicked.connect(self._on_click_upload_transform)
         self.layout().addWidget(self.upload_transform_button, 0, 0, 1, 2)
         
-        self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self._on_click_start)
-        self.layout().addWidget(self.start_button, 1, 0, 1, 2)
-
+        self.save_button = QPushButton("Save transform")
+        self.save_button.clicked.connect(self._on_click_save)
+        self.layout().addWidget(self.save_button, 1, 0)
+        
+        self.save_button = QPushButton("Reset transform")
+        self.save_button.clicked.connect(self._on_click_reset)
+        self.layout().addWidget(self.save_button, 1, 1)
+        
+        # ----------------- Z adjustment -----------------
+        self.layout().addWidget(QLabel("Adjust Z:"), 2, 0, 1, 2)
         self.reverse_checkbox = QCheckBox("Reverse Z direction")
         self.reverse_checkbox.stateChanged.connect(self._flip_z)
-        self.reverse_checkbox.setEnabled(False)
-        self.layout().addWidget(self.reverse_checkbox, 2, 0, 1, 2)
+        self.layout().addWidget(self.reverse_checkbox, 3, 0, 1, 2)
         
         self.move_down_button = QPushButton("Move down")
         self.move_down_button.clicked.connect(functools.partial(self._offset_z, 1))
-        self.move_down_button.setEnabled(False)
-        self.layout().addWidget(self.move_down_button, 3, 0)
+        self.layout().addWidget(self.move_down_button, 4, 0)
         self.move_up_button = QPushButton("Move up")
         self.move_up_button.clicked.connect(functools.partial(self._offset_z, -1))
-        self.move_up_button.setEnabled(False)
-        self.layout().addWidget(self.move_up_button, 3, 1)
+        self.layout().addWidget(self.move_up_button, 4, 1)
         
+        # ----------------- 2D transform -----------------
+        self.layout().addWidget(QLabel("2D Transform:"), 5, 0, 1, 2)
+        
+        self.toggle_manual_adjustment_button = QPushButton("Toggle manual adjustment")
+        self.toggle_manual_adjustment_button.clicked.connect(self._on_toggle_manual_adjustment)
+        self.layout().addWidget(self.toggle_manual_adjustment_button, 6, 0, 1, 2)
+            
         model_layout = QHBoxLayout()
         self.model_combobox = QComboBox()
         self.model_combobox.addItems([str(model.name) for model in AffineTransformChoices])
-        self.model_combobox.setEnabled(False)
         self.model_label = QLabel("Model:")
-        self.model_label.setEnabled(False)
         model_layout.addWidget(self.model_label)
         model_layout.addWidget(self.model_combobox)
         model_layout.setStretch(1, 1)
-        self.layout().addLayout(model_layout, 4, 0, 1, 2)
-    
-        self.save_button = QPushButton("Save")
-        self.save_button.clicked.connect(self._on_click_save)
-        self.save_button.setEnabled(False)
-        self.layout().addWidget(self.save_button, 5, 0)
+        self.layout().addLayout(model_layout, 7, 0, 1, 2)
         
-        self.close_button = QPushButton("Close")
-        self.close_button.clicked.connect(self._on_click_close)
-        self.close_button.setEnabled(False)
-        self.layout().addWidget(self.close_button, 5, 1)
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self._on_click_start)
+        self.layout().addWidget(self.start_button, 8, 0)
+    
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self._on_click_stop)
+        self.stop_button.setEnabled(False)
+        self.layout().addWidget(self.stop_button, 8, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
         
@@ -145,7 +151,6 @@ class ManualRegistration(QWidget):
                                                    "", 
                                                    "Text Files (*.txt);;All Files (*)", 
                                                    options=options)
-        
         if file_path:
             try:
                 transform = np.loadtxt(file_path, delimiter=',')
@@ -159,7 +164,6 @@ class ManualRegistration(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
         
     def _on_click_start(self):
-        self.initial_transform = self.moving_image_layer.affine
         self.moving_image_layer.mode = Mode.TRANSFORM
         self.moving_image_layer.events.affine.connect(self._affine_callback)
         
@@ -178,28 +182,23 @@ class ManualRegistration(QWidget):
 
         self._focus_moving_layer()
         self._enable_ui()
+        
+    def _on_toggle_manual_adjustment(self):
+        if self.moving_image_layer.mode != Mode.TRANSFORM:
+            self.moving_image_layer.mode = Mode.TRANSFORM
+            self.viewer.layers.selection.active = self.moving_image_layer
+        else:
+            self.moving_image_layer.mode = Mode.PAN_ZOOM
 
     def _enable_ui(self):
         self.start_button.setEnabled(False)
-        self.save_button.setEnabled(True)
-        self.move_up_button.setEnabled(True)
-        self.move_down_button.setEnabled(True)
-        self.close_button.setEnabled(True)
-        self.reverse_checkbox.setEnabled(True)
-        self.model_combobox.setEnabled(True)
-        self.model_label.setEnabled(True)
+        self.stop_button.setEnabled(True)
         
     def _disable_ui(self):        
         self.start_button.setEnabled(True)
-        self.save_button.setEnabled(False)
-        self.move_up_button.setEnabled(False)
-        self.move_down_button.setEnabled(False)
-        self.close_button.setEnabled(False)
-        self.reverse_checkbox.setEnabled(False)
-        self.model_combobox.setEnabled(False)
-        self.model_label.setEnabled(False)       
+        self.stop_button.setEnabled(False)
             
-    def _on_stop(self):
+    def _on_click_stop(self):
         self._disable_ui()
         self.moving_image_layer.mode = Mode.PAN_ZOOM
         if self.delete_pts:
@@ -219,11 +218,15 @@ class ManualRegistration(QWidget):
             
     def _on_click_save(self):
         self._save_transform(self.moving_image_layer.affine.affine_matrix)
-        self.initial_transform = self.moving_image_layer.affine.affine_matrix
         
-    def _on_click_close(self):
-        self.moving_image_layer.affine = self.initial_transform
-        self._on_stop()
+    def _on_click_reset(self):
+        reply = QMessageBox.question(self, 'Confirmation',
+                                     'Are you sure you want to reset the transformation?',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.moving_image_layer.affine = None
+        
         
     def _save_transform(self, affine_matrix):
         options = QFileDialog.Options()
@@ -244,19 +247,21 @@ class ManualRegistration(QWidget):
             self.moving_image_layer.affine.affine_matrix, moving_points_layer.ndim
             )
     
-    def _focus_fixed_layer(self):
+    def _focus_fixed_layer(self, reset_camera=True):
         self.viewer.layers.selection.active = self.points_layers[0]
         self.viewer.layers.move(self.viewer.layers.index(self.fixed_image_layer), -1)
         self.viewer.layers.move(self.viewer.layers.index(self.points_layers[0]), -1)
         self.points_layers[0].mode = 'add'
-        reset_view(self.viewer, self.fixed_image_layer)
+        if reset_camera:
+            reset_view(self.viewer, self.fixed_image_layer)
         
-    def _focus_moving_layer(self):
+    def _focus_moving_layer(self, reset_camera=True):
         self.viewer.layers.selection.active = self.points_layers[1]
         self.viewer.layers.move(self.viewer.layers.index(self.moving_image_layer), -1)
         self.viewer.layers.move(self.viewer.layers.index(self.points_layers[1]), -1)
         self.points_layers[1].mode = 'add'
-        reset_view(self.viewer, self.moving_image_layer)               
+        if reset_camera:
+            reset_view(self.viewer, self.moving_image_layer)               
         
     def _next_layer_callback(self, event):
         if not event.action == ActionType.ADDED:
@@ -267,8 +272,9 @@ class ManualRegistration(QWidget):
         pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
         n0, n1 = len(pts0), len(pts1)
         ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
+        reset_camera = n0 <= ndim or n1 <= ndim  # only reset the view for the inital points
         if moving_points_layer in self.viewer.layers.selection:
-            self._focus_fixed_layer()
+            self._focus_fixed_layer(reset_camera=reset_camera)
         elif fixed_points_layer in self.viewer.layers.selection:
             if n0 == n1:
                 # we just added enough points:
@@ -294,10 +300,11 @@ class ManualRegistration(QWidget):
                     moving_points_layer.affine = convert_affine_to_ndims(
                             (ref_mat @ mat), moving_points_layer.ndim
                             )
-            self._focus_moving_layer()
+            self._focus_moving_layer(reset_camera=reset_camera)
                 
                 
 class AffineTransformChoices(Enum):
     Affine = AffineTransform
     Euclidean = EuclideanTransform
     Similarity = SimilarityTransform
+    

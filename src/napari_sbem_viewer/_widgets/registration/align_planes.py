@@ -4,11 +4,9 @@ from copy import copy
 import napari
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers import Layer
-from qtpy.QtWidgets import QPushButton, QFormLayout, QLineEdit, QFileDialog, QGridLayout, QLabel, QSpinBox, QWidget, QSlider, QProgressBar, QLabel, QMessageBox
-from qtpy.QtGui import QDoubleValidator
+from qtpy.QtWidgets import QPushButton, QFormLayout, QFileDialog, QGridLayout, QLabel, QWidget, QLabel, QMessageBox
 from qtpy.QtCore import Qt
 import numpy as np
-from napari.qt import QtViewer
 
 from napari_sbem_viewer._widgets.registration import StackViewer
 from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vectors, 
@@ -41,9 +39,17 @@ class AlignPlanes(QWidget):
         self.align_planes_button.clicked.connect(self._on_click_upload_transform)
         self.layout().addWidget(self.align_planes_button, 0, 0, 1, 2)
         
+        self.save_transform_button = QPushButton("Save transform")
+        self.save_transform_button.clicked.connect(self._on_click_save_transform)
+        self.layout().addWidget(self.save_transform_button, 1, 0)
+        
+        self.save_ome_zarr_button = QPushButton("Save as OME-Zarr")
+        self.save_ome_zarr_button.clicked.connect(self._on_click_save_ome_zarr)
+        self.layout().addWidget(self.save_ome_zarr_button, 1, 1)
+        
         self.show_button = QPushButton("Show")
         self.show_button.clicked.connect(self._on_click_show)
-        self.layout().addWidget(self.show_button, 1, 0, 1, 2)
+        self.layout().addWidget(self.show_button, 2, 0, 1, 2)
         
         form_layout = QFormLayout()
         self.zy_degrees_slider = QDoubleSlider(Qt.Horizontal)
@@ -62,22 +68,11 @@ class AlignPlanes(QWidget):
         self.position_slider.valueChanged.connect(self._on_update_position)
         form_layout.addRow(QLabel("Position"), self.position_slider)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        self.layout().addLayout(form_layout, 2, 0, 1, 2)
+        self.layout().addLayout(form_layout, 3, 0, 1, 2)
         
         self.register_button = QPushButton("Apply transform")
         self.register_button.clicked.connect(self._on_click_register)
-        self.layout().addWidget(self.register_button, 3, 0, 1, 2)
-        
-        self.save_transform_button = QPushButton("Save transform")
-        self.save_transform_button.clicked.connect(self._on_click_save_transform)
-        self.layout().addWidget(self.save_transform_button, 4, 0)
-        
-        self.save_ome_zarr_button = QPushButton("Save as OME-Zarr")
-        self.save_ome_zarr_button.clicked.connect(self._on_click_save_ome_zarr)
-        self.layout().addWidget(self.save_ome_zarr_button, 4, 1)
-        
-        # self.progress_bar = QProgressBar(value=0)
-        # self.layout().addWidget(self.progress_bar, 5, 0, 1, 2)
+        self.layout().addWidget(self.register_button, 4, 0, 1, 2)
 
         self.parentWidget().parentWidget().select_images.moving_combo_box.currentTextChanged.connect(self._on_select_moving_image)
         
