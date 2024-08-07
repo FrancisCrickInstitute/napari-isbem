@@ -152,6 +152,9 @@ class ManualRegistration(QWidget):
                 
     def _on_click_upload_transform(self):
         options = QFileDialog.Options()
+        if not self.moving_image_layer:
+            QMessageBox.critical(self, "Error", "No moving image layer selected")
+            return
         file_path, _ = QFileDialog.getOpenFileName(self, 
                                                    "Open File", 
                                                    "", 
@@ -203,6 +206,7 @@ class ManualRegistration(QWidget):
     def _on_click_stop(self):
         self._disable_ui()
         self.moving_image_layer.mode = Mode.PAN_ZOOM
+        self.moving_image_layer.events.affine.disconnect(self._affine_callback)
         if self.delete_pts:
             self._remove_points_layers()
         else:
@@ -211,7 +215,6 @@ class ManualRegistration(QWidget):
     def _reset_points_layers(self):
         for layer in self.points_layers:
             layer.events.data.disconnect(self._next_layer_callback)
-            layer.events.affine.disconnect(self._affine_callback)
             layer.mode = 'pan_zoom'
     
     def _remove_points_layers(self):

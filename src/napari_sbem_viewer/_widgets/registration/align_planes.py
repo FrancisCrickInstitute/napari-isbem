@@ -111,6 +111,9 @@ class AlignPlanes(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
         
     def _on_click_upload_transform(self):
+        if not self.moving_image_layer:
+            QMessageBox.critical(self, "Error", "No moving image layer selected")
+            return
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, 
                                                    "Open File", 
