@@ -263,6 +263,7 @@ class ManualRegistration(QWidget):
             reset_view(self.viewer, self.fixed_image_layer)
         if len(fixed_points_layer.data):
             z_height = fixed_points_layer.data[-1][0]
+            self.viewer.dims._increment_dims_right(0)  # TODO: instead of incrementing, find a way to refresh the viewer without changing the dims
             self.viewer.dims.set_point(0, z_height)
         
     def _focus_moving_layer(self, reset_camera=True):
