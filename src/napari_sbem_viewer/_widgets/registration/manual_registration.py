@@ -151,10 +151,10 @@ class ManualRegistration(QWidget):
                 self.points_layers[i] = new_layer
                 
     def _on_click_upload_transform(self):
-        options = QFileDialog.Options()
         if not self.moving_image_layer:
             QMessageBox.critical(self, "Error", "No moving image layer selected")
             return
+        options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, 
                                                    "Open File", 
                                                    "", 

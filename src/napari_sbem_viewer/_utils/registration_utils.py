@@ -337,13 +337,6 @@ def calculate_z_transform(reference_points_layer, moving_points_layer, reverse_s
     else:
         z_offset = moving_z - reference_z
     mat = np.identity(4)
-    print('ref z', reference_z, 'moving z', moving_z)
-    print('ref points', reference_points_layer.data)
-    print('moving points', moving_points_layer.data)
-    print('fixed points affine:')
-    print(reference_points_layer.affine.affine_matrix)
-    print('moving points affine:')
-    print(moving_points_layer.affine.affine_matrix)
     if reverse_stack:
         mat[0, 0] = -1
     mat[0, 3] -= z_offset
