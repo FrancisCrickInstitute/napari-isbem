@@ -1,5 +1,4 @@
 import functools
-import os
 from enum import Enum
 
 import napari
@@ -70,20 +69,25 @@ class ManualRegistration(QWidget):
         model_layout = QHBoxLayout()
         self.model_combobox = QComboBox()
         self.model_combobox.addItems([str(model.name) for model in AffineTransformChoices])
+        self.model_combobox.currentIndexChanged.connect(self._do_transform)
         self.model_label = QLabel("Model:")
         model_layout.addWidget(self.model_label)
         model_layout.addWidget(self.model_combobox)
         model_layout.setStretch(1, 1)
         self.layout().addLayout(model_layout, 7, 0, 1, 2)
         
+        self.remove_outliers_checkbox = QCheckBox("Remove outliers")
+        self.remove_outliers_checkbox.stateChanged.connect(self._do_transform)
+        self.layout().addWidget(self.remove_outliers_checkbox, 8, 0, 1, 2)
+        
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(self._on_click_start)
-        self.layout().addWidget(self.start_button, 8, 0)
+        self.layout().addWidget(self.start_button, 9, 0)
     
         self.stop_button = QPushButton("Stop")
         self.stop_button.clicked.connect(self._on_click_stop)
         self.stop_button.setEnabled(False)
-        self.layout().addWidget(self.stop_button, 8, 1)
+        self.layout().addWidget(self.stop_button, 9, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
         
@@ -98,6 +102,7 @@ class ManualRegistration(QWidget):
     def _offset_z(self, offset):
         moving_points_layer = self.points_layers[1]
         if self.moving_image_layer is not None:
+            current_z = self.viewer.dims.point[0]
             mat = convert_affine_to_ndims(self.moving_image_layer.affine.affine_matrix, 3)
             offset_transform_matrix_z(mat, offset)
             ref_mat = convert_affine_to_ndims(self.fixed_image_layer.affine.affine_matrix, 3)
@@ -108,6 +113,7 @@ class ManualRegistration(QWidget):
                 moving_points_layer.affine = convert_affine_to_ndims(
                         (ref_mat @ mat), moving_points_layer.ndim
                         )
+            self.viewer.dims.set_point(0,  current_z)
                 
     def _flip_z(self):
         moving_points_layer = self.points_layers[1]
@@ -164,7 +170,6 @@ class ManualRegistration(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
         
     def _on_click_start(self):
-        self.moving_image_layer.mode = Mode.TRANSFORM
         self.moving_image_layer.events.affine.connect(self._affine_callback)
 
         self._create_points_layers()
@@ -212,6 +217,7 @@ class ManualRegistration(QWidget):
     def _remove_points_layers(self):
         for layer in self.points_layers:
             self.viewer.layers.remove(layer)
+        self.points_layers = [None, None]
             
     def _on_click_save(self):
         self._save_transform(self.moving_image_layer.affine.affine_matrix)
@@ -238,25 +244,30 @@ class ManualRegistration(QWidget):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
     
-    def _affine_callback(self, event):
+    def _affine_callback(self):
         moving_points_layer = self.points_layers[1]
         moving_points_layer.affine = convert_affine_to_ndims(
             self.moving_image_layer.affine.affine_matrix, moving_points_layer.ndim
             )
     
     def _focus_fixed_layer(self, reset_camera=True):
-        self.viewer.layers.selection.active = self.points_layers[0]
+        fixed_points_layer = self.points_layers[0]
+        self.viewer.layers.selection.active = fixed_points_layer
         self.viewer.layers.move(self.viewer.layers.index(self.fixed_image_layer), -1)
-        self.viewer.layers.move(self.viewer.layers.index(self.points_layers[0]), -1)
-        self.points_layers[0].mode = 'add'
+        self.viewer.layers.move(self.viewer.layers.index(fixed_points_layer), -1)
+        fixed_points_layer.mode = 'add'
         if reset_camera:
             reset_view(self.viewer, self.fixed_image_layer)
+        if len(fixed_points_layer.data):
+            z_height = fixed_points_layer.data[-1][0]
+            self.viewer.dims.set_point(0, z_height)
         
     def _focus_moving_layer(self, reset_camera=True):
-        self.viewer.layers.selection.active = self.points_layers[1]
+        moving_points_layer = self.points_layers[1]
+        self.viewer.layers.selection.active = moving_points_layer
         self.viewer.layers.move(self.viewer.layers.index(self.moving_image_layer), -1)
-        self.viewer.layers.move(self.viewer.layers.index(self.points_layers[1]), -1)
-        self.points_layers[1].mode = 'add'
+        self.viewer.layers.move(self.viewer.layers.index(moving_points_layer), -1)
+        moving_points_layer.mode = 'add'
         if reset_camera:
             reset_view(self.viewer, self.moving_image_layer)               
         
@@ -264,40 +275,49 @@ class ManualRegistration(QWidget):
         if not event.action == ActionType.ADDED:
             return
         fixed_points_layer, moving_points_layer = self.points_layers
-        pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
-        ndim_raw = pts0.shape[1]  # shape of raw points
-        pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
-        n0, n1 = len(pts0), len(pts1)
-        ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
-        reset_camera = n0 <= ndim + 1  # only reset the view for the inital points
+        reset_camera = len(fixed_points_layer.data) < fixed_points_layer.ndim + 1
         if fixed_points_layer in self.viewer.layers.selection:
             self._focus_moving_layer(reset_camera=reset_camera)
         elif moving_points_layer in self.viewer.layers.selection:
-            if n0 == n1:
-                # we just added enough points:
-                # estimate transform, go back to layer0
-                if n1 > ndim:
-                    mat = calculate_transform(
-                            pts0, pts1, ndim, model_class=AffineTransformChoices[self.model_combobox.currentText()].value,
-                            )
-                    # if image is 3D, add z-shift to 2D transform
-                    if ndim_raw > 2:
-                        z_mat = calculate_z_transform(fixed_points_layer, moving_points_layer, self.reverse_checkbox.isChecked())
-                        mat = z_mat @ convert_affine_to_ndims(mat, ndim_raw)
-                    ref_mat = self.fixed_image_layer.affine.affine_matrix
-                    # must shrink ndims of affine matrix if dims of image layer is bigger than moving layer #####
-                    if self.fixed_image_layer.ndim > self.moving_image_layer.ndim:
-                        ref_mat = convert_affine_to_ndims(
-                                ref_mat, self.moving_image_layer.ndim
-                                )
-                    # must pad affine matrix with identity matrix if dims of moving layer smaller #####
-                    self.moving_image_layer.affine = convert_affine_to_ndims(
-                            (ref_mat @ mat), self.moving_image_layer.ndim
-                            )
-                    moving_points_layer.affine = convert_affine_to_ndims(
-                            (ref_mat @ mat), moving_points_layer.ndim
-                            )
+            self._do_transform()
             self._focus_fixed_layer(reset_camera=reset_camera)
+            
+    def _do_transform(self):
+        fixed_points_layer, moving_points_layer = self.points_layers
+        if self.fixed_image_layer is None or self.moving_image_layer is None:
+            return
+        if fixed_points_layer is None or moving_points_layer is None:
+            return
+        pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
+        ndim_raw = pts0.shape[1]  # shape of raw points
+        pts0, pts1 = pts0[:, -2:], pts1[:, -2:]  
+        ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
+        if len(pts0) != len(pts1) or len(pts0) <= ndim:
+            return
+        mat = calculate_transform(
+            pts0, 
+            pts1, 
+            ndim, 
+            model_class=AffineTransformChoices[self.model_combobox.currentText()].value,
+            remove_outliers=self.remove_outliers_checkbox.isChecked()
+            )
+        # if image is 3D, add z-shift to 2D transform
+        if ndim_raw > 2:
+            z_mat = calculate_z_transform(fixed_points_layer, moving_points_layer, self.reverse_checkbox.isChecked())
+            mat = z_mat @ convert_affine_to_ndims(mat, ndim_raw)
+        ref_mat = self.fixed_image_layer.affine.affine_matrix
+        # must shrink ndims of affine matrix if dims of image layer is bigger than moving layer
+        if self.fixed_image_layer.ndim > self.moving_image_layer.ndim:
+            ref_mat = convert_affine_to_ndims(
+                    ref_mat, self.moving_image_layer.ndim
+                    )
+        # must pad affine matrix with identity matrix if dims of moving layer smaller
+        self.moving_image_layer.affine = convert_affine_to_ndims(
+                (ref_mat @ mat), self.moving_image_layer.ndim
+                )
+        moving_points_layer.affine = convert_affine_to_ndims(
+                (ref_mat @ mat), moving_points_layer.ndim
+                )
                 
                 
 class AffineTransformChoices(Enum):

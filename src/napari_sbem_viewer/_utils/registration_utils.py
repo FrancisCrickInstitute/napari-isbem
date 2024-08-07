@@ -3,6 +3,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 from scipy.ndimage import affine_transform
 import SimpleITK as sitk
+from sklearn.linear_model import RANSACRegressor
 
 
 def quaternion_from_vectors(v1, v2):
@@ -291,30 +292,25 @@ def flip_transform_matrix(mat, z_shape):
     return mat
 
 
-def calculate_transform(src, dst, ndim, model_class):
-    """Calculate transformation matrix from matched coordinate pairs.
+def remove_outliers_ransac(src, dst):
+    ransac = RANSACRegressor()
+    ransac.fit(src, dst)
+    
+    inlier_mask = ransac.inlier_mask_
+    src_filtered = src[inlier_mask]
+    dst_filtered = dst[inlier_mask]
+    
+    return src_filtered, dst_filtered
 
-    Parameters
-    ----------
-    src : ndarray
-        Matched row, column coordinates from source image.
-    dst : ndarray
-        Matched row, column coordinates from destination image.
-    model_class : scikit-image transformation class, optional.
-        By default, model=AffineTransform().
 
-    Returns
-    -------
-    transform
-        scikit-image Transformation object
+def calculate_transform(src, dst, ndim, model_class, remove_outliers=False):
     """
-    # convert points to correct dimension (from right bottom corner)
-    # pos_val = lambda x: x if x > 0 else 0
-
-    # do transform
+    Use the specified model to calculata a transform between two sets of points.
+    """
+    if remove_outliers:
+        src, dst = remove_outliers_ransac(src, dst)
     model = model_class(dimensionality=ndim)
-    model.estimate(dst, src)  # we want
-    # the inverse
+    model.estimate(dst, src)
     return model
 
 
@@ -341,6 +337,13 @@ def calculate_z_transform(reference_points_layer, moving_points_layer, reverse_s
     else:
         z_offset = moving_z - reference_z
     mat = np.identity(4)
+    print('ref z', reference_z, 'moving z', moving_z)
+    print('ref points', reference_points_layer.data)
+    print('moving points', moving_points_layer.data)
+    print('fixed points affine:')
+    print(reference_points_layer.affine.affine_matrix)
+    print('moving points affine:')
+    print(moving_points_layer.affine.affine_matrix)
     if reverse_stack:
         mat[0, 0] = -1
     mat[0, 3] -= z_offset
