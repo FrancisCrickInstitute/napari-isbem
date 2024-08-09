@@ -189,6 +189,8 @@ class ManualRegistration(QWidget):
         self._enable_ui()
         
     def _on_toggle_manual_adjustment(self):
+        if self.moving_image_layer is None:
+            return
         if self.moving_image_layer.mode != Mode.TRANSFORM:
             self.moving_image_layer.mode = Mode.TRANSFORM
             self.viewer.layers.selection.active = self.moving_image_layer
