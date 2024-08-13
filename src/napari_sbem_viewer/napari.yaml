@@ -2,36 +2,9 @@ name: napari-sbem-viewer
 display_name: Napari SBEM Viewer
 contributions:
   commands:
-    - id: napari-sbem-viewer.get_reader
-      python_name: napari_sbem_viewer._reader:napari_get_reader
-      title: Open data with Napari SBEM Viewer
-    - id: napari-sbem-viewer.write_multiple
-      python_name: napari_sbem_viewer._writer:write_multiple
-      title: Save multi-layer data with Napari SBEM Viewer
-    - id: napari-sbem-viewer.write_single_image
-      python_name: napari_sbem_viewer._writer:write_single_image
-      title: Save image data with Napari SBEM Viewer
-    - id: napari-sbem-viewer.make_sample_data
-      python_name: napari_sbem_viewer._sample_data:make_sample_data
-      title: Load sample data from Napari SBEM Viewer
     - id: napari-sbem-viewer.make_sbem_viewer_widget
       python_name: napari_sbem_viewer._widgets:MainWidget
       title: SBEM Viewer
-  readers:
-    - command: napari-sbem-viewer.get_reader
-      accepts_directories: false
-      filename_patterns: ['*.npy']
-  writers:
-    - command: napari-sbem-viewer.write_multiple
-      layer_types: ['image*','labels*']
-      filename_extensions: []
-    - command: napari-sbem-viewer.write_single_image
-      layer_types: ['image']
-      filename_extensions: ['.npy']
-  sample_data:
-    - command: napari-sbem-viewer.make_sample_data
-      display_name: Napari SBEM Viewer
-      key: unique_id.1
   widgets:
     - command: napari-sbem-viewer.make_sbem_viewer_widget
       display_name: SBEM Viewer
