@@ -14,6 +14,7 @@ from skimage.transform import downscale_local_mean
 import zarr
 from ome_zarr.io import parse_url
 from ome_zarr.writer import write_multiscale
+from skimage import measure
 
 
 def save_tiff(filename, image, metadata=None, compression=None, pyramid_levels=3, bigtiff=True):
@@ -185,6 +186,28 @@ def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
     write_multiscale(pyramid=image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunksize))
     metadata = create_ome_metadata(scales, name)
     root.attrs["multiscales"] = metadata
+    
+    
+def get_bounding_boxes_from_mask(mask, scale=(1, 1, 1)):
+    labels = measure.label(mask)
+    regions = measure.regionprops(labels)
+    bounding_boxes = []
+    for region in regions:
+        assert len(region.bbox) == 6
+        min_z, min_y, min_x, max_z, max_y, max_x = region.bbox
+        min_z, max_z = min_z * scale[0], max_z * scale[0]
+        min_y, max_y = min_y * scale[1], max_y * scale[1]
+        min_x, max_x = min_x * scale[2], max_x * scale[2]
+        bounding_boxes.append([
+            [min_z, min_y, min_x],
+            [max_z, min_y, min_x],
+            [min_z, min_y, max_x],
+            [max_z, min_y, max_x],
+            [min_z, max_y, max_x],
+            [max_z, max_y, max_x],
+            [min_z, max_y, min_x],
+            [max_z, max_y, min_x]])
+    return bounding_boxes
 
 
 def downsample_3d_image(image, downsample_factor):

@@ -8,6 +8,8 @@ from qtpy.QtCore import Qt, QItemSelection, QItemSelectionModel
 import numpy as np
 import pandas as pd
 
+from napari_sbem_viewer._utils.image_utils import get_bounding_boxes_from_mask
+
 
 class FloatValidationDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -97,6 +99,12 @@ class ROIList(QGroupBox):
         self.viewer.camera.center = center_coords
         # self._reset_z_viewer(center_coords[0])
         
+    def add_bounding_boxes_from_labels(self, labels_layer):
+        self._on_click_add()
+        mask = labels_layer.data
+        bounding_boxes = get_bounding_boxes_from_mask(mask, scale=labels_layer.scale[-3:])
+        self.bbox_layer.add(bounding_boxes)
+        
     def _on_click_add(self):
         if self.bbox_layer is None:
             bounding_box_layer = BoundingBoxLayer(name='ROIs', 
@@ -172,8 +180,8 @@ class ROIList(QGroupBox):
         # - use this to focus on the ROI after it has been added.
         if not hasattr(event, 'action'):
             if hasattr(event, 'data_indices'):
-                for r in range(self.model.rowCount(), len(event.value)):
-                    self._add_roi_to_table(event.value[r], r)
+                # for r in range(self.model.rowCount(), len(event.value)):
+                #     self._add_roi_to_table(event.value[r], r)
                 self.table_view.clearSelection()
                 self.viewer.dims.set_point(0, self.current_z)
             return
@@ -184,9 +192,9 @@ class ROIList(QGroupBox):
             #     df = self.bbox_layer.features
             #     self.bbox_layer.features.loc[idx, "name"] = f'ROI {idx+1}'
         
-        # if event.action == ActionType.ADDED:
-        #     for r in range(self.model.rowCount(), len(event.value)):
-        #         self._add_roi_to_table(event.value[r], r)
+        if event.action == ActionType.ADDED:
+            for r in range(self.model.rowCount(), len(event.value)):
+                self._add_roi_to_table(event.value[r], r)
         #     self.table_view.selectRow(-1)
     
         if event.action == ActionType.REMOVED:

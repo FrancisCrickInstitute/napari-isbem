@@ -1,5 +1,5 @@
 import napari
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QLabel
+from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
 from napari_sbem_viewer._widgets.select_rois import ROIList, UploadLabels
 
@@ -16,6 +16,7 @@ class SelectROIs(QWidget):
         self.layout().addWidget(self.roi_list)
         
         self.upload_labels = UploadLabels(self.viewer, parent=self)
+        self.upload_labels.upload_button.clicked.connect(self._on_upload_labels)
         self.layout().addWidget(self.upload_labels)
         
         self.viewer.layers.events.removed.connect(self._on_remove_bbox_layer)
@@ -26,3 +27,12 @@ class SelectROIs(QWidget):
             self.bbox_layer = None
             self.roi_list.model.removeRows(0, self.roi_list.model.rowCount())
             
+    def _on_upload_labels(self):
+        layer = self.upload_labels.get_layer()
+        if layer.ndim != 3:
+            QMessageBox.critical(self, "Error", "Labels layer must be 3D")
+            return
+        if layer is None:
+            return
+        self.roi_list.add_bounding_boxes_from_labels(layer)
+        
