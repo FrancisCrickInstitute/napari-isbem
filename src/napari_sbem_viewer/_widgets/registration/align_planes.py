@@ -18,7 +18,7 @@ from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vector
                                                           is_rotation_matrix,
                                                           decompose_rotation_matrix,
                                                           rotation_matrix_from_zy_zx_angles)
-from napari_sbem_viewer._utils.image_utils import save_ome_zarr
+from napari_sbem_viewer._utils.image_utils import save_ome_zarr, create_image_pyramid, get_pyramid_scales
 
 
 class AlignPlanes(QWidget):
@@ -86,15 +86,26 @@ class AlignPlanes(QWidget):
             return
         save_path = self._get_save_path()
         if save_path is not None:
-            try:
+            # try:
+            if isinstance(self.rotated_layer.data, np.ndarray):
+                image_pyramid = create_image_pyramid(self.rotated_layer.data)
+                shapes = [image.shape for image in image_pyramid]
+                scales = get_pyramid_scales(self.rotated_layer.scale, shapes)
+                save_ome_zarr(save_path,
+                              image_pyramid,
+                              chunksize=256,
+                              name=self.moving_image_layer.name,
+                              scales=scales)
+            else:
+                scales = get_pyramid_scales(self.rotated_layer.scale, self.rotated_layer.data.shapes)
                 save_ome_zarr(save_path, 
                               self.rotated_layer.data,
                               chunksize=self.moving_image_layer.data[0].chunksize,
-                              metadata={'name': self.moving_image_layer.name, 
-                                        'scale': self.moving_image_layer.scale})
-                QMessageBox.information(self, "Success", f"Image saved successfully")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to save image: {e}")
+                              name=self.moving_image_layer.name, 
+                              scales=scales)
+            QMessageBox.information(self, "Success", f"Image saved successfully")
+            # except Exception as e:
+            #     QMessageBox.critical(self, "Error", f"Failed to save image: {e}")
     
     def _on_click_save_transform(self):
         options = QFileDialog.Options()
@@ -166,7 +177,7 @@ class AlignPlanes(QWidget):
 
     def update_position_slider(self):
         layer = self.align_planes_window.viewer.layers['plane']
-        points = find_intersections([0, 0, 0], layer.data.shapes[-1], np.array(layer.plane.position), np.array(layer.plane.normal))
+        points = find_intersections([0, 0, 0], layer.data.shape, np.array(layer.plane.position), np.array(layer.plane.normal))
         if len(points) != 2:
             return
         self.intersection_points = [points[0], points[1]]
@@ -178,7 +189,7 @@ class AlignPlanes(QWidget):
             return
         layer = self.align_planes_window.viewer.layers['plane']
         if self.intersection_points is None:
-            layer.plane.position = [layer.data.shapes[-1][i] // 2 for i in range(len(layer.data.shape))]
+            layer.plane.position = [layer.data.shape[i] // 2 for i in range(len(layer.data.shape))]
         elif len(self.intersection_points) != 2:
             return
         else:
@@ -201,7 +212,7 @@ class AlignPlanes(QWidget):
         moving_layer_plane.name = 'plane'
         moving_layer_plane.depiction = 'plane'
         moving_layer_plane.colormap = 'cyan'
-        shape = moving_layer.data.shapes[-1]
+        shape = moving_layer.data.shape
         moving_layer_plane.plane.position = moving_layer_plane.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
         self.align_planes_window.viewer.add_layer(moving_layer)
         self.align_planes_window.viewer.add_layer(moving_layer_plane)
@@ -235,8 +246,11 @@ class AlignPlanes(QWidget):
         
 def rotate_layer(layer, v1, v2):
     quaternion = quaternion_from_vectors(v1, v2)
-    rotated_data = []
-    for pyramid_level in layer.data:
-        rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
+    if isinstance(layer.data, np.ndarray):
+        rotated_data = rotate_image_3d_sitk(layer.data, quaternion)
+    else:
+        rotated_data = []
+        for pyramid_level in layer.data:
+            rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
     rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, 'image')
     return rotated_layer

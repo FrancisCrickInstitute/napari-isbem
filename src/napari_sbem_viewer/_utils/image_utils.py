@@ -151,40 +151,79 @@ def convert_to_uint8(image):
     return image.astype(np.uint8)
 
 
-def create_ome_metadata(name, scale):
+def create_ome_metadata(scales, name, unit='micrometer'):
     metadata = {"name": name,
                 "axes": [
                     {
                     "name": "z",
                     "type": "space",
-                    "unit": "micrometer"
+                    "unit": unit
                     },
                     {
                     "name": "y",
                     "type": "space",
-                    "unit": "micrometer"
+                    "unit": unit
                     },
                     {
                     "name": "x",
                     "type": "space",
-                    "unit": "micrometer"
+                    "unit": unit
                     }
                 ], 
                 "datasets": []}
-    scale = [scale[-1], scale[-2], scale[-3]]
-    for i in range(3):
+    for i, scale in enumerate(scales):
         dataset_metadata = {"path": f"{i}", 
                             "coordinateTransformations": [{"type": "scale",
                                                             "scale": [scale[0], scale[1], scale[2]]}]}
-        scale[0], scale[1], scale[2] = scale[0] * 2, scale[1] * 2, scale[2] * 2
         metadata["datasets"].append(dataset_metadata)
     return [metadata]
 
 
-def save_ome_zarr(save_path, image_pyramid, chunksize, metadata):
+def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
     store = parse_url(save_path, mode="w").store
     root = zarr.group(store=store)
     write_multiscale(pyramid=image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunksize))
-    metadata = create_ome_metadata(**metadata)
+    metadata = create_ome_metadata(scales, name)
     root.attrs["multiscales"] = metadata
+
+
+def downsample_3d_image(image, downsample_factor):
+    image = sitk.GetImageFromArray(image)
+    original_spacing = image.GetSpacing()
+    new_spacing = [s * downsample_factor for s in original_spacing]
     
+    new_size = [int(sz / downsample_factor) for sz in image.GetSize()]
+    resampled_image = sitk.Resample(
+        image,
+        size=new_size,
+        transform=sitk.Transform(),
+        interpolator=sitk.sitkLinear,
+        outputSpacing=new_spacing,
+        outputOrigin=image.GetOrigin(),
+        outputDirection=image.GetDirection(),
+        defaultPixelValue=0,
+        outputPixelType=image.GetPixelID()
+    )
+    return sitk.GetArrayFromImage(resampled_image)
+
+
+def create_image_pyramid(image, downsample_factor=2, pyramid_levels=3):
+    pyramid = [image]
+    for i in range(pyramid_levels):
+        pyramid.append(downsample_3d_image(pyramid[i], downsample_factor))
+    return pyramid
+
+
+def get_pyramid_scales(scale, shapes):
+    """Using the top level scale and shapes of an image pyramid, 
+    calculate the scales of all pyramid levels."""
+    for shape in shapes:
+        assert len(scale) == len(shape)
+    all_scales = [scale]
+    for shape in shapes[1:]:
+        current_scale = []
+        for i in range(len(scale)):
+            factor = shape[0] / shape[i]
+            current_scale.append(scale[0] * factor)
+        all_scales.append(tuple(current_scale))
+    return all_scales
