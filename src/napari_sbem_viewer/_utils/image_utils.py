@@ -189,8 +189,7 @@ def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
     
     
 def get_bounding_boxes_from_mask(mask, scale=(1, 1, 1)):
-    labels = measure.label(mask)
-    regions = measure.regionprops(labels)
+    regions = measure.regionprops(mask)
     bounding_boxes = []
     for region in regions:
         assert len(region.bbox) == 6
