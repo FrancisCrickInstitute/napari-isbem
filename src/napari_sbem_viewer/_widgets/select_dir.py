@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog
+from qtpy.QtWidgets import QWidget, QHBoxLayout, QLineEdit, QPushButton, QFileDialog
 
 
 class SelectDir(QWidget):
@@ -21,19 +21,15 @@ class SelectDir(QWidget):
             self, "Select Directory"
         )
         self.dir_line.setText(dir_path)
-        # self.dir_line.editingFinished.emit()
-        # self.dir_line.textChanged.emit(self.dir_line.text())
-        # self.dir_line.textEdited.emit(self.dir_line.text())
-        # self.dir_line.returnPressed.emit()
-        # self.dir_line.selectionChanged.emit()
         self.dir_line.update()
         
 
 class SelectFile(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, file_filter="All files (*.*)"):
         super().__init__(parent)
         self.setLayout(QHBoxLayout())
         self.layout().setContentsMargins(0, 0, 0, 0)
+        self.file_filter=file_filter
 
         self.dir_line = QLineEdit()
         self.dir_line.setReadOnly(True)
@@ -42,10 +38,10 @@ class SelectFile(QWidget):
         self.btn = QPushButton("...")
         self.layout().addWidget(self.btn)
 
-        self.btn.clicked.connect(self.select_dir)
+        self.btn.clicked.connect(self.select_file)
 
-    def select_dir(self):
-        file_path = QFileDialog.getSaveFileName(self, "Select File")
+    def select_file(self):
+        file_path = QFileDialog.getOpenFileName(self, "Select File", filter=self.file_filter)[0]
         self.dir_line.setText(file_path)
         self.dir_line.update()
         
