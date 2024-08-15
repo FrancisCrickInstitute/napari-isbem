@@ -8,7 +8,7 @@ class AddBoundingBoxes(QGroupBox):
                  viewer: napari.Viewer,
                  parent=None
                  ):
-        super().__init__("Upload Labels", parent=parent)
+        super().__init__("Add Bounding Boxes", parent=parent)
         self.viewer = viewer
         self.setLayout(QGridLayout())
         
@@ -16,7 +16,7 @@ class AddBoundingBoxes(QGroupBox):
         self.combo_box = QComboBox()
         self.layout().addWidget(self.combo_box)
         
-        self.upload_button = QPushButton("Upload")
+        self.upload_button = QPushButton("Add")
         self.layout().addWidget(self.upload_button)
         
         self.viewer.layers.events.inserted.connect(self._update_selections)
