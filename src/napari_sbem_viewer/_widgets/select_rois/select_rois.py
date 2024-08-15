@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
-from napari_sbem_viewer._widgets.select_rois import ROIList, AddBoundingBoxes
+from napari_sbem_viewer._widgets.select_rois import ROIList, AddBoundingBoxes, AddLabels
 
 
 class SelectROIs(QWidget):
@@ -12,12 +12,15 @@ class SelectROIs(QWidget):
         self.bbox_layer_config = {'edge_width': 5}
         self.bbox_layer = None
         
-        self.roi_list = ROIList(self.viewer, parent=self, bbox_layer_config=self.bbox_layer_config)
-        self.layout().addWidget(self.roi_list)
+        self.add_labels = AddLabels(self.viewer, parent=self)
+        self.layout().addWidget(self.add_labels)
         
         self.upload_labels = AddBoundingBoxes(self.viewer, parent=self)
         self.upload_labels.upload_button.clicked.connect(self._on_upload_labels)
         self.layout().addWidget(self.upload_labels)
+        
+        self.roi_list = ROIList(self.viewer, parent=self, bbox_layer_config=self.bbox_layer_config)
+        self.layout().addWidget(self.roi_list)
         
         self.viewer.layers.events.removed.connect(self._on_remove_bbox_layer)
         self.layout().addStretch(1)
