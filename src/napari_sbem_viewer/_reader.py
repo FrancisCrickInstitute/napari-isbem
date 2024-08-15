@@ -5,9 +5,23 @@ It implements the Reader specification, but your plugin may choose to
 implement multiple readers or even other plugin contributions. see:
 https://napari.org/stable/plugins/guides.html?#readers
 """
+from functools import partial
+
 from tifffile import TIFF
 from napari_tiff.napari_tiff_reader import reader_function
 from skimage import measure
+from qtpy.QtWidgets import QDialog, QComboBox, QVBoxLayout, QLabel, QDialogButtonBox
+from napari._qt.qt_resources import get_stylesheet
+
+from napari_sbem_viewer._utils.image_utils import downsample_3d_image_sitk
+
+
+DOWNSAMPLE_FACTORS = {
+    'None': None,
+    '2x': 2,
+    '4x': 4,
+    '8x': 8
+}
 
 
 def get_labels_reader(path):
@@ -31,12 +45,17 @@ def get_labels_reader(path):
         path = path[0]
     path = path.lower()
     for ext in TIFF.FILE_EXTENSIONS:
+        dialog = DownsamplePopupWindow()
+        result = dialog.exec_()
+        if result != QDialog.Accepted:
+            return
+        downsample_factor = DOWNSAMPLE_FACTORS[dialog.combo_box.currentText()]
         if path.endswith(ext):
-            return labels_reader
+            return partial(labels_reader, downsample_factor=downsample_factor)
     return None
 
 
-def labels_reader(path):
+def labels_reader(path, downsample_factor=None):
     """Take a path or list of paths and return a list of LayerData tuples.
 
     Readers are expected to return data as a list of tuples, where each tuple
@@ -64,13 +83,37 @@ def labels_reader(path):
     del metadata_kwargs['colormap']
     del metadata_kwargs['contrast_limits']
     del metadata_kwargs['rgb']
-    
-    # downsample_factor = self._get_downsample_factor()
-    # if downsample_factor > 1:
-    #     data = downsample_3d_image_sitk(data, downsample_factor)
-    #     if 'scale' in metadata_kwargs:
-    #         metadata_kwargs['scale'] = tuple([s * downsample_factor for s in metadata_kwargs['scale']])
+
+    if downsample_factor is not None:
+        data = downsample_3d_image_sitk(data, downsample_factor)
+        if 'scale' in metadata_kwargs:
+            metadata_kwargs['scale'] = tuple([s * downsample_factor for s in metadata_kwargs['scale']])
         
     data = measure.label(data)
     return [(data, metadata_kwargs, 'labels')]
     
+    
+class DownsamplePopupWindow(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setStyleSheet(get_stylesheet("dark"))
+
+        # Set up the combo box with some example options
+        self.combo_box = QComboBox()
+        self.combo_box.addItems(DOWNSAMPLE_FACTORS.keys())
+
+        # Add a label to instruct the user
+        label = QLabel("Downsample factor:")
+
+        # Dialog buttons (OK and Cancel)
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)  # OK button
+        button_box.rejected.connect(self.reject)  # Cancel button
+
+        # Set up the layout for the dialog
+        layout = QVBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(self.combo_box)
+        layout.addWidget(button_box)
+        self.setLayout(layout)
+        
