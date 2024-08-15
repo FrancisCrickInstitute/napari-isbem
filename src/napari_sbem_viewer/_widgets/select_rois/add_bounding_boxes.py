@@ -3,7 +3,7 @@ from napari.layers.labels.labels import Labels
 from qtpy.QtWidgets import QGridLayout, QGroupBox, QComboBox, QLabel, QPushButton
 
 
-class UploadLabels(QGroupBox):
+class AddBoundingBoxes(QGroupBox):
     def __init__(self,
                  viewer: napari.Viewer,
                  parent=None

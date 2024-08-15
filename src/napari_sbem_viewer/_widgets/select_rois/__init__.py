@@ -1,3 +1,3 @@
-from napari_sbem_viewer._widgets.select_rois.upload_labels import UploadLabels
+from napari_sbem_viewer._widgets.select_rois.add_bounding_boxes import AddBoundingBoxes
 from napari_sbem_viewer._widgets.select_rois.roi_list import ROIList
 from napari_sbem_viewer._widgets.select_rois.select_rois import SelectROIs

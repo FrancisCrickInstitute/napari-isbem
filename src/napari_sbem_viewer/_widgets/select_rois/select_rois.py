@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
-from napari_sbem_viewer._widgets.select_rois import ROIList, UploadLabels
+from napari_sbem_viewer._widgets.select_rois import ROIList, AddBoundingBoxes
 
 
 class SelectROIs(QWidget):
@@ -15,7 +15,7 @@ class SelectROIs(QWidget):
         self.roi_list = ROIList(self.viewer, parent=self, bbox_layer_config=self.bbox_layer_config)
         self.layout().addWidget(self.roi_list)
         
-        self.upload_labels = UploadLabels(self.viewer, parent=self)
+        self.upload_labels = AddBoundingBoxes(self.viewer, parent=self)
         self.upload_labels.upload_button.clicked.connect(self._on_upload_labels)
         self.layout().addWidget(self.upload_labels)
         
