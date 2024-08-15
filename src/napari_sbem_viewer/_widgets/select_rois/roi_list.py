@@ -11,46 +11,12 @@ import pandas as pd
 from napari_sbem_viewer._utils.image_utils import get_bounding_boxes_from_mask
 
 
-class FloatValidationDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.old_value = None
-
-    def setEditorData(self, editor, index):
-        # Store old value when editing starts
-        self.old_value = index.model().data(index, Qt.EditRole)
-        super().setEditorData(editor, index)
-
-    def setModelData(self, editor, model, index):
-        # Get the new value from the editor
-        new_value = editor.text()
-        try:
-            # Try to convert the new value to float
-            z = float(new_value)
-            
-            # Check if z1 is less than z2
-            if index.column() == 0:
-                z1 = z
-                z2 = float(model.item(index.row(), 1).text())
-            elif index.column() == 1:
-                z1 = float(model.item(index.row(), 0).text())
-                z2 = z
-            if z1 > z2:
-                raise ValueError('z1 must be less than z2')
-            
-            # If successful, set the new value in the model
-            model.setData(index, new_value, Qt.EditRole)
-        except ValueError:
-            # If conversion fails, revert to the old value
-            model.setData(index, self.old_value, Qt.EditRole)
-
-
 class ROIList(QGroupBox):
     def __init__(self, 
                  viewer: napari.Viewer,
                  parent,
                  bbox_layer_config={}):
-        super().__init__("ROI Selection", parent=parent)
+        super().__init__("ROI selection", parent=parent)
         self.viewer = viewer
         self.setLayout(QGridLayout())
         self.bbox_layer_config = bbox_layer_config
@@ -228,9 +194,44 @@ class ROIList(QGroupBox):
         for row in sorted(rows, reverse=True):
             self.model.removeRow(row)
         
+        
 def get_roi_center(coords_list):
     # calculate the min / max values of the x, y and z coordinates
     min_coords = np.min(coords_list, axis=0)
     max_coords = np.max(coords_list, axis=0)
     center_coords = (min_coords + max_coords) / 2
     return center_coords
+
+
+class FloatValidationDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.old_value = None
+
+    def setEditorData(self, editor, index):
+        # Store old value when editing starts
+        self.old_value = index.model().data(index, Qt.EditRole)
+        super().setEditorData(editor, index)
+
+    def setModelData(self, editor, model, index):
+        # Get the new value from the editor
+        new_value = editor.text()
+        try:
+            # Try to convert the new value to float
+            z = float(new_value)
+            
+            # Check if z1 is less than z2
+            if index.column() == 0:
+                z1 = z
+                z2 = float(model.item(index.row(), 1).text())
+            elif index.column() == 1:
+                z1 = float(model.item(index.row(), 0).text())
+                z2 = z
+            if z1 > z2:
+                raise ValueError('z1 must be less than z2')
+            
+            # If successful, set the new value in the model
+            model.setData(index, new_value, Qt.EditRole)
+        except ValueError:
+            # If conversion fails, revert to the old value
+            model.setData(index, self.old_value, Qt.EditRole)

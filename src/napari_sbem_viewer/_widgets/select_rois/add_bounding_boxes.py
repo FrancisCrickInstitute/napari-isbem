@@ -8,7 +8,7 @@ class AddBoundingBoxes(QGroupBox):
                  viewer: napari.Viewer,
                  parent=None
                  ):
-        super().__init__("Add Bounding Boxes", parent=parent)
+        super().__init__("Add ROI from labels", parent=parent)
         self.viewer = viewer
         self.setLayout(QGridLayout())
         
