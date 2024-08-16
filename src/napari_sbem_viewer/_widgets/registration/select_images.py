@@ -1,6 +1,5 @@
 import napari
-from napari.layers.image.image import Image
-from napari.layers.labels.labels import Labels
+from napari.layers import Image, Labels
 from qtpy.QtWidgets import QGridLayout, QGroupBox, QComboBox, QLabel
 
 

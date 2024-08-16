@@ -3,7 +3,7 @@ from enum import Enum
 
 import napari
 from napari.layers.base._base_constants import Mode, ActionType
-from napari.layers import Layers
+from napari.layers import Image
 from qtpy.QtWidgets import QGridLayout, QPushButton, QFileDialog, QHBoxLayout, QHBoxLayout, QComboBox, QLabel, QCheckBox, QWidget, QMessageBox
 import numpy as np
 from skimage.transform import (
