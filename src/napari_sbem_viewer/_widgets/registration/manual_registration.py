@@ -121,13 +121,12 @@ class ManualRegistration(QWidget):
         if self.moving_image_layer is not None:
             mat = convert_affine_to_ndims(self.moving_image_layer.affine.affine_matrix, 3) 
             mat = flip_transform_matrix(mat, self.moving_image_layer.data.shape[-3] * self.moving_image_layer.scale[-3])
-            ref_mat = convert_affine_to_ndims(self.fixed_image_layer.affine.affine_matrix, 3)
             self.moving_image_layer.affine = convert_affine_to_ndims(
-                    (ref_mat @ mat), self.moving_image_layer.ndim
+                    mat, self.moving_image_layer.ndim
                     )           
             if moving_points_layer is not None:
                 moving_points_layer.affine = convert_affine_to_ndims(
-                        (ref_mat @ mat), moving_points_layer.ndim
+                        mat, moving_points_layer.ndim
                         )
                 
     def _create_points_layers(self):
