@@ -3,6 +3,7 @@ from enum import Enum
 
 import napari
 from napari.layers.base._base_constants import Mode, ActionType
+from napari.layers import Layers
 from qtpy.QtWidgets import QGridLayout, QPushButton, QFileDialog, QHBoxLayout, QHBoxLayout, QComboBox, QLabel, QCheckBox, QWidget, QMessageBox
 import numpy as np
 from skimage.transform import (
@@ -189,7 +190,7 @@ class ManualRegistration(QWidget):
         self._enable_ui()
         
     def _on_toggle_manual_adjustment(self):
-        if self.moving_image_layer is None:
+        if self.moving_image_layer is None and not isinstance(self.moving_image_layer, Image):
             return
         if self.moving_image_layer.mode != Mode.TRANSFORM:
             self.moving_image_layer.mode = Mode.TRANSFORM
