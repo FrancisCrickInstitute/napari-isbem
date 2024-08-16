@@ -222,12 +222,16 @@ def get_transformation_matrix_slices(reverse, z_offset, pts_fixed, pts_moving, s
     return T
 
 
-def rotate_image_3d_sitk(image, quaternion):
+def rotate_image_3d_sitk(image, quaternion, interpolator='linear'):
     image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
     transform = sitk.VersorTransform(list(quaternion))
     image_center = np.array(image_sitk.GetSize()) / 2.0
     transform.SetCenter(image_center)
-    image_rotated = sitk.Resample(image_sitk, transform, sitk.sitkLinear, 0.0, image_sitk.GetPixelID())
+    if interpolator == 'nearest':
+        interpolator = sitk.sitkNearestNeighbor
+    elif interpolator == 'linear':
+        interpolator = sitk.sitkLinear
+    image_rotated = sitk.Resample(image_sitk, transform, interpolator, 0.0, image_sitk.GetPixelID())
     return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
 
 
@@ -241,7 +245,6 @@ def rotate_image_3d(image, angle, axis):
     # Calculate translation to ensure the rotated image fits within the original image
     max_translation = np.ceil(np.sqrt(np.sum(center ** 2)))
     translation = max_translation - center
-
 
     # Define transformation matrix (rotation + translation)
     transformation_matrix = np.identity(4)

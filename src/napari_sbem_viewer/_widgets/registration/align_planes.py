@@ -2,6 +2,7 @@ import os
 from copy import copy
 
 import napari
+from napari.layers import Image
 from napari._qt.widgets._slider_compat import QDoubleSlider
 from napari.layers import Layer
 from qtpy.QtWidgets import QPushButton, QFormLayout, QFileDialog, QGridLayout, QLabel, QWidget, QLabel, QMessageBox
@@ -245,12 +246,14 @@ class AlignPlanes(QWidget):
         
         
 def rotate_layer(layer, v1, v2):
+    layer_type = 'image' if isinstance(layer, Image) else 'labels'
+    interpolator = 'linear' if layer_type == 'image' else 'nearest'
     quaternion = quaternion_from_vectors(v1, v2)
     if isinstance(layer.data, np.ndarray):
-        rotated_data = rotate_image_3d_sitk(layer.data, quaternion)
+        rotated_data = rotate_image_3d_sitk(layer.data, quaternion, interpolator)
     else:
         rotated_data = []
         for pyramid_level in layer.data:
-            rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion))
-    rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, 'image')
+            rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion, interpolator))
+    rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, layer_type)
     return rotated_layer

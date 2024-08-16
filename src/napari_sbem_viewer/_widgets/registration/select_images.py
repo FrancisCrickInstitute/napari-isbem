@@ -1,5 +1,6 @@
 import napari
 from napari.layers.image.image import Image
+from napari.layers.labels.labels import Labels
 from qtpy.QtWidgets import QGridLayout, QGroupBox, QComboBox, QLabel
 
 
@@ -54,7 +55,7 @@ class SelectImages(QGroupBox):
             self.fixed_combo_box.setCurrentText(fixed_layer)
         
     def _get_image_layer_names(self):
-        return [x.name for x in self.viewer.layers if isinstance(x, Image)]
+        return [x.name for x in self.viewer.layers if (isinstance(x, Image) or isinstance(x, Labels))]
         
     def _get_layer(self, layer_name):
         for layer in self.viewer.layers:
