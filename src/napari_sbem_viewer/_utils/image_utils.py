@@ -188,15 +188,12 @@ def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
     root.attrs["multiscales"] = metadata
     
     
-def get_bounding_boxes_from_mask(mask, scale=(1, 1, 1)):
+def get_bounding_boxes_from_mask(mask):
     regions = measure.regionprops(mask)
     bounding_boxes = []
     for region in regions:
         assert len(region.bbox) == 6
         min_z, min_y, min_x, max_z, max_y, max_x = region.bbox
-        min_z, max_z = min_z * scale[0], max_z * scale[0]
-        min_y, max_y = min_y * scale[1], max_y * scale[1]
-        min_x, max_x = min_x * scale[2], max_x * scale[2]
         bounding_boxes.append([
             [min_z, min_y, min_x],
             [max_z, min_y, min_x],

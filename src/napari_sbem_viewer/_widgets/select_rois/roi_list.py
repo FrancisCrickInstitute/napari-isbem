@@ -68,8 +68,12 @@ class ROIList(QGroupBox):
     def add_bounding_boxes_from_labels(self, labels_layer):
         self._on_click_add()
         mask = labels_layer.data
-        bounding_boxes = get_bounding_boxes_from_mask(mask, scale=labels_layer.scale[-3:])
-        self.bbox_layer.add(bounding_boxes)
+        bounding_boxes = get_bounding_boxes_from_mask(mask)
+        bounding_boxes_scaled = [
+            [labels_layer.data_to_world(coord) for coord in bounding_box]
+            for bounding_box in bounding_boxes
+        ]
+        self.bbox_layer.add(bounding_boxes_scaled)
         
     def _on_click_add(self):
         if self.bbox_layer is None:
