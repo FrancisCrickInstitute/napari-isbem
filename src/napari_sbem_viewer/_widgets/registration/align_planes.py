@@ -199,6 +199,9 @@ class AlignPlanes(QWidget):
         
     def _on_click_show(self):
         moving_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
+        if not isinstance(moving_layer, Image):
+            QMessageBox.warning(self, "Error showing image", "Can only show image layers.")
+            return
         if self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer() is None:
             QMessageBox.warning(self, "Error showing image", "Select a moving image first.")
             return
