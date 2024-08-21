@@ -55,12 +55,12 @@ class AlignPlanes(QWidget):
         form_layout = QFormLayout()
         self.zy_degrees_slider = QDoubleSlider(Qt.Horizontal)
         self.zy_degrees_slider.setRange(-90, 90)
-        self.zy_degrees_slider.setDecimals(0)
+        self.zy_degrees_slider.setDecimals(1)
         self.zy_degrees_slider.valueChanged.connect(self._on_change_angle)
         form_layout.addRow(QLabel("Rotate Z-Y"), self.zy_degrees_slider)
         self.zx_degrees_slider = QDoubleSlider(Qt.Horizontal)
         self.zx_degrees_slider.setRange(-90, 90)
-        self.zx_degrees_slider.setDecimals(0)
+        self.zx_degrees_slider.setDecimals(1)
         self.zx_degrees_slider.valueChanged.connect(self._on_change_angle)
         form_layout.addRow(QLabel("Rotate Z-X"), self.zx_degrees_slider)
         self.position_slider = QDoubleSlider(Qt.Horizontal)
@@ -190,9 +190,9 @@ class AlignPlanes(QWidget):
             return
         layer = self.align_planes_window.viewer.layers['plane']
         
-        shape = layer.data.shape
+        shape = layer.data.shape if isinstance(layer.data, np.ndarray) else layer.data.shapes[-1]
         if self.intersection_points is None:
-            layer.plane.position = layer.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
+            layer.plane.position = (shape[0] / 2, shape[1] / 2, shape[2] / 2)
         elif len(self.intersection_points) != 2:
             return
         else:
@@ -220,7 +220,6 @@ class AlignPlanes(QWidget):
         moving_layer_plane.colormap = 'cyan'
         shape = moving_layer.data.shape
         moving_layer_plane.plane.position = moving_layer_plane.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
-        print(moving_layer_plane.plane.position)
         self.align_planes_window.viewer.add_layer(moving_layer)
         self.align_planes_window.viewer.add_layer(moving_layer_plane)
         self.align_planes_window.show()
