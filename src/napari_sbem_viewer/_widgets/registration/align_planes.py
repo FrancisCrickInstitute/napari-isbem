@@ -178,7 +178,8 @@ class AlignPlanes(QWidget):
 
     def update_position_slider(self):
         layer = self.align_planes_window.viewer.layers['plane']
-        points = find_intersections([0, 0, 0], layer.data_to_world(layer.data.shape), np.array(layer.plane.position), np.array(layer.plane.normal))
+        shape = layer.data.shape if isinstance(layer.data, np.ndarray) else layer.data.shapes[-1]
+        points = find_intersections([0, 0, 0], shape, np.array(layer.plane.position), np.array(layer.plane.normal))
         if len(points) != 2:
             return
         self.intersection_points = [points[0], points[1]]
