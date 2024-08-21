@@ -178,7 +178,7 @@ class AlignPlanes(QWidget):
 
     def update_position_slider(self):
         layer = self.align_planes_window.viewer.layers['plane']
-        points = find_intersections([0, 0, 0], layer.data.shape, np.array(layer.plane.position), np.array(layer.plane.normal))
+        points = find_intersections([0, 0, 0], layer.data_to_world(layer.data.shape), np.array(layer.plane.position), np.array(layer.plane.normal))
         if len(points) != 2:
             return
         self.intersection_points = [points[0], points[1]]
@@ -189,8 +189,10 @@ class AlignPlanes(QWidget):
         if 'plane' not in self.align_planes_window.viewer.layers:
             return
         layer = self.align_planes_window.viewer.layers['plane']
+        
+        shape = layer.data.shape
         if self.intersection_points is None:
-            layer.plane.position = [layer.data.shape[i] // 2 for i in range(len(layer.data.shape))]
+            layer.plane.position = layer.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
         elif len(self.intersection_points) != 2:
             return
         else:
@@ -218,6 +220,7 @@ class AlignPlanes(QWidget):
         moving_layer_plane.colormap = 'cyan'
         shape = moving_layer.data.shape
         moving_layer_plane.plane.position = moving_layer_plane.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
+        print(moving_layer_plane.plane.position)
         self.align_planes_window.viewer.add_layer(moving_layer)
         self.align_planes_window.viewer.add_layer(moving_layer_plane)
         self.align_planes_window.show()
@@ -233,7 +236,7 @@ class AlignPlanes(QWidget):
     def _on_select_moving_image(self):
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
-        self.reset_ui()
+        # self.reset_ui()
         
     def _init_align_planes_window(self):
         window = StackViewer(napari.Viewer(show=False))
