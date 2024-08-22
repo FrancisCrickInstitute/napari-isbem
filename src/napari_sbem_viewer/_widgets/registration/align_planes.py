@@ -83,32 +83,34 @@ class AlignPlanes(QWidget):
         
     def _on_click_save_ome_zarr(self):
         if self.rotated_layer is None:
-            QMessageBox.warning(self, "Error saving image", "Apply transformation before saving as OME-Zarr.")
+            QMessageBox.warning(self, "Error saving image", "Apply transform before saving as OME-Zarr.")
             return
         save_path = self._get_save_path()
         if save_path is not None:
-            # try:
-            if isinstance(self.rotated_layer.data, np.ndarray):
-                image_pyramid = create_image_pyramid(self.rotated_layer.data)
-                shapes = [image.shape for image in image_pyramid]
-                scales = get_pyramid_scales(self.rotated_layer.scale, shapes)
-                save_ome_zarr(save_path,
-                              image_pyramid,
-                              chunksize=256,
-                              name=self.moving_image_layer.name,
-                              scales=scales)
-            else:
-                scales = get_pyramid_scales(self.rotated_layer.scale, self.rotated_layer.data.shapes)
-                save_ome_zarr(save_path, 
-                              self.rotated_layer.data,
-                              chunksize=self.moving_image_layer.data[0].chunksize,
-                              name=self.moving_image_layer.name, 
-                              scales=scales)
-            QMessageBox.information(self, "Success", f"Image saved successfully")
-            # except Exception as e:
-            #     QMessageBox.critical(self, "Error", f"Failed to save image: {e}")
+            try:
+                if isinstance(self.rotated_layer.data, np.ndarray):
+                    image_pyramid = create_image_pyramid(self.rotated_layer.data)
+                    shapes = [image.shape for image in image_pyramid]
+                    scales = get_pyramid_scales(self.rotated_layer.scale, shapes)
+                    save_ome_zarr(save_path,
+                                image_pyramid,
+                                chunksize=256,
+                                name=self.moving_image_layer.name,
+                                scales=scales)
+                else:
+                    scales = get_pyramid_scales(self.rotated_layer.scale, self.rotated_layer.data.shapes)
+                    save_ome_zarr(save_path, 
+                                self.rotated_layer.data,
+                                chunksize=self.moving_image_layer.data[0].chunksize,
+                                name=self.moving_image_layer.name, 
+                                scales=scales)
+                QMessageBox.information(self, "Success", f"Image saved successfully")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save image: {e}")
     
     def _on_click_save_transform(self):
+        if not self._check_moving_image_selected():
+            return
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(self, 
                                                    "Save File", 
@@ -121,10 +123,15 @@ class AlignPlanes(QWidget):
                 np.savetxt(file_path, rotation_matrix, delimiter=',')
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {e}")
+                
+    def _check_moving_image_selected(self):
+        if not self.moving_image_layer:
+            QMessageBox.warning(self, "Error", "No moving image selected")
+            return False
+        return True
         
     def _on_click_upload_transform(self):
-        if not self.moving_image_layer:
-            QMessageBox.critical(self, "Error", "No moving image layer selected")
+        if not self._check_moving_image_selected():
             return
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, 
@@ -201,12 +208,11 @@ class AlignPlanes(QWidget):
             layer.plane.position = line_parametric_equation(self.intersection_points[0], self.intersection_points[1], t)
         
     def _on_click_show(self):
-        moving_layer = self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
+        if not self._check_moving_image_selected():
+            return
+        moving_layer = self.moving_image_layer
         if not isinstance(moving_layer, Image):
             QMessageBox.warning(self, "Error showing image", "Can only show image layers.")
-            return
-        if self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer() is None:
-            QMessageBox.warning(self, "Error showing image", "Select a moving image first.")
             return
         
         self.align_planes_window.viewer.layers.clear()

@@ -16,7 +16,7 @@ class SelectImages(QGroupBox):
         self.fixed_combo_box = QComboBox()
         self.layout().addWidget(self.fixed_combo_box)
         
-        self.layout().addWidget(QLabel("Moving stack"))
+        self.layout().addWidget(QLabel("Moving image"))
         self.moving_combo_box = QComboBox()
         self.layout().addWidget(self.moving_combo_box)
         

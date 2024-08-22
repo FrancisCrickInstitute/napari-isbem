@@ -151,8 +151,7 @@ class ManualRegistration(QWidget):
                 self.points_layers[i] = new_layer
                 
     def _on_click_upload_transform(self):
-        if not self.moving_image_layer:
-            QMessageBox.critical(self, "Error", "No moving image layer selected")
+        if not self._check_moving_image_selected():
             return
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(self, 
@@ -173,6 +172,9 @@ class ManualRegistration(QWidget):
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
         
     def _on_click_start(self):
+        if not self.moving_image_layer or not self.fixed_image_layer:
+            QMessageBox.warning(self, "Error", "No images selected")
+            return
         self.moving_image_layer.events.affine.connect(self._affine_callback)
 
         self._create_points_layers()
@@ -218,6 +220,12 @@ class ManualRegistration(QWidget):
         for layer in self.points_layers:
             layer.events.data.disconnect(self._next_layer_callback)
             layer.mode = 'pan_zoom'
+            
+    def _check_moving_image_selected(self):
+        if not self.moving_image_layer:
+            QMessageBox.warning(self, "Error", "No moving image selected")
+            return False
+        return True
     
     def _remove_points_layers(self):
         for layer in self.points_layers:
@@ -225,9 +233,13 @@ class ManualRegistration(QWidget):
         self.points_layers = [None, None]
             
     def _on_click_save(self):
+        if not self._check_moving_image_selected():
+            return
         self._save_transform(self.moving_image_layer.affine.affine_matrix)
         
     def _on_click_reset(self):
+        if not self._check_moving_image_selected():
+            return
         reply = QMessageBox.question(self, 'Confirmation',
                                      'Are you sure you want to reset the transformation?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
