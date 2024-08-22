@@ -91,6 +91,7 @@ class ManualRegistration(QWidget):
         self.layout().addWidget(self.stop_button, 9, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
+        self.parentWidget().parentWidget().select_images.moving_combo_box.currentTextChanged.connect(self._update_reverse_checkbox)
         
     @property
     def fixed_image_layer(self):
@@ -99,7 +100,15 @@ class ManualRegistration(QWidget):
     @property
     def moving_image_layer(self):
         return self.parentWidget().parentWidget().parentWidget().select_images.get_moving_layer()
-
+    
+    def _update_reverse_checkbox(self):
+        self.reverse_checkbox.blockSignals(True)
+        if not self.moving_image_layer or self.moving_image_layer.affine.affine_matrix[0, 0] > 0:
+            self.reverse_checkbox.setChecked(False)
+        else:
+            self.reverse_checkbox.setChecked(True)
+        self.reverse_checkbox.blockSignals(False)
+            
     def _offset_z(self, offset):
         moving_points_layer = self.points_layers[1]
         if self.moving_image_layer is not None:
@@ -168,6 +177,7 @@ class ManualRegistration(QWidget):
                     transform, 
                     self.moving_image_layer.ndim
                     )
+                self._update_reverse_checkbox()
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
         
@@ -246,7 +256,7 @@ class ManualRegistration(QWidget):
 
         if reply == QMessageBox.Yes:
             self.moving_image_layer.affine = None
-        
+            self._update_reverse_checkbox()
         
     def _save_transform(self, affine_matrix):
         options = QFileDialog.Options()
