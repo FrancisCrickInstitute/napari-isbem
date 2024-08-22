@@ -151,10 +151,10 @@ def is_2d_affine_matrix(matrix):
         return False
     
     # Check if the matrix doesn't include rotation through z-axis
-    if not np.allclose(matrix[0, :3], [1, 0, 0]):
+    if not np.allclose(matrix[0, 1:3], [0, 0]):
         return False
     
-    if not np.allclose(matrix[:, 0], [1, 0, 0, 0]):
+    if not np.allclose(matrix[1:, 0], [0, 0, 0]):
         return False
     
     if not np.allclose(matrix[3, :], [0, 0, 0, 1]):
