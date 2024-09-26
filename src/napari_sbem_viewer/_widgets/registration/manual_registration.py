@@ -170,16 +170,19 @@ class ManualRegistration(QWidget):
                                                    options=options)
         if file_path:
             try:
-                transform = np.loadtxt(file_path, delimiter=',')
-                if not is_2d_affine_matrix(transform):
-                    raise ValueError("Transform must be a 2D affine transform")
-                self.moving_image_layer.affine = convert_affine_to_ndims(
-                    transform, 
-                    self.moving_image_layer.ndim
-                    )
-                self._update_reverse_checkbox()
+                self._do_upload_transform(file_path)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {e}")
+                
+    def _do_upload_transform(self, file_path):
+        transform = np.loadtxt(file_path, delimiter=',')
+        if not is_2d_affine_matrix(transform):
+            raise ValueError("Transform must be a 2D affine transform")
+        self.moving_image_layer.affine = convert_affine_to_ndims(
+            transform, 
+            self.moving_image_layer.ndim
+            )
+        self._update_reverse_checkbox()        
         
     def _on_click_start(self):
         if not self.moving_image_layer or not self.fixed_image_layer:
