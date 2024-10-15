@@ -21,7 +21,8 @@ class SBEMimageIntegration(QWidget):
         self.trigger.signal.connect(self.process_request)
         self.response_queue = Queue()
         self.roi_data = ROIData()
-        self.bbox_layer = None
+        self.roi_layer = None
+        self.bbox_callback = None
         self.is_cutting_thin = False
         self.tcp_server = TCPServer('localhost', 8888, self.trigger, self.response_queue)
         self.acquisition_info = AcquisitionInfo()
@@ -129,12 +130,12 @@ class SBEMimageIntegration(QWidget):
         self.roi_data.clear()
         
         # remove the previous bbox layer callback
-        if self.bbox_layer and self.bbox_callback:
-            self.bbox_layer.events.data.disconnect(self.bbox_callback)
+        if self.roi_layer and self.bbox_callback:
+            self.roi_layer.events.data.disconnect(self.bbox_callback)
         
         # get the new roi layer
-        self.bbox_layer = self.acquisition_settings.get_bbox_layer()
-        if self.bbox_layer is None:
+        self.roi_layer = self.acquisition_settings.get_roi_layer()
+        if self.roi_layer is None:
             self.acquisition_info.update_roi_info(self.roi_data)
             return
         
@@ -143,9 +144,13 @@ class SBEMimageIntegration(QWidget):
                                   self.live_viewer.position_z)
         
         # if the roi layer exists, update the roi data
-        self.bbox_callback = self.bbox_layer.events.data.connect(self._update_rois)
-        for roi in self.bbox_layer.data:
-            self.roi_data.add(roi)
+        if isinstance(self.roi_layer, napari.layers.Labels):
+            self.roi_data.add_masks(self.roi_layer.data, 
+                                   self.roi_layer.scale)
+        else:
+            self.bbox_callback = self.roi_layer.events.data.connect(self._update_rois)
+            for roi in self.roi_layer.data:
+                self.roi_data.add_bounding_box(roi)
         self.acquisition_info.update_roi_info(self.roi_data)
             
     def _update_rois(self, event):
@@ -153,18 +158,18 @@ class SBEMimageIntegration(QWidget):
             return
         if event.action == ActionType.ADDED:
             for idx in event.data_indices:
-                self.roi_data.add(self.bbox_layer.data[idx])
+                self.roi_data.add_bounding_box(self.roi_layer.data[idx])
         elif event.action == ActionType.REMOVED:
             for idx in event.data_indices:
                 self.roi_data.remove(idx)
         elif event.action == ActionType.CHANGED:
             for idx in event.data_indices:
-                self.roi_data.edit(idx, self.bbox_layer.data[idx])
+                self.roi_data.edit(idx, self.roi_layer.data[idx])
         self.acquisition_info.update_roi_info(self.roi_data)
                 
     def _update_roi_selections(self):
-        layer_names = self.acquisition_settings._get_bbox_layer_names()
-        bbox_layer = self.acquisition_settings.roi_combo_box.currentText()
+        layer_names = self.acquisition_settings._get_roi_layer_names()
+        roi_layer = self.acquisition_settings.roi_combo_box.currentText()
         self.acquisition_settings.roi_combo_box.clear()
         self.acquisition_settings.roi_combo_box.addItem("")
         self.acquisition_settings.roi_combo_box.addItems(layer_names)
@@ -174,5 +179,5 @@ class SBEMimageIntegration(QWidget):
             self.acquisition_settings.roi_combo_box.setCurrentIndex(0)
             self.roi_data.clear()
         else:
-            self.acquisition_settings.roi_combo_box.setCurrentText(bbox_layer)
+            self.acquisition_settings.roi_combo_box.setCurrentText(roi_layer)
     

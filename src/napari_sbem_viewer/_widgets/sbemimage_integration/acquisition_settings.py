@@ -2,6 +2,7 @@ import napari
 from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox, QMessageBox
 from napari_bbox import BoundingBoxLayer
 from napari.qt import create_worker
+from napari.layers import Labels
 
 from napari_sbem_viewer._utils.live_viewer import LiveViewer
 from napari_sbem_viewer._widgets.select_dir import SelectDir
@@ -49,12 +50,12 @@ class AcquisitionSettings(QGroupBox):
         cutting_depth_layout.addWidget(self.fine_thickness_spinbox, 1, 1)
         self.layout().addLayout(cutting_depth_layout)
         
-    def get_bbox_layer(self):
+    def get_roi_layer(self):
         layer_name = self.roi_combo_box.currentText()
         return self._get_layer(layer_name)
         
-    def _get_bbox_layer_names(self):
-        return [x.name for x in self.viewer.layers if isinstance(x, BoundingBoxLayer)]
+    def _get_roi_layer_names(self):
+        return [x.name for x in self.viewer.layers if (isinstance(x, BoundingBoxLayer) or isinstance(x, Labels))]
         
     def _get_layer(self, layer_name):
         for layer in self.viewer.layers:
