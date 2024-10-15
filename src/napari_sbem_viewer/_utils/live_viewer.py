@@ -1,5 +1,6 @@
 import os
 import time
+import math
 
 import dask.array as da
 from dask import delayed
@@ -7,7 +8,7 @@ from tifffile import imread, TiffFile, xml2dict
 from skimage.io.collection import alphanumeric_key
 import numpy as np
 
-from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, load_as_dask
+from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_position, load_as_dask
 
 
 class LiveViewer():
@@ -23,19 +24,18 @@ class LiveViewer():
         self.pixel_size_x = None
         self.pixel_size_y = None
         self.pixel_size_z = None
+        self.position_x = None
+        self.position_y = None
+        self.position_z = None
         self.dtype = None
         self.layer_name = layer_name
         
     def init_metadata(self, tiff):
         xml_metadata = tiff.ome_metadata
-        if xml_metadata is not None:
-            metadata_dict = xml2dict(xml_metadata)
-            self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
-            self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
-        else:
-            self.pixel_size_x = 1
-            self.pixel_size_y = 1
-            # raise ValueError("File does not contain OME metadata.")
+        if xml_metadata is None:
+            raise ValueError("File does not contain OME metadata.")
+        
+        metadata_dict = xml2dict(xml_metadata)
         if not self.image_shapes:
             for page in tiff.pages:
                 self.image_shapes.append(page.shape)
@@ -45,12 +45,33 @@ class LiveViewer():
             for shape, page in zip(self.image_shapes, tiff.pages):
                 if shape != page.shape:
                     raise ValueError("All images must have same shape.")
+        self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
+        self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
+        if len(self.processed_files) == 1:
+            self.pixel_size_z = get_ome_position(metadata_dict, 'Z') - self.position_z
+        size_y, size_x = self.get_size_um()
+        if self.position_x is None:
+            self.position_x = get_ome_position(metadata_dict, 'X') - size_x // 2
+        if self.position_y is None:
+            self.position_y = get_ome_position(metadata_dict, 'Y') - size_y // 2
+        if self.position_z is None:
+            self.position_z = get_ome_position(metadata_dict, 'Z')
+        if self.pixel_size_z is not None:
+            expected_z = self.position_z + self.pixel_size_z * len(self.processed_files)
+            current_z = get_ome_position(metadata_dict, 'Z')
+            if not math.isclose(expected_z, current_z):
+                raise ValueError(f"Inconsitent Z spacing between images. Expected: {expected_z}, Got: {current_z}")
+            
+
         if self.dtype is None:
             self.dtype = tiff.pages[0].asarray().dtype
         
     @property
     def image_layer(self):
         return self._get_layer()
+    
+    def get_size_um(self):
+        return (self.image_shapes[0][0] * self.pixel_size_y, self.image_shapes[0][1] * self.pixel_size_x)
         
     def init_images(self, image_dir):
         # add the existing images to the viewer
@@ -129,8 +150,6 @@ class LiveViewer():
                 tiff = TiffFile(os.path.join(path, p))
                 self.init_metadata(tiff)
                 yield tiff
-            else:
-                yield
 
             # add the files which we have yield to the processed list.
             self.processed_files.update(files_to_process)
@@ -145,6 +164,10 @@ class LiveViewer():
         self.image_shapes = []
         self.pixel_size_x = None
         self.pixel_size_y = None
+        self.pixel_size_z = None
+        self.position_x = None
+        self.position_y = None
+        self.position_z = None
         self.dtype = None
         self.res_unit = None
         self.image_dir = None

@@ -28,13 +28,14 @@ class AcquisitionSettings(QGroupBox):
         self.overview_combo_box.addItem("")
         self.overview_combo_box.currentIndexChanged.connect(self._on_change_ov_combo)
         self.layout().addWidget(self.overview_combo_box)
-        self.overview_dir_widget = SelectDir(self)
-        self.overview_dir_widget.dir_line.textChanged.connect(self._on_change_ov_text)
-        self.layout().addWidget(self.overview_dir_widget)
+        # self.overview_dir_widget = SelectDir(self)
+        # self.overview_dir_widget.dir_line.textChanged.connect(self._on_change_ov_text)
+        # self.layout().addWidget(self.overview_dir_widget)
         
         # --------- ROI layer settings---------
         self.layout().addWidget(QLabel("ROI layer"))
         self.roi_combo_box = QComboBox()
+        self.roi_combo_box.setEnabled(False)
         self.layout().addWidget(self.roi_combo_box)
         self.roi_layer = None
         
@@ -75,18 +76,32 @@ class AcquisitionSettings(QGroupBox):
             return
         self._on_select_overview_dir(self.overview_combo_box.currentText())
         
-    def _on_change_ov_text(self):
-        self.live_viewer.pixel_size_z = self.coarse_thickness_spinbox.value() * 1e-3
-        self._on_select_overview_dir(self.overview_dir_widget.dir_line.text())
+    # def _on_change_ov_text(self):
+    #     self._on_select_overview_dir(self.overview_dir_widget.dir_line.text())
         
     def _on_select_overview_dir(self, image_dir):
         self.live_viewer.init_images(image_dir)
+        if self.live_viewer.pixel_size_z is not None:
+            self._on_pixel_size_z_added()
         create_worker(self.live_viewer.watch_folder, 
                       image_dir, 
-                      _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error})
+                      _connect={'yielded': self._on_live_viewer_yield, 'errored': self._handle_overview_error}) 
         
+    def _on_live_viewer_yield(self, tiff):
+        self.live_viewer.append(tiff)
+        if self.live_viewer.pixel_size_z is not None:
+            self._on_pixel_size_z_added()
+    
+    def _on_pixel_size_z_added(self):
+        self.coarse_thickness_spinbox.setValue(int(self.live_viewer.pixel_size_z * 1e3))
+        self.coarse_thickness_spinbox.setEnabled(False)
+        self.roi_combo_box.setEnabled(True)
+                    
     def _on_reset_overview(self):
         self.live_viewer.reset()
+        self.coarse_thickness_spinbox.setEnabled(True)
+        self.roi_combo_box.setCurrentIndex(0)
+        self.roi_combo_box.setEnabled(False)
     
     def _handle_overview_error(self, error):
         if isinstance(error, ValueError):

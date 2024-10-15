@@ -41,17 +41,14 @@ class SBEMimageIntegration(QWidget):
         
         self.layout().addStretch(1)
         
-        
     def process_request(self):
         request = self.trigger.queue.get()
         # validate_request(request)
 
         slice_thickness = request['slice_thickness']
-        self.live_viewer.pixel_size_z = self.acquisition_settings.coarse_thickness_spinbox.value() * 1e-3
         
         # update overview spinbox
         ov_dirs = request['overviews']['ov_dirs']
-        ov_coords = request['overviews']['ov_coords']
         self.acquisition_settings._update_overview_dirs(ov_dirs)
         ov_idx = None
         for i in range(len(ov_dirs)):
@@ -66,16 +63,12 @@ class SBEMimageIntegration(QWidget):
         # check if the z-depth calculated in napari is within a tolerance of the z-depth displayed in sbemimage
         z_depth = request['z_depth']
         self.roi_data.update_z_depth(z_depth)
-        napari_z_depth = self.live_viewer.get_current_z_depth()        
-        if not self.is_cutting_thin and napari_z_depth is not None and not math.isclose(z_depth, napari_z_depth):
-            QMessageBox.warning(self, "Z-depth error", f"Missmatch between Napari ({napari_z_depth:.2f}µm) and SBEMimage ({z_depth:.2f}µm) Z-depths.\n Check if the Z-depth in SBEMimage is correct and the correct number of overview images are available.")
-            self.tcp_server.pause_acquisition()
-            self.tcp_server.send_response()
-            return
+        napari_z_depth = self.live_viewer.get_current_z_depth()
+        print(z_depth, napari_z_depth)
         
         # check cutting thicknesses are multiples of each other
         try:
-            overview_interval = self.get_overview_interval()
+            self.get_overview_interval()
         except AssertionError as e:
             QMessageBox.warning(self, "Cutting thickness error", str(e))
             self.tcp_server.pause_acquisition()
@@ -85,7 +78,7 @@ class SBEMimageIntegration(QWidget):
         # update ROI data
         self.tcp_server.delete_all_grids()
         for roi in self.roi_data.rois:
-            x, y = roi.center[:2] + ov_coords[ov_idx]
+            x, y = roi.center[:2]
             w, h = roi.size[:2]
             self.tcp_server.add_grid(roi.id, x, y, w, h)
             if roi.state == ROIState.ACQUIRING:
@@ -138,12 +131,16 @@ class SBEMimageIntegration(QWidget):
         # remove the previous bbox layer callback
         if self.bbox_layer and self.bbox_callback:
             self.bbox_layer.events.data.disconnect(self.bbox_callback)
-            
+        
         # get the new roi layer
         self.bbox_layer = self.acquisition_settings.get_bbox_layer()
         if self.bbox_layer is None:
             self.acquisition_info.update_roi_info(self.roi_data)
             return
+        
+        self.roi_data.set_offsets(self.live_viewer.position_x, 
+                                  self.live_viewer.position_y, 
+                                  self.live_viewer.position_z)
         
         # if the roi layer exists, update the roi data
         self.bbox_callback = self.bbox_layer.events.data.connect(self._update_rois)

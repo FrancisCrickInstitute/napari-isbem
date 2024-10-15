@@ -72,6 +72,15 @@ def get_ome_pixel_size(metadata, axis):
     return convert_to_micrometers(pixel_size, units)
 
 
+def get_ome_position(metadata, axis):
+    axis = axis.upper()
+    if axis not in ['X', 'Y', 'Z']:
+        raise ValueError("Invalid axis. Must be one of 'X', 'Y', 'Z'")
+    pixel_size = metadata['OME']['Image']['Pixels']['Plane'][f'Position{axis}']
+    units = metadata['OME']['Image']['Pixels']['Plane'][f'Position{axis}Unit']
+    return convert_to_micrometers(pixel_size, units)    
+
+
 def load_as_dask(tiff, dtype):
     arrays = []
     for level in range(len(tiff.pages)):
