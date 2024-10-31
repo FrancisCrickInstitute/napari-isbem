@@ -8,7 +8,6 @@ from napari_sbem_viewer._utils.live_viewer import LiveViewer
 from napari_sbem_viewer._widgets.select_dir import SelectDir
 
 
-DEFAULT_COARSE_THICKNESS = 100
 DEFAULT_FINE_THICKNESS = 50
 
 
@@ -29,9 +28,6 @@ class AcquisitionSettings(QGroupBox):
         self.overview_combo_box.addItem("")
         self.overview_combo_box.currentIndexChanged.connect(self._on_change_ov_combo)
         self.layout().addWidget(self.overview_combo_box)
-        # self.overview_dir_widget = SelectDir(self)
-        # self.overview_dir_widget.dir_line.textChanged.connect(self._on_change_ov_text)
-        # self.layout().addWidget(self.overview_dir_widget)
         
         # --------- ROI layer settings---------
         self.layout().addWidget(QLabel("ROI layer"))
@@ -42,11 +38,11 @@ class AcquisitionSettings(QGroupBox):
         
         # ------- Cutting depth settings-------
         cutting_depth_layout = QGridLayout()
-        cutting_depth_layout.addWidget(QLabel("Cutting thickness coarse (nm)"), 0, 0)
-        self.coarse_thickness_spinbox = QSpinBox(maximum=999, value=DEFAULT_COARSE_THICKNESS)
-        cutting_depth_layout.addWidget(self.coarse_thickness_spinbox, 0, 1)
-        cutting_depth_layout.addWidget(QLabel("Cutting thickness fine (nm)"), 1, 0)
+        self.coarse_thickness_label = QLabel("")
+        cutting_depth_layout.addWidget(QLabel("Coarse thickness (nm):"), 0, 0)
+        cutting_depth_layout.addWidget(self.coarse_thickness_label, 0, 1)
         self.fine_thickness_spinbox = QSpinBox(maximum=999, value=DEFAULT_FINE_THICKNESS)
+        cutting_depth_layout.addWidget(QLabel("Fine thickness (nm):"), 1, 0)
         cutting_depth_layout.addWidget(self.fine_thickness_spinbox, 1, 1)
         self.layout().addLayout(cutting_depth_layout)
         
@@ -77,32 +73,24 @@ class AcquisitionSettings(QGroupBox):
             return
         self._on_select_overview_dir(self.overview_combo_box.currentText())
         
-    # def _on_change_ov_text(self):
-    #     self._on_select_overview_dir(self.overview_dir_widget.dir_line.text())
-        
     def _on_select_overview_dir(self, image_dir):
-        self.live_viewer.init_images(image_dir)
-        if self.live_viewer.pixel_size_z is not None:
-            self._on_pixel_size_z_added()
+        try:
+            self.live_viewer.init_images(image_dir)
+        except ValueError as e:
+            QMessageBox.warning(self, "Error adding images", str(e))
+            self.overview_combo_box.setCurrentIndex(0)
+            return
+        self.roi_combo_box.setEnabled(True)
+        self.coarse_thickness_label.setText(f"{self.live_viewer.pixel_size_z*1e3:.0f}")
         create_worker(self.live_viewer.watch_folder, 
                       image_dir, 
-                      _connect={'yielded': self._on_live_viewer_yield, 'errored': self._handle_overview_error}) 
+                      _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error}) 
         
-    def _on_live_viewer_yield(self, tiff):
-        self.live_viewer.append(tiff)
-        if self.live_viewer.pixel_size_z is not None:
-            self._on_pixel_size_z_added()
-    
-    def _on_pixel_size_z_added(self):
-        self.coarse_thickness_spinbox.setValue(round(self.live_viewer.pixel_size_z * 1e3))
-        self.coarse_thickness_spinbox.setEnabled(False)
-        self.roi_combo_box.setEnabled(True)
-                    
     def _on_reset_overview(self):
         self.live_viewer.reset()
-        self.coarse_thickness_spinbox.setEnabled(True)
         self.roi_combo_box.setCurrentIndex(0)
         self.roi_combo_box.setEnabled(False)
+        self.coarse_thickness_label.setText("")
     
     def _handle_overview_error(self, error):
         if isinstance(error, ValueError):

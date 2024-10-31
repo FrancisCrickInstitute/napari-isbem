@@ -48,7 +48,7 @@ class LiveViewer():
         self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
         self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
         if len(self.processed_files) == 1:
-            self.pixel_size_z = get_ome_position(metadata_dict, 'Z') - self.position_z
+            self.pixel_size_z = round(get_ome_position(metadata_dict, 'Z') - self.position_z, 5)
         size_y, size_x = self.get_size_um()
         if not len(self.processed_files):
             self.position_x = get_ome_position(metadata_dict, 'X') - size_x // 2
@@ -72,16 +72,22 @@ class LiveViewer():
         
     def init_images(self, image_dir):
         # add the existing images to the viewer
+        if not os.path.exists(image_dir):
+            self.reset()
+            raise ValueError("Image directory does not exist.")
         self.image_dir = image_dir
         dask_arrays = []
-        if os.path.exists(image_dir):
-            for image in sorted(os.listdir(image_dir)):
-                if image.endswith('.tif') or image.endswith('.tiff'):
-                    tiff = TiffFile(os.path.join(image_dir, image))
-                    self.init_metadata(tiff)
-                    image_pyramids = load_as_dask(tiff, self.dtype)
-                    dask_arrays.append(image_pyramids)
-                    self.processed_files.add(image)
+        for image in sorted(os.listdir(image_dir)):
+            if image.endswith('.tif') or image.endswith('.tiff'):
+                tiff = TiffFile(os.path.join(image_dir, image))
+                self.init_metadata(tiff)
+                image_pyramids = load_as_dask(tiff, self.dtype)
+                dask_arrays.append(image_pyramids)
+                self.processed_files.add(image)
+                
+        if len(self.processed_files) < 2:
+            self.reset()
+            raise ValueError("Image directory must contain at least 2 images.")
                     
         dask_arrays_transposed = list(zip(*dask_arrays))
         stack = [da.stack(slices, axis=0) for slices in dask_arrays_transposed]
@@ -198,3 +204,4 @@ class LiveViewer():
     def _remove_layer(self):
         if layer := self.image_layer:
             self.viewer.layers.remove(layer)
+            

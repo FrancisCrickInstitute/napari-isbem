@@ -104,12 +104,12 @@ class SBEMimageIntegration(QWidget):
             self.tcp_server.set_slice_thickness(self.acquisition_settings.fine_thickness_spinbox.value())
             
         # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
-        elif is_multiple(z_depth - self.live_viewer.position_z, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
-            self.tcp_server.set_slice_thickness(self.acquisition_settings.coarse_thickness_spinbox.value())
+        elif is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
+            self.tcp_server.set_slice_thickness(self.live_viewer.pixel_size_z)
             self.is_cutting_thin = False
             
         # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
-        if is_multiple(z_depth - self.live_viewer.position_z, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
+        if is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
             self.tcp_server.activate_overview(ov_idx)
         else:
             self.tcp_server.deactivate_overview(ov_idx)
@@ -122,7 +122,7 @@ class SBEMimageIntegration(QWidget):
         self.tcp_server.send_response()
     
     def get_overview_interval(self):
-        coarse_thickness = self.acquisition_settings.coarse_thickness_spinbox.value()
+        coarse_thickness = self.live_viewer.pixel_size_z*1e3
         fine_thickness = self.acquisition_settings.fine_thickness_spinbox.value()
         assert coarse_thickness % fine_thickness == 0, "Coarse thickness must be a multiple of fine thickness."
         return coarse_thickness // fine_thickness
