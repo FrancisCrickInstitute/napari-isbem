@@ -2,8 +2,10 @@ from enum import Enum
 
 import cv2
 import numpy as np
+from skimage import measure
 
 from napari_sbem_viewer._utils.image_utils import downsample_3d_image_sitk, get_bounding_boxes_from_mask
+from napari_sbem_viewer._utils.registration_utils import transform_image_3d
 
 
 class ROIState(Enum):
@@ -26,21 +28,20 @@ class ROIData:
             self._offset_z)
         self.rois.append(roi)
         
-    def add_masks(self, labels, scale, downsample_factor=10):
-        labels = downsample_3d_image_sitk(labels, downsample_factor)
-        scale = [s * downsample_factor for s in scale]
-        bboxes = get_bounding_boxes_from_mask(labels)
+    def add_masks(self, labels_layer):
+        labels = transform_image_3d(labels_layer.data, labels_layer.affine.affine_matrix, labels_layer.scale)
+        bboxes = get_bounding_boxes_from_mask((labels > 0).astype(np.uint8))
         for bbox in bboxes:
             z1, z2 = bbox[0][0], bbox[5][0]
             y1, y2 = bbox[0][1], bbox[5][1]
             x1, x2 = bbox[0][2], bbox[5][2]
-            roi = BoundingBoxMask(
-                labels[z1:z2, y1:y2, x1:x2], 
+            mask = (labels[z1:z2, y1:y2, x1:x2] > 0).astype(np.uint8)
+            roi = MaskROI(
+                mask, 
                 len(self.rois)+1, 
-                scale, 
-                self._offset_x + x1 * scale[2], 
-                self._offset_y + y1 * scale[1], 
-                self._offset_z + z1 * scale[0])
+                self._offset_x + x1, 
+                self._offset_y + y1, 
+                self._offset_z + z1)
             self.rois.append(roi)
         
     def set_offsets(self, offset_x, offset_y, offset_z):
@@ -77,27 +78,31 @@ class ROIData:
                 roi.state = ROIState.REMAINING
                 
                 
-class BoundingBoxMask:
-    def __init__(self, mask, id_, scale=(1, 1, 1), offset_x=0, offset_y=0, offset_z=0):
+class MaskROI:
+    def __init__(self, mask, id_, offset_x=0, offset_y=0, offset_z=0):
         self.id = id_
         self.state = ROIState.REMAINING
-        self.add_mask(mask, scale=scale, offset_x=offset_x, offset_y=offset_y, offset_z=offset_z)
-        
-    def add_mask(self, mask, scale, offset_x=0, offset_y=0, offset_z=0):
+        self.mask = mask
         self.x1 = offset_x
-        self.x2 = offset_x + mask.shape[-1] * scale[-1]
+        self.x2 = offset_x + mask.shape[-1]
         self.y1 = offset_y
-        self.y2 = offset_y + mask.shape[-2] * scale[-2]
+        self.y2 = offset_y + mask.shape[-2]
         self.z1 = offset_z
-        self.z2 = offset_z + mask.shape[-3] * scale[-3]
+        self.z2 = offset_z + mask.shape[-3]
         self.center = np.array([(self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2, (self.z1 + self.z2) / 2])
         self.size = np.array([self.x2 - self.x1, self.y2 - self.y1, self.z2 - self.z1])
+        
+    def get_current_slice(self, z_depth):
+        z_idx = round(z_depth - self.z1)
+        slice = self.mask[z_idx]
+        return slice
             
 class BoundingBoxROI:
     def __init__(self, coords, id_, offset_x=0, offset_y=0, offset_z=0):
         self.id = id_
         self.update_coords(coords, offset_x, offset_y, offset_z)
         self.state = ROIState.REMAINING
+        self.mask = None
         
     def update_coords(self, coords, offset_x=0, offset_y=0, offset_z=0):
         assert self.check_cube(coords)

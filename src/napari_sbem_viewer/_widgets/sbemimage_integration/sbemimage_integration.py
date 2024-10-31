@@ -1,5 +1,3 @@
-import math
-
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 from napari.layers.base._base_constants import ActionType
@@ -81,7 +79,10 @@ class SBEMimageIntegration(QWidget):
         for roi in self.roi_data.rois:
             x, y = roi.center[:2]
             w, h = roi.size[:2]
-            self.tcp_server.add_grid(roi.id, x, y, w, h)
+            if roi.mask is not None:
+                self.tcp_server.add_grid(roi.id, int(x), int(y), int(w), int(h), roi.get_current_slice(z_depth).tolist())
+            else:
+                self.tcp_server.add_grid(roi.id, x, y, w, h)
             if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
                 # if new roi is reached
@@ -103,12 +104,12 @@ class SBEMimageIntegration(QWidget):
             self.tcp_server.set_slice_thickness(self.acquisition_settings.fine_thickness_spinbox.value())
             
         # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
-        elif is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
+        elif is_multiple(z_depth - self.live_viewer.position_z, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
             self.tcp_server.set_slice_thickness(self.acquisition_settings.coarse_thickness_spinbox.value())
             self.is_cutting_thin = False
             
         # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
-        if is_multiple(z_depth, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
+        if is_multiple(z_depth - self.live_viewer.position_z, self.acquisition_settings.coarse_thickness_spinbox.value()*1e-3):
             self.tcp_server.activate_overview(ov_idx)
         else:
             self.tcp_server.deactivate_overview(ov_idx)
@@ -145,8 +146,7 @@ class SBEMimageIntegration(QWidget):
         
         # if the roi layer exists, update the roi data
         if isinstance(self.roi_layer, napari.layers.Labels):
-            self.roi_data.add_masks(self.roi_layer.data, 
-                                   self.roi_layer.scale)
+            self.roi_data.add_masks(self.roi_layer)
         else:
             self.bbox_callback = self.roi_layer.events.data.connect(self._update_rois)
             for roi in self.roi_layer.data:

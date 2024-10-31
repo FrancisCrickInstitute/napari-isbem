@@ -24,9 +24,9 @@ class LiveViewer():
         self.pixel_size_x = None
         self.pixel_size_y = None
         self.pixel_size_z = None
-        self.position_x = None
-        self.position_y = None
-        self.position_z = None
+        self.position_x = 0
+        self.position_y = 0
+        self.position_z = 0
         self.dtype = None
         self.layer_name = layer_name
         
@@ -50,11 +50,9 @@ class LiveViewer():
         if len(self.processed_files) == 1:
             self.pixel_size_z = get_ome_position(metadata_dict, 'Z') - self.position_z
         size_y, size_x = self.get_size_um()
-        if self.position_x is None:
+        if not len(self.processed_files):
             self.position_x = get_ome_position(metadata_dict, 'X') - size_x // 2
-        if self.position_y is None:
             self.position_y = get_ome_position(metadata_dict, 'Y') - size_y // 2
-        if self.position_z is None:
             self.position_z = get_ome_position(metadata_dict, 'Z')
         if self.pixel_size_z is not None:
             expected_z = self.position_z + self.pixel_size_z * len(self.processed_files)
@@ -62,7 +60,6 @@ class LiveViewer():
             if not math.isclose(expected_z, current_z):
                 raise ValueError(f"Inconsitent Z spacing between images. Expected: {expected_z}, Got: {current_z}")
             
-
         if self.dtype is None:
             self.dtype = tiff.pages[0].asarray().dtype
         
@@ -165,9 +162,9 @@ class LiveViewer():
         self.pixel_size_x = None
         self.pixel_size_y = None
         self.pixel_size_z = None
-        self.position_x = None
-        self.position_y = None
-        self.position_z = None
+        self.position_x = 0
+        self.position_y = 0
+        self.position_z = 0
         self.dtype = None
         self.res_unit = None
         self.image_dir = None

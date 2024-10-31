@@ -235,6 +235,13 @@ def rotate_image_3d_sitk(image, quaternion, interpolator='linear'):
     return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
 
 
+def transform_image_3d(image, transformation_matrix, scale=None):
+    transformation_matrix = np.linalg.inv(transformation_matrix)
+    if scale is not None:
+        transformation_matrix = np.diag([*[1/s for s in scale], 1]) @ transformation_matrix
+    return affine_transform(image, transformation_matrix, output_shape=image.shape)
+
+
 def rotate_image_3d(image, angle, axis):
     # Create rotation object
     rotation = Rotation.from_rotvec(angle * axis)

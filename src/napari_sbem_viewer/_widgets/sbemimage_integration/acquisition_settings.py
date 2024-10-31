@@ -94,7 +94,7 @@ class AcquisitionSettings(QGroupBox):
             self._on_pixel_size_z_added()
     
     def _on_pixel_size_z_added(self):
-        self.coarse_thickness_spinbox.setValue(int(self.live_viewer.pixel_size_z * 1e3))
+        self.coarse_thickness_spinbox.setValue(round(self.live_viewer.pixel_size_z * 1e3))
         self.coarse_thickness_spinbox.setEnabled(False)
         self.roi_combo_box.setEnabled(True)
                     

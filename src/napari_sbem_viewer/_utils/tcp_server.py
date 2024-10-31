@@ -21,8 +21,8 @@ class TCPServer(QThread):
     def delete_all_grids(self):
         self.response_commands.append({'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}})
         
-    def add_grid(self, roi_id, x, y, w, h):
-        self.response_commands.append({'msg': 'ADD ARRAY GRID', 'args': [None, roi_id, [x, y], [w, h], 0], 'kwargs': {}})
+    def add_grid(self, roi_id, x, y, w, h, mask=None):
+        self.response_commands.append({'msg': 'ADD ARRAY GRID', 'args': [None, roi_id, [x, y], [w, h], 0, mask], 'kwargs': {}})
         
     def activate_grid(self, roi_id):
         self.response_commands.append({'msg': 'ACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}})
