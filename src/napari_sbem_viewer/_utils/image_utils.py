@@ -116,7 +116,6 @@ def create_image_pyramid(image, downsample_factor, pyramid_levels):
     pyramid = [image]
     for i in range(pyramid_levels):
         pyramid.append(downsample_3d_image_sitk(pyramid[i], downsample_factor))
-        # pyramid.append(downsample_3d_image(pyramid[i], downsample_factor))
     return pyramid
 
 
@@ -215,26 +214,6 @@ def get_bounding_boxes_from_mask(mask):
     return bounding_boxes
 
 
-def downsample_3d_image(image, downsample_factor):
-    image = sitk.GetImageFromArray(image)
-    original_spacing = image.GetSpacing()
-    new_spacing = [s * downsample_factor for s in original_spacing]
-    
-    new_size = [int(sz / downsample_factor) for sz in image.GetSize()]
-    resampled_image = sitk.Resample(
-        image,
-        size=new_size,
-        transform=sitk.Transform(),
-        interpolator=sitk.sitkLinear,
-        outputSpacing=new_spacing,
-        outputOrigin=image.GetOrigin(),
-        outputDirection=image.GetDirection(),
-        defaultPixelValue=0,
-        outputPixelType=image.GetPixelID()
-    )
-    return sitk.GetArrayFromImage(resampled_image)
-
-
 def create_image_pyramid(image, downsample_factor=2, pyramid_levels=3):
     pyramid = [image]
     for i in range(pyramid_levels):
@@ -255,3 +234,10 @@ def get_pyramid_scales(scale, shapes):
             current_scale.append(scale[0] * factor)
         all_scales.append(tuple(current_scale))
     return all_scales
+
+
+def convert_data_to_world_coords(layer, points):
+    world_coords = []
+    for point in points:
+        world_coords.append(layer.data_to_world(point))
+    return np.asarray(world_coords)

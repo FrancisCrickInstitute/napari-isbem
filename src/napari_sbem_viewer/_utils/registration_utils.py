@@ -235,6 +235,61 @@ def rotate_image_3d_sitk(image, quaternion, interpolator='linear'):
     return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
 
 
+def find_bounds(image_shape, affine_matrix):
+    bounds = np.asarray([[0, 0, 0, 1], 
+                         [0, image_shape[1], 0, 1], 
+                         [image_shape[0], 0, 0, 1], 
+                         [0, 0, image_shape[2], 1],
+                         [image_shape[0], image_shape[1], 0, 1],
+                         [image_shape[0], 0, image_shape[2], 1],
+                         [0, image_shape[1], image_shape[2], 1],
+                         [image_shape[0], image_shape[1], image_shape[2], 1]])
+    transformed_bounds = np.dot(affine_matrix, bounds.T).T
+    min_bound = np.min(transformed_bounds, axis=0)[:-1]
+    max_bound = np.max(transformed_bounds, axis=0)[:-1]
+    return min_bound, max_bound
+    
+
+def transform_image_3d_sitk(image, transformation_matrix, scale=None, interpolator='linear'):
+    # Apply scale factor to the transformation matrix if provided
+    if scale is not None:
+        transformation_matrix = transformation_matrix @ np.diag([*[s for s in scale], 1])
+        
+    # Find the image bounds after transformation
+    min_coords, max_coords = find_bounds(image.shape, transformation_matrix)
+    
+    # Calculate the inverse transform and perform the transformation for use with sitk
+    transformation_matrix = np.linalg.inv(transformation_matrix)
+    transformation_matrix_xyz = transformation_matrix[np.ix_([2, 1, 0, 3], [2, 1, 0, 3])]
+    
+    # Create the sitk image and transformation objects
+    image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
+    transform = sitk.AffineTransform(3)
+    transform.SetMatrix(transformation_matrix_xyz[:3, :3].flatten())
+    translation_vector = transformation_matrix_xyz[:3, 3]
+    transform.SetTranslation(translation_vector)
+    transform.SetCenter([0, 0, 0])
+    
+    # Set the interpolator
+    if interpolator == 'nearest':
+        interpolator = sitk.sitkNearestNeighbor
+    elif interpolator == 'linear':
+        interpolator = sitk.sitkLinear
+        
+    # Use the max and min bounds to calculate the output size and origin
+    output_size = [int(max_coord - min_coord) for min_coord, max_coord in zip(min_coords, max_coords)][::-1]
+    output_origin = min_coords.astype(np.float64).tolist()[::-1]
+    
+    # Perform the transformation
+    image_transformed = sitk.Resample(image_sitk, 
+                                      output_size,
+                                      transform, 
+                                      interpolator,
+                                      output_origin)
+    
+    return sitk.GetArrayFromImage(image_transformed).astype(image.dtype), min_coords
+
+
 def transform_image_3d(image, transformation_matrix, scale=None):
     transformation_matrix = np.linalg.inv(transformation_matrix)
     if scale is not None:

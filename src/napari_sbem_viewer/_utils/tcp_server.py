@@ -74,7 +74,7 @@ class TCPServer(QThread):
                                 
                                 # Block until the main process processes the data and sends back the result
                                 res = self.response_queue.get()
-                                print("RemoteTCP:", f"Sending response: {res}")
+                                # print("RemoteTCP:", f"Sending response: {res}")
                                 conn.sendall(json.dumps(res).encode('utf-8'))
                                 
                             except json.decoder.JSONDecodeError:

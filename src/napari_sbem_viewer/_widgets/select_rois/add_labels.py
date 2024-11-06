@@ -1,10 +1,7 @@
 import napari
 from qtpy.QtWidgets import QVBoxLayout, QWidget, QComboBox, QPushButton, QFileDialog, QMessageBox, QFormLayout, QLabel
-from skimage import measure
-from napari_tiff import napari_get_reader
 from napari.layers import Layer
 
-from napari_sbem_viewer._utils.image_utils import downsample_3d_image_sitk
 from napari_sbem_viewer._reader import get_labels_reader
 
 

@@ -62,8 +62,6 @@ class SBEMimageIntegration(QWidget):
         # check if the z-depth calculated in napari is within a tolerance of the z-depth displayed in sbemimage
         z_depth = request['z_depth']
         self.roi_data.update_z_depth(z_depth)
-        napari_z_depth = self.live_viewer.get_current_z_depth()
-        print(z_depth, napari_z_depth)
         
         # check cutting thicknesses are multiples of each other
         try:
@@ -139,10 +137,10 @@ class SBEMimageIntegration(QWidget):
         if self.roi_layer is None:
             self.acquisition_info.update_roi_info(self.roi_data)
             return
-        
-        self.roi_data.set_offsets(self.live_viewer.position_x, 
-                                  self.live_viewer.position_y, 
-                                  self.live_viewer.position_z)
+        self.roi_data.set_offset(
+            self.live_viewer.image_layer,
+            [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
+            )
         
         # if the roi layer exists, update the roi data
         if isinstance(self.roi_layer, napari.layers.Labels):
