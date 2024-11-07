@@ -75,8 +75,8 @@ class SBEMimageIntegration(QWidget):
         # update ROI data
         self.tcp_server.delete_all_grids()
         for roi in self.roi_data.rois:
-            x, y = roi.center[:2]
-            w, h = roi.size[:2]
+            y, x = roi.center[1:]
+            h, w = roi.size[1:]
             if roi.mask is not None:
                 self.tcp_server.add_grid(roi.id, int(x), int(y), int(w), int(h), roi.get_current_slice(z_depth).tolist())
             else:

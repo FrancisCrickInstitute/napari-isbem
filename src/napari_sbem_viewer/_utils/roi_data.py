@@ -19,13 +19,16 @@ class ROIData:
         self._offset = np.asarray([0, 0, 0])
     
     def add_bounding_box(self, coords):
-        coords = self.world_to_roi_coords(coords)
-        roi = BoundingBoxROI(coords, len(self.rois)+1)
+        coords_roi = self.world_to_roi_coords(coords)
+        mins = coords_roi.min(axis=0)
+        maxes = coords_roi.max(axis=0)
+        roi = BoundingBoxROI(mins, maxes - mins, len(self.rois)+1)
         self.rois.append(roi)
         
-    def add_masks(self, labels_layer):
-        # labels, offset = transform_image_3d_sitk(labels_layer.data, labels_layer.affine.affine_matrix, labels_layer.scale)
+    def add_masks(self, labels_layer, combine_masks=False):
         labels = labels_layer.data
+        if combine_masks:
+            labels[labels > 0] = 1
         bounds = get_bounds_from_labels(labels.astype(np.uint8))
         for mins, maxes in bounds:
             # Obtain the mask for the current bounding box
@@ -35,18 +38,23 @@ class ROIData:
             T = add_scale_to_transform_matrix(labels_layer.affine.affine_matrix, labels_layer.scale)
             mins_t, maxes_t = find_bounds(maxes - mins, T, mins)
             mins_t, maxes_t = mins_t.astype(int), maxes_t.astype(int)
-            mask_t, _ = transform_image_3d_sitk(mask, T).astype(np.uint8)
+            mask_t, _ = transform_image_3d_sitk(mask, T)
+            mask_t.astype(np.uint8)
             mask_t[mask_t > 0] = 1
             
-            bbox_position = self.world_to_roi_coords(mins_t)
-            roi = MaskROI(bbox_position, mask_t, len(self.rois)+1)
+            position = self.world_to_roi_coords(mins_t)
+            size = maxes_t - mins_t
+            roi = MaskROI(position, size, mask_t, len(self.rois)+1)
             self.rois.append(roi)
         
     def set_offset(self, layer, offset):
         self._offset = np.asarray(offset) + layer.data_to_world([0, 0, 0])
         
     def edit(self, idx, coords):
-        self.rois[idx].update_coords(self.world_to_roi_coords(coords))
+        coords_roi = self.world_to_roi_coords(coords)
+        mins = coords_roi.min(axis=0)
+        maxes = coords_roi.max(axis=0)
+        self.rois[idx].update_coords(mins, maxes - mins)
         
     def remove(self, idx):
         del self.rois[idx]
@@ -72,18 +80,18 @@ class ROIData:
         return coords + self._offset
                 
 class MaskROI:
-    def __init__(self, position, mask, id_):
+    def __init__(self, position, size, mask, id_):
         self.id = id_
         self.state = ROIState.REMAINING
         self.mask = mask
         self.x1 = position[2]
-        self.x2 = position[2] + mask.shape[2]
+        self.x2 = position[2] + size[2]
         self.y1 = position[1]
-        self.y2 = position[1] + mask.shape[1]
+        self.y2 = position[1] + size[1]
         self.z1 = position[0]
-        self.z2 = position[0] + mask.shape[0]
-        self.center = np.array([(self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2, (self.z1 + self.z2) / 2])
-        self.size = np.array([self.x2 - self.x1, self.y2 - self.y1, self.z2 - self.z1])
+        self.z2 = position[0] + size[0]
+        self.center = np.array([(self.z1 + self.z2) / 2, (self.y1 + self.y2) / 2, (self.x1 + self.x2) / 2])
+        self.size = size
         
     def get_current_slice(self, z_depth):
         z_idx = round(z_depth - self.z1)
@@ -91,27 +99,19 @@ class MaskROI:
         return slice
             
 class BoundingBoxROI:
-    def __init__(self, coords, id_):
-        self.id = id_
-        self.update_coords(coords)
+    def __init__(self, position, size, id_):
+        self.id = id_        
+        self.update_coords(position, size)
         self.state = ROIState.REMAINING
         self.mask = None
         
-    def update_coords(self, coords):
-        assert self.check_cube(coords)
-        mins = coords.min(axis=0)
-        maxes = coords.max(axis=0)
-        z1, y1, x1 = mins
-        z2, y2, x2 = maxes
-        self.x1, self.x2 = x1, x2
-        self.y1, self.y2 = y1, y2
-        self.z1, self.z2 = z1, z2
-        self.center = np.array([(x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2])
-        self.size = np.array([x2 - x1, y2 - y1, z2 - z1])
-        
-    def check_cube(self, roi):
-        # check if the roi is a cube
-        if len(roi) != 8:
-            return False
-        return True
+    def update_coords(self, position, size):
+        self.x1 = position[2]
+        self.x2 = position[2] + size[2]
+        self.y1 = position[1]
+        self.y2 = position[1] + size[1]
+        self.z1 = position[0]
+        self.z2 = position[0] + size[0]
+        self.center = np.array([(self.z1 + self.z2) / 2, (self.y1 + self.y2) / 2, (self.x1 + self.x2) / 2])
+        self.size = size
     
