@@ -2,8 +2,8 @@ from enum import Enum
 
 import numpy as np
 
-from napari_sbem_viewer._utils.image_utils import get_bounding_boxes_from_mask, convert_data_to_world_coords
-from napari_sbem_viewer._utils.registration_utils import transform_image_3d_sitk
+from napari_sbem_viewer._utils.image_utils import get_bounds_from_labels
+from napari_sbem_viewer._utils.registration_utils import transform_image_3d_sitk, find_bounds, add_scale_to_transform_matrix
 
 
 class ROIState(Enum):
@@ -24,16 +24,22 @@ class ROIData:
         self.rois.append(roi)
         
     def add_masks(self, labels_layer):
-        labels, offset = transform_image_3d_sitk(labels_layer.data, labels_layer.affine.affine_matrix, labels_layer.scale)
-        bboxes = np.asarray(get_bounding_boxes_from_mask((labels > 0).astype(np.uint8)))
-        for bbox in bboxes:
-            mins = bbox.min(axis=0).astype(int)
-            maxes = bbox.max(axis=0).astype(int)
-            z1, y1, x1 = mins
-            z2, y2, x2 = maxes
-            mask = (labels[z1:z2, y1:y2, x1:x2] > 0).astype(np.uint8)
-            bbox_position = self.world_to_roi_coords(np.asarray([z1, y1, x1]) + offset)
-            roi = MaskROI(bbox_position, mask, len(self.rois)+1)
+        # labels, offset = transform_image_3d_sitk(labels_layer.data, labels_layer.affine.affine_matrix, labels_layer.scale)
+        labels = labels_layer.data
+        bounds = get_bounds_from_labels(labels.astype(np.uint8))
+        for mins, maxes in bounds:
+            # Obtain the mask for the current bounding box
+            mask = labels[mins[0]:maxes[0], mins[1]:maxes[1], mins[2]:maxes[2]]
+            
+            # Transform the mask and bounds using the transform matrix and scale
+            T = add_scale_to_transform_matrix(labels_layer.affine.affine_matrix, labels_layer.scale)
+            mins_t, maxes_t = find_bounds(maxes - mins, T, mins)
+            mins_t, maxes_t = mins_t.astype(int), maxes_t.astype(int)
+            mask_t, _ = transform_image_3d_sitk(mask, T).astype(np.uint8)
+            mask_t[mask_t > 0] = 1
+            
+            bbox_position = self.world_to_roi_coords(mins_t)
+            roi = MaskROI(bbox_position, mask_t, len(self.rois)+1)
             self.rois.append(roi)
         
     def set_offset(self, layer, offset):

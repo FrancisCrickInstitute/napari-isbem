@@ -6,6 +6,7 @@ import numpy as np
 import dask.array as da
 import dask
 import glob
+import scipy.ndimage as ndi
 from skimage.io.collection import alphanumeric_key
 from tifffile import imread
 import SimpleITK as sitk
@@ -212,6 +213,18 @@ def get_bounding_boxes_from_mask(mask):
             [min_z, max_y, min_x],
             [max_z, max_y, min_x]])
     return bounding_boxes
+
+
+def get_bounds_from_labels(labels):
+    # Given a labeled mask, return the upper and lower bounds of each label
+    assert labels.dtype == np.uint8
+    slices = ndi.find_objects(labels)
+    bounds = []
+    for slice in slices:
+        mins = np.asarray([s.start for s in slice])
+        maxes = np.asarray([s.stop for s in slice])
+        bounds.append([mins, maxes])
+    return bounds
 
 
 def create_image_pyramid(image, downsample_factor=2, pyramid_levels=3):

@@ -235,7 +235,7 @@ def rotate_image_3d_sitk(image, quaternion, interpolator='linear'):
     return sitk.GetArrayFromImage(image_rotated).astype(image.dtype)
 
 
-def find_bounds(image_shape, affine_matrix):
+def find_bounds(image_shape, affine_matrix, offset=None):
     bounds = np.asarray([[0, 0, 0, 1], 
                          [0, image_shape[1], 0, 1], 
                          [image_shape[0], 0, 0, 1], 
@@ -244,23 +244,33 @@ def find_bounds(image_shape, affine_matrix):
                          [image_shape[0], 0, image_shape[2], 1],
                          [0, image_shape[1], image_shape[2], 1],
                          [image_shape[0], image_shape[1], image_shape[2], 1]])
+    if offset is not None:
+        offset = np.asarray(offset)
+        assert len(offset) == 3
+        offset = np.append(offset, 0)
+        bounds += offset
     transformed_bounds = np.dot(affine_matrix, bounds.T).T
     min_bound = np.min(transformed_bounds, axis=0)[:-1]
     max_bound = np.max(transformed_bounds, axis=0)[:-1]
     return min_bound, max_bound
-    
 
-def transform_image_3d_sitk(image, transformation_matrix, scale=None, interpolator='linear'):
-    # Apply scale factor to the transformation matrix if provided
-    if scale is not None:
-        transformation_matrix = transformation_matrix @ np.diag([*[s for s in scale], 1])
-        
+
+def add_scale_to_transform_matrix(matrix, scale):
+    assert len(scale) == 3
+    assert matrix.shape == (4, 4)
+    return matrix @ np.diag([*[s for s in scale], 1])
+
+
+def permute_matrix(matrix):
+    # Permute a transformation matrix from ZYX to XYZ order or vice versa
+    return matrix[np.ix_([2, 1, 0, 3], [2, 1, 0, 3])]
+
+def transform_image_3d_sitk(image, transformation_matrix, interpolator='linear'):
     # Find the image bounds after transformation
     min_coords, max_coords = find_bounds(image.shape, transformation_matrix)
-    
     # Calculate the inverse transform and perform the transformation for use with sitk
     transformation_matrix = np.linalg.inv(transformation_matrix)
-    transformation_matrix_xyz = transformation_matrix[np.ix_([2, 1, 0, 3], [2, 1, 0, 3])]
+    transformation_matrix_xyz = permute_matrix(transformation_matrix)
     
     # Create the sitk image and transformation objects
     image_sitk = sitk.GetImageFromArray(image.astype(np.float32))
@@ -290,10 +300,8 @@ def transform_image_3d_sitk(image, transformation_matrix, scale=None, interpolat
     return sitk.GetArrayFromImage(image_transformed).astype(image.dtype), min_coords
 
 
-def transform_image_3d(image, transformation_matrix, scale=None):
+def transform_image_3d(image, transformation_matrix):
     transformation_matrix = np.linalg.inv(transformation_matrix)
-    if scale is not None:
-        transformation_matrix = np.diag([*[1/s for s in scale], 1]) @ transformation_matrix
     return affine_transform(image, transformation_matrix, output_shape=image.shape)
 
 
