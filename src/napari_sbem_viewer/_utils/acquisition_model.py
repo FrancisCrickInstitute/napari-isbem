@@ -1,0 +1,139 @@
+from qtpy.QtCore import QObject, Signal
+from napari.layers import Labels
+
+from napari_sbem_viewer._utils.tcp_server import TCPServer
+from napari_sbem_viewer._utils.roi_data import ROIData, ROIState
+from napari_sbem_viewer._utils.general_utils import is_multiple
+
+
+class AcquisitionModel(QObject):
+    errored = Signal(str, str)
+    overviews_updated = Signal(list)
+    acquisition_info_updated = Signal(float, float, bool)
+    rois_updated = Signal(ROIData)
+    def __init__(self, live_viewer):
+        super().__init__()
+        self.tcp_server = TCPServer('localhost', 8888)
+        self.roi_data = ROIData()
+        self.live_viewer = live_viewer
+        self.fine_thickness = None
+        self.is_cutting_thin = False
+        self.last_z_depth = None
+        self.tcp_server.request_received.connect(self.process_request)
+    
+    def process_request(self, request):
+        slice_thickness = request['slice_thickness']
+        z_depth = request['z_depth']
+        ov_dirs = request['overviews']['ov_dirs']
+        is_paused = request['paused']
+        
+        # emit signals to update the GUI
+        self.overviews_updated.emit(ov_dirs)
+        self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
+        self.last_z_depth = z_depth
+        
+        ov_idx = self._get_overview_idx(ov_dirs)
+        if ov_idx is None:
+            # no overview is selected - pause acquisition
+            self.tcp_server.pause_acquisition()
+            self.tcp_server.send_response()
+            return
+        
+        try:
+            self._check_fine_thickness()
+        except Exception as e:
+            self.errored.emit("Cutting thickness error", str(e))
+            self.tcp_server.pause_acquisition()
+            self.tcp_server.send_response()
+            return
+
+        # add response commands
+        self._update_rois(z_depth)
+        self._update_cutting_depth(z_depth)
+        self._update_overview(z_depth, ov_idx)
+        
+        # emit signal with updated ROI information
+        self.rois_updated.emit(self.roi_data)
+        
+        self.tcp_server.send_response()
+        
+    def _update_rois(self, z_depth):
+        self.roi_data.update_z_depth(z_depth)
+        self.tcp_server.delete_all_grids()
+        for roi in self.roi_data.rois:
+            y, x = roi.center[1:]
+            h, w = roi.size[1:]
+            if roi.mask is not None:
+                self.tcp_server.add_grid(roi.id, int(x), int(y), int(w), int(h), roi.get_current_slice(z_depth).tolist())
+            else:
+                self.tcp_server.add_grid(roi.id, x, y, w, h)
+            if roi.state == ROIState.ACQUIRING:
+                self.tcp_server.activate_grid(roi.id)
+                # if new roi is reached
+                if roi.id not in self.roi_data.acquiring_rois:
+                    self.roi_data.acquiring_rois.add(roi.id)
+                    self.tcp_server.pause_acquisition()
+            else:
+                self.tcp_server.deactivate_grid(roi.id)
+                # if the roi has been fully imaged
+                if roi.id in self.roi_data.acquiring_rois:
+                    self.roi_data.acquiring_rois.remove(roi.id)
+                    self.tcp_server.pause_acquisition()
+                    
+    def _update_cutting_depth(self, z_depth):
+        if self.roi_data.acquiring_rois:
+            self.is_cutting_thin = True
+
+        if self.roi_data.acquiring_rois:
+            self.tcp_server.set_slice_thickness(self.fine_thickness)
+            
+        # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
+        elif is_multiple(z_depth - self.live_viewer.position_z, self.coarse_thickness):
+            self.tcp_server.set_slice_thickness(self.coarse_thickness)
+            self.is_cutting_thin = False
+    
+    def _update_overview(self, z_depth, ov_idx):
+        # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
+        if is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
+            self.tcp_server.activate_overview(ov_idx)
+        else:
+            self.tcp_server.deactivate_overview(ov_idx)
+            
+    def _on_roi_layer_changed(self, roi_layer):
+        self.roi_data.clear()
+
+        if roi_layer is not None:
+            self.roi_data.set_offset(
+                self.live_viewer.image_layer,
+                [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
+                )
+            
+            # if the roi layer exists, update the roi data
+            if isinstance(roi_layer, Labels):
+                self.roi_data.add_masks(roi_layer)
+            else:
+                for roi in roi_layer.data:
+                    self.roi_data.add_bounding_box(roi)
+                    
+            # update the acquisition state of the rois using previous z-depth
+            if self.last_z_depth is not None:
+                self.roi_data.update_z_depth(self.last_z_depth)   
+                     
+        self.rois_updated.emit(self.roi_data)
+        
+    def _on_fine_thickness_changed(self, fine_thickness):
+        self.fine_thickness = fine_thickness
+        
+    def _check_fine_thickness(self):
+        if self.fine_thickness is None:
+            raise ValueError("Fine thickness is not set.")
+        coarse_thickness = self.live_viewer.pixel_size_z*1e3
+        assert coarse_thickness % self.fine_thickness == 0, "Coarse thickness must be a multiple of fine thickness."       
+    
+    def _get_overview_idx(self, ov_dirs):
+        # Given a list of overview directories, return the index of the current overview directory
+        for i, ov_dir in enumerate(ov_dirs):
+            if self.live_viewer.image_dir == ov_dir:
+                return i
+        return None
+    

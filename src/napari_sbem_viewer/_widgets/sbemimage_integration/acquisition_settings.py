@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox, QMessageBox
 from napari_bbox import BoundingBoxLayer
-from napari.qt import create_worker
+
 from napari.layers import Labels
 
 from napari_sbem_viewer._utils.live_viewer import LiveViewer
@@ -12,21 +12,15 @@ DEFAULT_FINE_THICKNESS = 50
 
 
 class AcquisitionSettings(QGroupBox):
-    def __init__(self,
-                 viewer: napari.Viewer,
-                 live_viewer: LiveViewer,
-                 ):
+    def __init__(self, viewer: napari.Viewer):
         super().__init__("Acquisition settings")
-        self.viewer = viewer
-        self.live_viewer = live_viewer
         self.setLayout(QVBoxLayout())
-        self.overview_dirs = []
+        self.viewer = viewer
         
         # ------- Overview directory settings-------
         self.layout().addWidget(QLabel("Overview directory"))
         self.overview_combo_box = QComboBox()
         self.overview_combo_box.addItem("")
-        self.overview_combo_box.currentIndexChanged.connect(self._on_change_ov_combo)
         self.layout().addWidget(self.overview_combo_box)
         
         # --------- ROI layer settings---------
@@ -46,9 +40,21 @@ class AcquisitionSettings(QGroupBox):
         cutting_depth_layout.addWidget(self.fine_thickness_spinbox, 1, 1)
         self.layout().addLayout(cutting_depth_layout)
         
+    def update_overview_dirs(self, ov_dirs):
+        curr_dirs = self.get_current_overview_dirs()
+        if set(ov_dirs) != set(curr_dirs):
+            self.overview_combo_box.clear()
+            # add an empty item to the combo box
+            self.overview_combo_box.addItem("")
+            self.overview_combo_box.addItems(ov_dirs)
+        
     def get_roi_layer(self):
         layer_name = self.roi_combo_box.currentText()
         return self._get_layer(layer_name)
+    
+    def get_current_overview_dirs(self):
+        return [self.overview_combo_box.itemText(i) 
+                for i in range(1, self.overview_combo_box.count())]
         
     def _get_roi_layer_names(self):
         return [x.name for x in self.viewer.layers if (isinstance(x, BoundingBoxLayer) or isinstance(x, Labels))]
@@ -57,43 +63,5 @@ class AcquisitionSettings(QGroupBox):
         for layer in self.viewer.layers:
             if layer.name == layer_name:
                 return layer
-        return None    
-        
-    def _update_overview_dirs(self, overview_dirs):
-        if set(overview_dirs) != set(self.overview_dirs):
-            self.overview_combo_box.clear()
-            # add an empty item to the combo box
-            self.overview_combo_box.addItem("")
-            self.overview_combo_box.addItems(overview_dirs)
-            self.overview_dirs = overview_dirs
-
-    def _on_change_ov_combo(self):
-        self._on_reset_overview()
-        if self.overview_combo_box.currentIndex() < 1:
-            return
-        self._on_select_overview_dir(self.overview_combo_box.currentText())
-        
-    def _on_select_overview_dir(self, image_dir):
-        try:
-            self.live_viewer.init_images(image_dir)
-        except ValueError as e:
-            QMessageBox.warning(self, "Error adding images", str(e))
-            self.overview_combo_box.setCurrentIndex(0)
-            return
-        self.roi_combo_box.setEnabled(True)
-        self.coarse_thickness_label.setText(f"{self.live_viewer.pixel_size_z*1e3:.0f}")
-        create_worker(self.live_viewer.watch_folder, 
-                      image_dir, 
-                      _connect={'yielded': self.live_viewer.append, 'errored': self._handle_overview_error}) 
-        
-    def _on_reset_overview(self):
-        self.live_viewer.reset()
-        self.roi_combo_box.setCurrentIndex(0)
-        self.roi_combo_box.setEnabled(False)
-        self.coarse_thickness_label.setText("")
-    
-    def _handle_overview_error(self, error):
-        if isinstance(error, ValueError):
-            QMessageBox.warning(self, "Error adding images", "One or more images are missing OME metadata.")
-        self.overview_combo_box.setCurrentIndex(0)
+        return None
         

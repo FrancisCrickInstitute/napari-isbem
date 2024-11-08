@@ -1,16 +1,17 @@
 import socket
 import json
+from queue import Queue
 
-from qtpy.QtCore import QThread
+from qtpy.QtCore import QThread, Signal
 
 
 class TCPServer(QThread):
-    def __init__(self, host, port, command_trigger, response_queue, parent=None):
+    request_received = Signal(dict)
+    def __init__(self, host, port, parent=None):
         super().__init__(parent)
         self.host = host
         self.port = port
-        self.request_trigger = command_trigger
-        self.response_queue = response_queue
+        self.response_queue = Queue()
 
         self.is_running = False
         self.response_commands = []
@@ -70,7 +71,7 @@ class TCPServer(QThread):
                                 print("RemoteTCP:", f"Received: {request}")
                                 
                                 # Transmit request to main controls
-                                self.request_trigger.transmit(request)
+                                self.request_received.emit(request)
                                 
                                 # Block until the main process processes the data and sends back the result
                                 res = self.response_queue.get()

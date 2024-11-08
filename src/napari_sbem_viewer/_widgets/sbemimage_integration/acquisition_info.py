@@ -26,7 +26,13 @@ class AcquisitionInfo(QGroupBox):
         self.table_view.setModel(self.model)
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-
+        
+    def reset(self):
+        self.model.clear()
+        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.z_depth.setText('')
+        self.slice_thickenss.setText('')
+        self.pause_status.setText('')
     
     def update_acquisition_info(self, z_depth, slice_thickness, pause_status):
         self.z_depth.setText(f'{z_depth:.2f}µm')
