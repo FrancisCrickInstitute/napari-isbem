@@ -6,7 +6,6 @@ from qtpy.QtWidgets import QGroupBox, QPushButton, QGridLayout, QTableView, QHea
 from qtpy.QtGui import QStandardItemModel, QStandardItem
 from qtpy.QtCore import Qt, QItemSelection, QItemSelectionModel
 import numpy as np
-import pandas as pd
 
 from napari_sbem_viewer._utils.image_utils import get_bounding_boxes_from_mask
 

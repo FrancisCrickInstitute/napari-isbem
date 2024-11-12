@@ -1,10 +1,10 @@
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
-from napari_sbem_viewer._widgets.select_rois import ROIList, AddBoundingBoxes, AddLabels
+from napari_sbem_viewer._views.rois import ROIList, AddBoundingBoxes, AddLabels
 
 
-class SelectROIs(QWidget):
+class SelectROIsWidget(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
         self.viewer = napari_viewer

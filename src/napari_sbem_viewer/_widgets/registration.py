@@ -1,10 +1,10 @@
 import napari
 from qtpy.QtWidgets import QVBoxLayout, QWidget, QVBoxLayout
 
-from napari_sbem_viewer._widgets.registration import UploadXrayStack, SelectImages, RegistrationOptions
+from napari_sbem_viewer._views.registration import UploadXrayStack, SelectImages, RegistrationOptions
 
 
-class Registration(QWidget):
+class RegistrationWidget(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
         

@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QVBoxLayout, QVBoxLayout, QGroupBox, QComboBox, QStackedWidget
 
-from napari_sbem_viewer._widgets.registration import AlignPlanes, ManualRegistration, PrecomputedTransformation
+from napari_sbem_viewer._views.registration import AlignPlanes, ManualRegistration, PrecomputedTransformation
 
 
 class RegistrationOptions(QGroupBox):

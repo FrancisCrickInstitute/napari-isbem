@@ -1,11 +1,8 @@
 import napari
-from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox, QMessageBox
+from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox
 from napari_bbox import BoundingBoxLayer
 
 from napari.layers import Labels
-
-from napari_sbem_viewer._utils.live_viewer import LiveViewer
-from napari_sbem_viewer._widgets.select_dir import SelectDir
 
 
 DEFAULT_FINE_THICKNESS = 50

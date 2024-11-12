@@ -1,8 +1,5 @@
-from copy import copy
-
 import napari
 from napari.qt import QtViewer
-from napari.layers.points._points_constants import Mode
 from qtpy.QtCore import Qt
 
 

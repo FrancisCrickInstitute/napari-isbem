@@ -1,28 +1,11 @@
 import os
-from queue import Queue
 import warnings
 
 import numpy as np
 from qtpy.QtWidgets import QErrorMessage
 import math
 import psutil
-from qtpy.QtCore import QObject, Signal
 import napari
-
-
-class Trigger(QObject):
-    """A custom QObject for receiving notifications and commands from threads.
-    The trigger signal is emitted by calling signal.emit(). The queue can
-    be used to send commands: queue.put(cmd) puts a cmd into the
-    queue, and queue.get() reads the cmd and empties the queue.
-    """
-    signal = Signal()
-    queue = Queue()
-
-    def transmit(self, req):
-        """Transmit a single command."""
-        self.queue.put(req)
-        self.signal.emit()
 
 
 def display_qt_error(parent, error):

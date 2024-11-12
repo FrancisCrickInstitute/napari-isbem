@@ -9,8 +9,6 @@ import numpy as np
 from qtpy.QtWidgets import QPushButton, QListWidget, QWidget, QGridLayout, QLabel, QAbstractScrollArea, QMessageBox, QSpinBox
 from napari.layers.points._points_constants import Mode
 
-from napari_sbem_viewer._widgets.registration import StackViewer
-
 
 class PointSelection(QWidget):
     def __init__(self,

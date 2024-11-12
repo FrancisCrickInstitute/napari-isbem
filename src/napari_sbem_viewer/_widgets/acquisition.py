@@ -2,15 +2,11 @@ import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 from napari.qt import create_worker
 
-from napari_sbem_viewer._widgets.sbemimage_integration import TCPSettings, AcquisitionSettings, AcquisitionInfo
-from napari_sbem_viewer._utils.acquisition_model import AcquisitionModel
-from napari_sbem_viewer._utils.live_viewer import LiveViewer
-from napari_sbem_viewer._utils.tcp_server import TCPServer
-from napari_sbem_viewer._utils.roi_data import ROIData, ROIState
-from napari_sbem_viewer._utils.general_utils import Trigger, is_multiple
+from napari_sbem_viewer._views.acquisition import TCPSettings, AcquisitionSettings, AcquisitionInfo
+from napari_sbem_viewer._models import AcquisitionModel, LiveViewer
 
 
-class SBEMimageIntegration(QWidget):
+class AcquisitionWidget(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
         self.viewer = napari_viewer

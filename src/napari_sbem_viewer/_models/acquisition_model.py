@@ -1,8 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Labels
 
-from napari_sbem_viewer._utils.tcp_server import TCPServer
-from napari_sbem_viewer._utils.roi_data import ROIData, ROIState
+from napari_sbem_viewer._models import ROIData, ROIState, TCPServer
 from napari_sbem_viewer._utils.general_utils import is_multiple
 
 

@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QPushButton, QFormLayout, QFileDialog, QGridLayout, Q
 from qtpy.QtCore import Qt
 import numpy as np
 
-from napari_sbem_viewer._widgets.registration import StackViewer
+from napari_sbem_viewer._views.registration import StackViewer
 from napari_sbem_viewer._utils.registration_utils import (quaternion_from_vectors, 
                                                           line_parametric_equation, 
                                                           find_intersections, 
