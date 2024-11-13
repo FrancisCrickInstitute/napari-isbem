@@ -1,18 +1,19 @@
-import napari
-from qtpy.QtWidgets import QGridLayout, QLabel, QSpinBox, QGroupBox, QVBoxLayout, QComboBox
-from napari_bbox import BoundingBoxLayer
-
-from napari.layers import Labels
+from qtpy.QtWidgets import (QGridLayout, 
+                            QLabel, 
+                            QSpinBox, 
+                            QGroupBox, 
+                            QVBoxLayout, 
+                            QComboBox, 
+                            QMessageBox)
 
 
 DEFAULT_FINE_THICKNESS = 50
 
 
 class AcquisitionSettings(QGroupBox):
-    def __init__(self, viewer: napari.Viewer):
+    def __init__(self):
         super().__init__("Acquisition settings")
         self.setLayout(QVBoxLayout())
-        self.viewer = viewer
         
         # ------- Overview directory settings-------
         self.layout().addWidget(QLabel("Overview directory"))
@@ -25,7 +26,6 @@ class AcquisitionSettings(QGroupBox):
         self.roi_combo_box = QComboBox()
         self.roi_combo_box.setEnabled(False)
         self.layout().addWidget(self.roi_combo_box)
-        self.roi_layer = None
         
         # ------- Cutting depth settings-------
         cutting_depth_layout = QGridLayout()
@@ -44,21 +44,11 @@ class AcquisitionSettings(QGroupBox):
             # add an empty item to the combo box
             self.overview_combo_box.addItem("")
             self.overview_combo_box.addItems(ov_dirs)
-        
-    def get_roi_layer(self):
-        layer_name = self.roi_combo_box.currentText()
-        return self._get_layer(layer_name)
+    
+    def show_error(self, title, text):
+        QMessageBox.warning(self, title, text)
     
     def get_current_overview_dirs(self):
         return [self.overview_combo_box.itemText(i) 
                 for i in range(1, self.overview_combo_box.count())]
-        
-    def _get_roi_layer_names(self):
-        return [x.name for x in self.viewer.layers if (isinstance(x, BoundingBoxLayer) or isinstance(x, Labels))]
-        
-    def _get_layer(self, layer_name):
-        for layer in self.viewer.layers:
-            if layer.name == layer_name:
-                return layer
-        return None
         

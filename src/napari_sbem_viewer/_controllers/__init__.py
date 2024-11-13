@@ -1,1 +1,2 @@
+from napari_sbem_viewer._controllers.acquisition_controller import AcquisitionController
 from napari_sbem_viewer._controllers.manual_registration_controller import ManualRegistrationController

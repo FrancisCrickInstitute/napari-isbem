@@ -1,7 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Labels
 
-from napari_sbem_viewer._models import ROIData, ROIState, TCPServer
+from napari_sbem_viewer._models import ROIData, ROIState, TCPServer, LiveViewer
 from napari_sbem_viewer._utils.general_utils import is_multiple
 
 
@@ -10,11 +10,12 @@ class AcquisitionModel(QObject):
     overviews_updated = Signal(list)
     acquisition_info_updated = Signal(float, float, bool)
     rois_updated = Signal(ROIData)
-    def __init__(self, live_viewer):
+    def __init__(self, viewer):
         super().__init__()
+        self.viewer = viewer
         self.tcp_server = TCPServer('localhost', 8888)
         self.roi_data = ROIData()
-        self.live_viewer = live_viewer
+        self.live_viewer = LiveViewer(self.viewer)
         self.fine_thickness = None
         self.is_cutting_thin = False
         self.last_z_depth = None
@@ -55,6 +56,31 @@ class AcquisitionModel(QObject):
         self.rois_updated.emit(self.roi_data)
         
         self.tcp_server.send_response()
+        
+    def set_roi_layer(self, roi_layer):
+        self.roi_data.clear()
+
+        if roi_layer is not None:
+            self.roi_data.set_offset(
+                self.live_viewer.image_layer,
+                [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
+                )
+            
+            # if the roi layer exists, update the roi data
+            if isinstance(roi_layer, Labels):
+                self.roi_data.add_masks(roi_layer)
+            else:
+                for roi in roi_layer.data:
+                    self.roi_data.add_bounding_box(roi)
+                    
+            # update the acquisition state of the rois using previous z-depth
+            if self.last_z_depth is not None:
+                self.roi_data.update_z_depth(self.last_z_depth)   
+                     
+        self.rois_updated.emit(self.roi_data)
+        
+    def set_fine_thickness(self, fine_thickness):
+        self.fine_thickness = fine_thickness
         
     def _update_rois(self, z_depth):
         self.roi_data.update_z_depth(z_depth)
@@ -97,31 +123,6 @@ class AcquisitionModel(QObject):
             self.tcp_server.activate_overview(ov_idx)
         else:
             self.tcp_server.deactivate_overview(ov_idx)
-            
-    def _on_roi_layer_changed(self, roi_layer):
-        self.roi_data.clear()
-
-        if roi_layer is not None:
-            self.roi_data.set_offset(
-                self.live_viewer.image_layer,
-                [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
-                )
-            
-            # if the roi layer exists, update the roi data
-            if isinstance(roi_layer, Labels):
-                self.roi_data.add_masks(roi_layer)
-            else:
-                for roi in roi_layer.data:
-                    self.roi_data.add_bounding_box(roi)
-                    
-            # update the acquisition state of the rois using previous z-depth
-            if self.last_z_depth is not None:
-                self.roi_data.update_z_depth(self.last_z_depth)   
-                     
-        self.rois_updated.emit(self.roi_data)
-        
-    def _on_fine_thickness_changed(self, fine_thickness):
-        self.fine_thickness = fine_thickness
         
     def _check_fine_thickness(self):
         if self.fine_thickness is None:

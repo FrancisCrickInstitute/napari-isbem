@@ -11,7 +11,7 @@ class SBEMViewerWidget(QTabWidget):
         self.setLayout(QVBoxLayout())
 
         self.sbem_image_integration = AcquisitionWidget(napari_viewer)
-        self.insertTab(0, self.sbem_image_integration, "Config")
+        self.insertTab(0, self.sbem_image_integration, "Acquisition")
            
         self.image_registration = RegistrationWidget(napari_viewer)
         self.insertTab(1, self.image_registration, "Registration")
