@@ -20,7 +20,7 @@ class RegistrationOptions(QGroupBox):
         # self.widgets_combo_box.addItem('Precomputed transformation')
         # self.stacked_widget.addWidget(self.precomputed_transformation)
         
-        self.manual_registration = ManualRegistration(self.viewer, parent=self)
+        self.manual_registration = ManualRegistration(parent=self)
         self.manual_registration.layout().setContentsMargins(0, 0, 0, 0)
         self.widgets_combo_box.addItem('Manual registration')
         self.stacked_widget.addWidget(self.manual_registration)
@@ -28,5 +28,4 @@ class RegistrationOptions(QGroupBox):
         self.widgets_combo_box.activated[int].connect(self.stacked_widget.setCurrentIndex)
         self.layout().addWidget(self.widgets_combo_box)
         self.layout().addWidget(self.stacked_widget)
-        
         
