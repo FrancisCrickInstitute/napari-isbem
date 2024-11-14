@@ -4,7 +4,7 @@ from napari_sbem_viewer._models.manual_registration_model import AffineTransform
 
 
 class ManualRegistrationController:
-    def __init__(self, manual_registration_view, select_images, manual_registration_model):
+    def __init__(self, manual_registration_model, manual_registration_view, select_images):
         self.view = manual_registration_view
         self.model = manual_registration_model
         self.model.do_transform = self._on_transform

@@ -1,5 +1,7 @@
 from napari_sbem_viewer._models.live_viewer import LiveViewer
 from napari_sbem_viewer._models.roi_data import ROIData, ROIState
 from napari_sbem_viewer._models.tcp_server import TCPServer
+from napari_sbem_viewer._models.stack_viewer import StackViewer
 from napari_sbem_viewer._models.acquisition_model import AcquisitionModel
+from napari_sbem_viewer._models.align_planes_model import AlignPlanesModel
 from napari_sbem_viewer._models.manual_registration_model import ManualRegistrationModel

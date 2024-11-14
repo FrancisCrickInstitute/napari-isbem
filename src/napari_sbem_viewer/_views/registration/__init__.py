@@ -1,6 +1,6 @@
 from napari_sbem_viewer._views.registration.select_images import SelectImages
 from napari_sbem_viewer._views.registration.upload_xray_stack import UploadXrayStack
-from napari_sbem_viewer._views.registration.stack_viewer import StackViewer
+from napari_sbem_viewer._models.stack_viewer import StackViewer
 from napari_sbem_viewer._views.registration.align_planes import AlignPlanes
 from napari_sbem_viewer._views.registration.manual_registration import ManualRegistration
 from napari_sbem_viewer._views.registration.point_selection import PointSelection

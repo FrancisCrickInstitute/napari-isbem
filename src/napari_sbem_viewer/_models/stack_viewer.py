@@ -10,6 +10,7 @@ class StackViewer(QtViewer):
             self.setParent(parent)
         self.viewer = viewer
         self.setWindowFlags(Qt.Tool | Qt.WindowStaysOnTopHint)
+        self.viewer.dims.ndisplay = 3
 
     def closeEvent(self, event):
         event.ignore()
