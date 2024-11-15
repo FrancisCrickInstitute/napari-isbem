@@ -49,4 +49,11 @@ def reset_view(viewer: napari.Viewer, layer: napari.layers.Layer):
         warnings.simplefilter('ignore')
         canvas_size = viewer._canvas_size
     viewer.camera.zoom = np.min(canvas_size) / np.max(size)
-    
+
+
+def get_roi_center(coords_list):
+    # calculate the min / max values of the x, y and z coordinates
+    min_coords = np.min(coords_list, axis=0)
+    max_coords = np.max(coords_list, axis=0)
+    center_coords = (min_coords + max_coords) / 2
+    return center_coords

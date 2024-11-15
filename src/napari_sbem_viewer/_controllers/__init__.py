@@ -1,4 +1,4 @@
 from napari_sbem_viewer._controllers.acquisition_controller import AcquisitionController
 from napari_sbem_viewer._controllers.align_planes_controller import AlignPlanesController
 from napari_sbem_viewer._controllers.manual_registration_controller import ManualRegistrationController
-from napari_sbem_viewer._controllers.roi_controller import ROIController
+from napari_sbem_viewer._controllers.select_rois_controller import SelectROIsController
