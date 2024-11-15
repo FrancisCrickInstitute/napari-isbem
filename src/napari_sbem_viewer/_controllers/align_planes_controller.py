@@ -14,6 +14,7 @@ class AlignPlanesController:
         self.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.align_planes.zx_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.align_planes.position_slider.valueChanged.connect(self._on_update_position)
+        self.align_planes.apply_transform_button.clicked.connect(self._on_click_register)
         self.select_images.moving_combo_box.currentIndexChanged.connect(self._on_change_moving_image)
         
     def _on_click_save_ome_zarr(self):
@@ -31,7 +32,9 @@ class AlignPlanesController:
         if not file_path:
             return
         try:
-            self.model.upload_transform(file_path)
+            angle_zy, angle_zx = self.model.load_transform(file_path)
+            self.align_planes.zy_degrees_slider.setValue(angle_zy)
+            self.align_planes.zx_degrees_slider.setValue(angle_zx)
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to load transform: {e}")
         
@@ -40,8 +43,9 @@ class AlignPlanesController:
         if not file_path:
             return
         try:
-            self.model.save_transform(file_path)
-
+            zy_degrees = self.align_planes.zy_degrees_slider.value()
+            zx_degrees = self.align_planes.zx_degrees_slider.value()
+            self.model.save_transform(file_path, zy_degrees, zx_degrees)
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to save transform: {e}")
             
@@ -49,7 +53,7 @@ class AlignPlanesController:
         try:
             self.model.show_align_planes_window()
             self._on_update_position()
-            self._on_change_angle()
+            self._on_update_angle()
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to display window: {e}")
             
@@ -57,18 +61,22 @@ class AlignPlanesController:
         position = self.model.update_plane_angle(
             self.align_planes.zy_degrees_slider.value(), 
             self.align_planes.zx_degrees_slider.value())
-        self.align_planes.position_slider.setValue(position)
+        if position is not None:
+            self.align_planes.position_slider.setValue(position)
     
     def _on_update_position(self):
         self.model.update_plane_position(self.align_planes.position_slider.value())
         
     def _on_click_register(self):
         try:
-            self.model.apply_transform()
-            self.show_info("Success", "Image rotated successfully")
+            zy_degrees = self.align_planes.zy_degrees_slider.value()
+            zx_degrees = self.align_planes.zx_degrees_slider.value()
+            self.model.apply_transform(zy_degrees, zx_degrees)
+            self.align_planes.show_info("Success", "Image rotated successfully")
         except Exception as e:
-            self.show_error("Error", f"Failed to rotate image: {e}")
+            self.align_planes.show_error("Error", f"Failed to rotate image: {e}")
       
     def _on_change_moving_image(self):
         self.model.reset()
+        self.model.moving_image_layer = self.select_images.get_moving_layer()
         
