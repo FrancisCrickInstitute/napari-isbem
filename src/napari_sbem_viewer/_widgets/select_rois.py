@@ -1,5 +1,5 @@
 import napari
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from qtpy.QtWidgets import QWidget, QVBoxLayout
 
 from napari_sbem_viewer._views.rois import ROIList, AddBoundingBoxes, AddLabels
 from napari_sbem_viewer._models import SelectROIsModel
