@@ -3,6 +3,8 @@ from qtpy.QtCore import QObject
 import cv2
 from scipy.ndimage import distance_transform_edt
 
+from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
+
 
 class DrawROIsModel(QObject):
     def __init__(self, viewer):
@@ -10,20 +12,28 @@ class DrawROIsModel(QObject):
         self.viewer = viewer
         self.labels_layer = None
         self.annotated_labels = None
+        self.image_layer = None
         
     def add_labels_layer(self, image_layer_name, downsample_factor):
-        image_layer = self._get_layer(image_layer_name)
+        self.image_layer = self._get_layer(image_layer_name)
         if self.labels_layer is not None:
             raise ValueError("Labels layer already exists")
-        labels_shape = [dim // downsample_factor for dim in image_layer.data.shape]
+        labels_shape = [dim // downsample_factor for dim in self.image_layer.data.shape]
         labels = np.zeros(labels_shape, dtype=np.uint8)
         self.labels_layer = self.viewer.add_labels(
             labels,
             name="ROIs",
-            scale=[downsample_factor * s for s in image_layer.scale],
+            scale=[downsample_factor * s for s in self.image_layer.scale],
             )
         self.annotated_labels = np.zeros_like(labels)
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
+        self.image_layer.events.affine.connect(self._on_affine_changed)
+        self._on_affine_changed() 
+        
+    def _on_affine_changed(self):
+        self.labels_layer.affine = convert_affine_to_ndims(
+            self.image_layer.affine.affine_matrix, self.labels_layer.ndim
+            )
         
     def _on_labels_data_changed(self, event):
         if event.type != 'paint':
@@ -58,6 +68,8 @@ class DrawROIsModel(QObject):
     def reset(self):
         self.labels_layer = None
         self.annotated_labels = None
+        self.image_layer.events.affine.disconnect(self._on_affine_changed)
+        self.image_layer = None
         
     def _get_layer(self, layer_name):
         try:
