@@ -10,9 +10,11 @@ class DrawROIsController:
         self._connect_signals()
         
     def _connect_signals(self):
-        self.add_labels.add_labels_button.clicked.connect(self._on_add_labels)
-        self.add_labels.upload_labels_button.clicked.connect(self._on_upload_labels)
+        self.add_labels.add_labels_button.clicked.connect(self._on_click_add_labels)
+        self.add_labels.upload_labels_button.clicked.connect(self._on_click_upload_labels)
         self.label_settings.autofill_checkbox.stateChanged.connect(self._on_autofill_labels_changed)
+        self.label_settings.export_labels_button.clicked.connect(self._on_click_export_labels)
+        self.label_settings.connected_components_button.clicked.connect(self.model.connected_components)
         self.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
         self.label_settings.interpolate_button.clicked.connect(self._on_click_interpolate)
         self.model.viewer.layers.events.inserted.connect(self._on_add_layer)
@@ -22,7 +24,7 @@ class DrawROIsController:
         self.model.interpolation_finished.connect(lambda: self.label_settings.interpolate_button.setEnabled(True))
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
         
-    def _on_add_labels(self):
+    def _on_click_add_labels(self):
         try:
             image_layer_name = self.add_labels.image_layer_combo_box.currentText()
             downsample_factor = self.add_labels.downsample_combo_box.currentText()
@@ -34,7 +36,7 @@ class DrawROIsController:
         except Exception as e:
             self.add_labels.show_error("Error", f"Failed to add labels layer: {e}")
             
-    def _on_upload_labels(self):
+    def _on_click_upload_labels(self):
         try:
             file_path = self.add_labels.open_file_dialog()
             if not file_path:
@@ -43,6 +45,15 @@ class DrawROIsController:
             self.model.upload_labels(file_path, image_layer_name)
         except Exception as e:
             self.add_labels.show_error("Error", f"Failed to upload labels: {e}")
+            
+    def _on_click_export_labels(self):
+        try:
+            file_path = self.label_settings.save_file_dialog()
+            if not file_path:
+                return
+            self.model.export_labels(file_path)
+        except Exception as e:
+            self.label_settings.show_error("Error", f"Failed to export labels: {e}")
             
     def _on_add_layer(self, event):
         if not isinstance(event.value, Image):

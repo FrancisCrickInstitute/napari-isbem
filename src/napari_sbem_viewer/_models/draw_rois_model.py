@@ -4,6 +4,8 @@ import cv2
 from scipy.ndimage import distance_transform_edt
 from napari.qt import create_worker
 from napari.layers import Layer
+import tifffile
+from skimage import measure
 
 from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
 from napari_sbem_viewer._reader import get_labels_reader
@@ -53,6 +55,18 @@ class DrawROIsModel(QObject):
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
         self.image_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
+        
+    def export_labels(self, file_path):
+        if self.labels_layer is None:
+            raise ValueError("No labels layer found")
+        tifffile.imsave(file_path, self.labels_layer.data)
+        
+    def connected_components(self):
+        if self.labels_layer is None:
+            raise ValueError("No labels layer found")
+        cc_mask = measure.label(self.labels_layer.data).astype(np.uint8)
+        self.labels_layer.data = cc_mask
+        self.annotated_labels = cc_mask.copy()
         
     def _on_affine_changed(self):
         self.labels_layer.affine = convert_affine_to_ndims(
