@@ -1,5 +1,4 @@
 from napari_sbem_viewer._widgets.acquisition import AcquisitionWidget
 from napari_sbem_viewer._widgets.registration import RegistrationWidget
-from napari_sbem_viewer._widgets.select_rois import SelectROIsWidget
 from napari_sbem_viewer._widgets.draw_rois import DrawROIsWidget
 from napari_sbem_viewer._widgets.sbem_viewer import SBEMViewerWidget

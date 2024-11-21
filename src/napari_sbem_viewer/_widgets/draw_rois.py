@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 
-from napari_sbem_viewer._views.rois import DrawROIsView
+from napari_sbem_viewer._views.rois import AddLabels, LabelSettings
 from napari_sbem_viewer._models import DrawROIsModel
 from napari_sbem_viewer._controllers import DrawROIsController
 
@@ -11,14 +11,17 @@ class DrawROIsWidget(QWidget):
         super().__init__()
         self.viewer = napari_viewer
         
-        self.draw_rois_view = DrawROIsView(parent=self)
+        self.add_labels = AddLabels(parent=self)
+        self.label_settings = LabelSettings(parent=self)
         self.draw_rois_model = DrawROIsModel(self.viewer)
         self.draw_rois_controller = DrawROIsController(
-            self.draw_rois_model, 
-            self.draw_rois_view
+            self.draw_rois_model,
+            self.add_labels,
+            self.label_settings
         )
 
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.draw_rois_view)
+        self.layout().addWidget(self.add_labels)
+        self.layout().addWidget(self.label_settings)
         self.layout().addStretch(1)
         

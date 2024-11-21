@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QVBoxLayout, QVBoxLayout, QTabWidget
 
-from napari_sbem_viewer._widgets import RegistrationWidget, AcquisitionWidget, SelectROIsWidget, DrawROIsWidget
+from napari_sbem_viewer._widgets import RegistrationWidget, AcquisitionWidget, DrawROIsWidget
 
 
 class SBEMViewerWidget(QTabWidget):
@@ -15,9 +15,6 @@ class SBEMViewerWidget(QTabWidget):
            
         self.image_registration = RegistrationWidget(napari_viewer)
         self.insertTab(1, self.image_registration, "Registration")
-        
-        self.roi_selection = SelectROIsWidget(napari_viewer)
-        self.insertTab(2, self.roi_selection, "ROIs")
         
         self.draw_rois = DrawROIsWidget(napari_viewer)
         self.insertTab(3, self.draw_rois, "Draw ROIs")
