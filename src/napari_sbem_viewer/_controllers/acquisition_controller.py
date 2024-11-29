@@ -1,5 +1,4 @@
 from napari.qt import create_worker
-from napari_bbox import BoundingBoxLayer
 from napari.layers import Labels
 
 
@@ -111,7 +110,7 @@ class AcquisitionController:
         self.acquisition_settings.overview_combo_box.setCurrentIndex(0)
         
     def _get_roi_layer_names(self):
-        return [x.name for x in self.acquisition_model.viewer.layers if (isinstance(x, BoundingBoxLayer) or isinstance(x, Labels))]
+        return [x.name for x in self.acquisition_model.viewer.layers if isinstance(x, Labels)]
     
     def _get_roi_layer(self):
         self.acquisition_settings.roi_combo_box.currentText()
