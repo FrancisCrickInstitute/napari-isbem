@@ -3,12 +3,10 @@ from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
 from napari.qt import create_worker
-from napari.layers import Layer
 import tifffile
 from skimage import measure
 
 from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
-from napari_sbem_viewer._reader import get_labels_reader
 
 
 class DrawROIsModel(QObject):

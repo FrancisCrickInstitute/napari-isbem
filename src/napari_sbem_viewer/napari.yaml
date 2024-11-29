@@ -2,16 +2,9 @@ name: napari-sbem-viewer
 display_name: SBEM Viewer
 contributions:
   commands:
-    - id: napari-sbem-viewer.read_labels
-      python_name: napari_sbem_viewer._reader:get_labels_reader
-      title: Open binary mask as labels
     - id: napari-sbem-viewer.make_sbem_viewer_widget
       python_name: napari_sbem_viewer._widgets:SBEMViewerWidget
       title: Open SBEM Viewer
-  readers:
-    - command: napari-sbem-viewer.read_labels
-      accepts_directories: false
-      filename_patterns: ['*.tif', '*.tiff']
   widgets:
     - command: napari-sbem-viewer.make_sbem_viewer_widget
       display_name: SBEM Viewer
