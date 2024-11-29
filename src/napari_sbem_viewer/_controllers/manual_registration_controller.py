@@ -21,14 +21,22 @@ class ManualRegistrationController:
         self.view.reset_button.clicked.connect(self._on_click_reset)
         
         self.view.reverse_checkbox.stateChanged.connect(self.model._flip_z)
-        self.view.move_down_button.clicked.connect(functools.partial(self.model._offset_z, 1))
-        self.view.move_up_button.clicked.connect(functools.partial(self.model._offset_z, -1))
+        self.view.move_down_button.clicked.connect(self._on_click_move_down)
+        self.view.move_up_button.clicked.connect(self._on_click_move_up)
         
         self.view.model_combobox.addItems([str(model.name) for model in AffineTransformChoices])
         self.view.model_combobox.currentIndexChanged.connect(self.model.do_transform)
         self.view.start_button.clicked.connect(self._on_click_start)
         self.view.stop_button.clicked.connect(self._on_click_stop)
         self.view.remove_outliers_checkbox.stateChanged.connect(self.model.do_transform)
+        
+    def _on_click_move_down(self):
+        offset_amount = self.view.move_amount_slider.value()
+        self.model._offset_z(offset_amount)
+    
+    def _on_click_move_up(self):
+        offset_amount = self.view.move_amount_slider.value()
+        self.model._offset_z(-offset_amount)
         
     def _on_click_upload_transform(self):
         file_path = self.view.open_file_dialog()
@@ -63,7 +71,8 @@ class ManualRegistrationController:
     def _on_transform(self):
         self.model._do_transform(
             flip_z=self.view.reverse_checkbox.isChecked(),
-            transform_method=AffineTransformChoices[self.view.model_combobox.currentText()].value,
+            transform_method=AffineTransformChoices.Affine.value,
+            # transform_method=AffineTransformChoices[self.view.model_combobox.currentText()].value,
             remove_outliers=self.view.remove_outliers_checkbox.isChecked()
         )
         

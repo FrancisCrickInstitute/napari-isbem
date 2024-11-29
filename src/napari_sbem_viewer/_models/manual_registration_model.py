@@ -95,7 +95,6 @@ class ManualRegistrationModel(QObject):
             current_z = self.viewer.dims.point[0]
             mat = convert_affine_to_ndims(self.moving_image_layer.affine.affine_matrix, 3)
             offset_transform_matrix_z(mat, offset)
-            ref_mat = convert_affine_to_ndims(self.fixed_image_layer.affine.affine_matrix, 3)
             self.moving_image_layer.affine = convert_affine_to_ndims(
                     mat, self.moving_image_layer.ndim
                     )
