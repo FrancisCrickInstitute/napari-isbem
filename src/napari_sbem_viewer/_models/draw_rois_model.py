@@ -40,18 +40,19 @@ class DrawROIsModel(QObject):
         self._on_affine_changed()
         
     def upload_labels(self, file_path, image_layer_name):
-        image_layer = self._get_layer(image_layer_name)
+        self.image_layer = self._get_layer(image_layer_name)
         if self.labels_layer is not None:
             raise ValueError("Labels layer already exists")
-        reader = get_labels_reader(file_path)
-        if reader is None:
-            raise ValueError("Unsupported file format")
-        labels_layer = Layer.create(*reader(file_path)[0])
-        # self._check_dims(image_layer, labels_layer)
         
-        self.image_layer = image_layer
-        self.annotated_labels = labels_layer.data.copy()
-        self.labels_layer = self.viewer.add_layer(labels_layer)
+        labels = tifffile.imread(file_path)
+        scale_factors = calculate_scale(labels.shape, self.image_layer.data.shape)
+        scale = [s * f for s, f in zip(self.image_layer.scale, scale_factors)]
+        self.annotated_labels = labels.copy()
+        self.labels_layer = self.viewer.add_labels(
+            labels,
+            name="ROIs",
+            scale=scale,
+            )
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
         self.image_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
@@ -124,14 +125,8 @@ class DrawROIsModel(QObject):
         except KeyError:
             raise ValueError(f"Layer '{layer_name}' not found.")
         
-    def _check_dims(self, image_layer, labels_layer):
-        if image_layer.ndim != labels_layer.ndim:
-            raise ValueError("Image and labels must have the same number of dimensions.")
-        image_extent = image_layer.data_to_world(image_layer.data.shape)
-        labels_extent = labels_layer.data_to_world(labels_layer.data.shape)
-        if labels_extent != image_extent:
-            print(labels_extent, image_extent)
-            raise ValueError("Image and labels sizes do not match.")
+def calculate_scale(source_shape, target_shape):
+    return [dim1 / dim2 for dim1, dim2 in zip(target_shape, source_shape)]
         
 def create_contour(x_coords, y_coords):
     """

@@ -16,7 +16,7 @@ class LabelSettings(QGroupBox):
         self.autofill_checkbox.setChecked(True)
         self.export_labels_button = QPushButton("Export labels")
         self.connected_components_button = QPushButton("Connected components")
-        self.reset_labels_button = QPushButton("Reset labels")
+        self.reset_labels_button = QPushButton("Reset interpolation")
         self.interpolate_button = QPushButton("Interpolate labels")
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)

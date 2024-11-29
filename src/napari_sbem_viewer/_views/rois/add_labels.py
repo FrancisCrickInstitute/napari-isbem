@@ -8,7 +8,7 @@ class AddLabels(QGroupBox):
         self.downsample_combo_box = QComboBox()
         self.downsample_combo_box.addItems(["None", "2", "4", "8", "16"])
         self.add_labels_button = QPushButton("Add labels layer")
-        self.upload_labels_button = QPushButton("Upload labels")
+        self.upload_labels_button = QPushButton("Import labels")
         
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(QLabel("Image layer"))
