@@ -81,15 +81,6 @@ class ManualRegistrationModel(QObject):
             raise ValueError("No moving image layer selected")
         np.savetxt(file_path, np.asarray(self.moving_image_layer.affine.affine_matrix), delimiter=',')
         
-    def toggle_manual_adjustment(self):
-        if self.moving_image_layer is None and not isinstance(self.moving_image_layer, Image):
-            return
-        if self.moving_image_layer.mode != Mode.TRANSFORM:
-            self.moving_image_layer.mode = Mode.TRANSFORM
-            self.viewer.layers.selection.active = self.moving_image_layer
-        else:
-            self.moving_image_layer.mode = Mode.PAN_ZOOM
-            
     def is_moving_image_flipped(self):
         if not self.moving_image_layer:
             return False
@@ -106,11 +97,11 @@ class ManualRegistrationModel(QObject):
             offset_transform_matrix_z(mat, offset)
             ref_mat = convert_affine_to_ndims(self.fixed_image_layer.affine.affine_matrix, 3)
             self.moving_image_layer.affine = convert_affine_to_ndims(
-                    (ref_mat @ mat), self.moving_image_layer.ndim
+                    mat, self.moving_image_layer.ndim
                     )
             if moving_points_layer is not None:
                 moving_points_layer.affine = convert_affine_to_ndims(
-                        (ref_mat @ mat), moving_points_layer.ndim
+                        mat, moving_points_layer.ndim
                         )
             self.viewer.dims.set_point(0,  current_z)
             

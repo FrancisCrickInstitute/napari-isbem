@@ -24,7 +24,6 @@ class ManualRegistrationController:
         self.view.move_down_button.clicked.connect(functools.partial(self.model._offset_z, 1))
         self.view.move_up_button.clicked.connect(functools.partial(self.model._offset_z, -1))
         
-        self.view.toggle_manual_adjustment_button.clicked.connect(self.model.toggle_manual_adjustment)
         self.view.model_combobox.addItems([str(model.name) for model in AffineTransformChoices])
         self.view.model_combobox.currentIndexChanged.connect(self.model.do_transform)
         self.view.start_button.clicked.connect(self._on_click_start)
