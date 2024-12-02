@@ -89,7 +89,6 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.show()
         
     def reset(self):
-        self.rotated_layer = None
         self.image_layer = None
         self.plane_layer = None
         self.layer = None

@@ -25,7 +25,7 @@ class AlignPlanesController:
             self.model.save_ome_zarr(save_path)
             self.align_planes.show_info("Success", f"Image saved successfully")
         except Exception as e:
-            self.align_planes.show_error(self, "Error", f"Failed to save image: {e}")
+            self.align_planes.show_error("Error", f"Failed to save image: {e}")
             
     def _on_click_upload_transform(self):
         file_path = self.align_planes.open_transform_file_dialog()
