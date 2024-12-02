@@ -21,9 +21,10 @@ class AlignPlanesModel(QObject):
         super().__init__()
         self.viewer = viewer
         self.align_planes_window = align_planes_window
-        self.intersection_points = None
         self.rotated_layer = None
         self.moving_image_layer = None
+        self.r_max = None
+        self.shape = None
     
     def save_ome_zarr(self, save_path):
         if self.rotated_layer is None:
@@ -68,54 +69,48 @@ class AlignPlanesModel(QObject):
             raise ValueError("Can only show image layers.")
         
         self.align_planes_window.viewer.layers.clear()
-        moving_layer = copy(moving_layer)
-        moving_layer.affine = None
-        moving_layer.name = 'image'
-        moving_layer.blending = 'translucent'
-        moving_layer_plane = copy(moving_layer)
-        moving_layer_plane.blending = 'translucent_no_depth'
-        moving_layer_plane.name = 'plane'
-        moving_layer_plane.depiction = 'plane'
-        moving_layer_plane.colormap = 'cyan'
-        shape = moving_layer.data.shape
-        moving_layer_plane.plane.position = moving_layer_plane.data_to_world((shape[0] / 2, shape[1] / 2, shape[2] / 2))
-        self.align_planes_window.viewer.add_layer(moving_layer)
-        self.align_planes_window.viewer.add_layer(moving_layer_plane)
+        self.image_layer = copy(moving_layer)
+        self.image_layer.affine = None
+        self.image_layer.name = 'image'
+        self.image_layer.blending = 'translucent'
+        
+        self.plane_layer = copy(moving_layer)
+        self.plane_layer.affine = None
+        self.plane_layer.blending = 'translucent_no_depth'
+        self.plane_layer.name = 'plane'
+        self.plane_layer.depiction = 'plane'
+        self.plane_layer.colormap = 'cyan'
+        self.shape = self.plane_layer.data.shape if isinstance(self.plane_layer.data, np.ndarray) else self.plane_layer.data.shapes[-1]
+        self.plane_layer.plane.position = np.array(self.shape) / 2
+        self.r_max = max(self.shape)
+        
+        self.align_planes_window.viewer.add_layer(self.image_layer)
+        self.align_planes_window.viewer.add_layer(self.plane_layer)
         self.align_planes_window.show()
         
     def reset(self):
-        self.intersection_points = None
         self.rotated_layer = None
+        self.image_layer = None
+        self.plane_layer = None
+        self.layer = None
+        self.r_max = None
+        self.shape = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
-        
-    def get_position_value(self):
-        layer = self.align_planes_window.viewer.layers['plane']
-        shape = layer.data.shape if isinstance(layer.data, np.ndarray) else layer.data.shapes[-1]
-        points = find_intersections([0, 0, 0], shape, np.array(layer.plane.position), np.array(layer.plane.normal))
-        if len(points) != 2:
-            return
-        self.intersection_points = [points[0], points[1]]
-        t = calculate_t(points[0], points[1], np.array(layer.plane.position))
-        return t
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
-        if 'plane' not in self.align_planes_window.viewer.layers:
+        if self.plane_layer is None:
             return
+        
         normal = calculate_normal(zy_degrees, zx_degrees)
-        self.align_planes_window.viewer.layers['plane'].plane.normal = normal
-        return self.get_position_value()
+        self.plane_layer.plane.normal = normal
         
     def update_plane_position(self, t):
-        if 'plane' not in self.align_planes_window.viewer.layers:
+        if self.plane_layer is None:
             return
-        layer = self.align_planes_window.viewer.layers['plane']
-        
-        shape = layer.data.shape if isinstance(layer.data, np.ndarray) else layer.data.shapes[-1]
-        if self.intersection_points is None:
-            layer.plane.position = (shape[0] / 2, shape[1] / 2, shape[2] / 2)
-        elif len(self.intersection_points) != 2:
-            return
-        else:
-            layer.plane.position = line_parametric_equation(self.intersection_points[0], self.intersection_points[1], t)
+        normal = self.plane_layer.plane.normal
+        normal = normal / np.linalg.norm(normal)
+        center = np.asarray(self.shape) / 2
+        position = normal * t * self.r_max / 2
+        self.plane_layer.plane.position = position + center
             

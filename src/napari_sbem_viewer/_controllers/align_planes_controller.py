@@ -58,11 +58,9 @@ class AlignPlanesController:
             self.align_planes.show_error("Error", f"Failed to display window: {e}")
             
     def _on_update_angle(self):
-        position = self.model.update_plane_angle(
+        self.model.update_plane_angle(
             self.align_planes.zy_degrees_slider.value(), 
             self.align_planes.zx_degrees_slider.value())
-        if position is not None:
-            self.align_planes.position_slider.setValue(position)
     
     def _on_update_position(self):
         self.model.update_plane_position(self.align_planes.position_slider.value())
