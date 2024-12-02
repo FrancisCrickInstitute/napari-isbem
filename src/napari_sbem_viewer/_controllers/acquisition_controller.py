@@ -30,7 +30,14 @@ class AcquisitionController:
         # Init viewer events
         self.acquisition_model.viewer.layers.events.removed.connect(self._update_roi_selections)
         self.acquisition_model.viewer.layers.events.inserted.connect(self._update_roi_selections)
+        self.acquisition_model.viewer.dims.events.current_step.connect(self._on_change_z_depth)
         self._update_roi_selections()
+        
+    def _on_change_z_depth(self):
+        if not self.acquisition_model.live_viewer.image_dir:
+            return
+        viewer_z_depth = self.acquisition_model.get_viewer_z_depth()
+        self.acquisition_info.viewer_z_depth.setText(f"{viewer_z_depth:.2f}nm")
         
     def _on_click_start_server(self):
         self.acquisition_model.tcp_server.host = self.tcp_settings.host_line_edit.text()
@@ -72,6 +79,7 @@ class AcquisitionController:
         self.acquisition_settings.roi_combo_box.setCurrentIndex(0)
         self.acquisition_settings.roi_combo_box.setEnabled(False)
         self.acquisition_settings.coarse_thickness_label.setText("")
+        self.acquisition_info.reset()
         
     def _on_roi_layer_changed(self):
         roi_layer = self._get_roi_layer()

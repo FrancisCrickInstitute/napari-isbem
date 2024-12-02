@@ -75,12 +75,15 @@ class AcquisitionModel(QObject):
                     
             # update the acquisition state of the rois using previous z-depth
             if self.last_z_depth is not None:
-                self.roi_data.update_z_depth(self.last_z_depth)   
+                self.roi_data.update_z_depth(self.last_z_depth)
                      
         self.rois_updated.emit(self.roi_data)
         
     def set_fine_thickness(self, fine_thickness):
         self.fine_thickness = fine_thickness
+        
+    def get_viewer_z_depth(self):
+        return self.viewer.dims.point[0] + self.live_viewer.position_z
         
     def _update_rois(self, z_depth):
         self.roi_data.update_z_depth(z_depth)
@@ -113,8 +116,8 @@ class AcquisitionModel(QObject):
             self.tcp_server.set_slice_thickness(self.fine_thickness)
             
         # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
-        elif is_multiple(z_depth - self.live_viewer.position_z, self.coarse_thickness):
-            self.tcp_server.set_slice_thickness(self.coarse_thickness)
+        elif is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
+            self.tcp_server.set_slice_thickness(self.live_viewer.pixel_size_z)
             self.is_cutting_thin = False
     
     def _update_overview(self, z_depth, ov_idx):
