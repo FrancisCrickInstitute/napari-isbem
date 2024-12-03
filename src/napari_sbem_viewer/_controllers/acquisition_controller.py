@@ -37,7 +37,7 @@ class AcquisitionController:
         if not self.acquisition_model.live_viewer.image_dir:
             return
         viewer_z_depth = self.acquisition_model.get_viewer_z_depth()
-        self.acquisition_info.viewer_z_depth.setText(f"{viewer_z_depth:.2f}nm")
+        self.acquisition_info.viewer_z_depth.setText(f"{viewer_z_depth:.2f}µm")
         
     def _on_click_start_server(self):
         self.acquisition_model.tcp_server.host = self.tcp_settings.host_line_edit.text()
@@ -114,7 +114,7 @@ class AcquisitionController:
             self.acquisition_settings.roi_combo_box.setCurrentText(roi_layer)
         
     def _handle_overview_error(self, error):
-        self.acquisition_settings.show_error("Error adding images", error)
+        self.acquisition_settings.show_error("Error adding images", str(error))
         self.acquisition_settings.overview_combo_box.setCurrentIndex(0)
         
     def _get_roi_layer_names(self):

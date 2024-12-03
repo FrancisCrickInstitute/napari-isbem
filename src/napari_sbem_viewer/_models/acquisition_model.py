@@ -22,40 +22,42 @@ class AcquisitionModel(QObject):
         self.tcp_server.request_received.connect(self.process_request)
     
     def process_request(self, request):
-        slice_thickness = request['slice_thickness']
-        z_depth = request['z_depth']
-        ov_dirs = request['overviews']['ov_dirs']
-        is_paused = request['paused']
-        
-        # emit signals to update the GUI
-        self.overviews_updated.emit(ov_dirs)
-        self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
-        self.last_z_depth = z_depth
-        
-        ov_idx = self._get_overview_idx(ov_dirs)
-        if ov_idx is None:
-            # no overview is selected - pause acquisition
-            self.tcp_server.pause_acquisition()
-            self.tcp_server.send_response()
-            return
-        
         try:
-            self._check_fine_thickness()
-        except Exception as e:
-            self.errored.emit("Cutting thickness error", str(e))
-            self.tcp_server.pause_acquisition()
-            self.tcp_server.send_response()
-            return
+            slice_thickness = request['slice_thickness']
+            z_depth = request['z_depth']
+            ov_dirs = request['overviews']['ov_dirs']
+            is_paused = request['paused']
+            
+            # emit signals to update the GUI
+            self.overviews_updated.emit(ov_dirs)
+            self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
+            self.last_z_depth = z_depth
+            
+            ov_idx = self._get_overview_idx(ov_dirs)
+            if ov_idx is None:
+                # no overview is selected - pause acquisition
+                self.tcp_server.pause_acquisition()
+                self.tcp_server.send_response()
+                return
+            
+            try:
+                self._check_fine_thickness()
+            except Exception as e:
+                self.errored.emit("Cutting thickness error", str(e))
+                self.tcp_server.pause_acquisition()
+                self.tcp_server.send_response()
+                return
 
-        # add response commands
-        self._update_rois(z_depth)
-        self._update_cutting_depth(z_depth)
-        self._update_overview(z_depth, ov_idx)
-        
-        # emit signal with updated ROI information
-        self.rois_updated.emit(self.roi_data)
-        
-        self.tcp_server.send_response()
+            # add response commands
+            self._update_rois(z_depth)
+            self._update_cutting_depth(z_depth)
+            self._update_overview(z_depth, ov_idx)
+            
+            # emit signal with updated ROI information
+            self.rois_updated.emit(self.roi_data)
+            
+        finally:
+            self.tcp_server.send_response()
         
     def set_roi_layer(self, roi_layer):
         self.roi_data.clear()
@@ -91,8 +93,8 @@ class AcquisitionModel(QObject):
         for roi in self.roi_data.rois:
             y, x = roi.center[1:]
             h, w = roi.size[1:]
-            if roi.mask is not None:
-                self.tcp_server.add_grid(roi.id, int(x), int(y), int(w), int(h), roi.get_current_slice(z_depth).tolist())
+            if roi.mask is not None and roi.state == ROIState.ACQUIRING:
+                self.tcp_server.add_grid(roi.id, x, y, w, h, roi.get_current_slice(z_depth).tolist())
             else:
                 self.tcp_server.add_grid(roi.id, x, y, w, h)
             if roi.state == ROIState.ACQUIRING:
