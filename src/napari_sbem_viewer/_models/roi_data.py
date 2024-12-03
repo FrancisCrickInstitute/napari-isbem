@@ -33,15 +33,11 @@ class ROIData:
         for mins, maxes in bounds:
             # Obtain the mask for the current bounding box
             mask = labels[mins[0]:maxes[0], mins[1]:maxes[1], mins[2]:maxes[2]]
-            
             # Transform the mask and bounds using the transform matrix and scale
             T = add_scale_to_transform_matrix(labels_layer.affine.affine_matrix, labels_layer.scale)
             mins_t, maxes_t = find_bounds(maxes - mins, T, mins)
-            mins_t, maxes_t = mins_t.astype(int), maxes_t.astype(int)
             mask_t, _ = transform_image_3d_sitk(mask, T)
-            mask_t.astype(np.uint8)
             mask_t[mask_t > 0] = 1
-            
             position = self.world_to_roi_coords(mins_t)
             size = maxes_t - mins_t
             roi = MaskROI(position, size, mask_t, len(self.rois)+1)
@@ -94,9 +90,18 @@ class MaskROI:
         self.size = size
         
     def get_current_slice(self, z_depth):
-        z_idx = round(z_depth - self.z1)
-        slice = self.mask[z_idx]
-        return slice
+        if not (self.z1 <= z_depth <= self.z2):
+            print(f'Warning: z_depth not within mask bounds: {z_depth} not in ({self.z1}, {self.z2})')
+            return np.zeros_like(self.mask[0])
+        
+        mask_z_total = self.z2 - self.z1
+        mask_z_cur = z_depth - self.z1
+        perc = mask_z_cur / mask_z_total
+        
+        # Get the slice index between 0 and self.mask.shape[0]
+        idx = round(perc * (self.mask.shape[0] - 1))
+
+        return self.mask[idx]
             
 class BoundingBoxROI:
     def __init__(self, position, size, id_):
