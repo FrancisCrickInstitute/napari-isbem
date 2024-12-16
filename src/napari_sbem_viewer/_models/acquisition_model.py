@@ -15,7 +15,7 @@ class AcquisitionModel(QObject):
         self.viewer = viewer
         self.tcp_server = TCPServer('localhost', 8888)
         self.roi_data = ROIData()
-        self.live_viewer = LiveViewer(self.viewer)
+        self.live_viewer = LiveViewer(self.viewer, 'EM overview')
         self.fine_thickness = None
         self.is_cutting_thin = False
         self.last_z_depth = None
@@ -50,7 +50,6 @@ class AcquisitionModel(QObject):
         # add response commands
         self._update_rois(z_depth)
         self._update_cutting_depth(z_depth)
-        self._update_overview(z_depth, ov_idx)
         
         # emit signal with updated ROI information
         self.rois_updated.emit(self.roi_data)
@@ -62,7 +61,7 @@ class AcquisitionModel(QObject):
 
         if roi_layer is not None:
             self.roi_data.set_offset(
-                self.live_viewer.image_layer,
+                self.live_viewer.layer,
                 [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
                 )
             

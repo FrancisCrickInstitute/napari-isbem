@@ -64,8 +64,7 @@ class AcquisitionController:
             return
         self.acquisition_settings.roi_combo_box.setEnabled(True)
         self.acquisition_settings.coarse_thickness_label.setText(f"{self.acquisition_model.live_viewer.pixel_size_z*1e3:.0f}")
-        create_worker(self.acquisition_model.live_viewer.watch_folder, 
-                      ov_dir, 
+        create_worker(self.acquisition_model.live_viewer.watch, 
                       _connect={'yielded': self.acquisition_model.live_viewer.append, 'errored': self._handle_overview_error})
 
     def _on_change_ov_combo(self):
