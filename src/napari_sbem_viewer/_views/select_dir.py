@@ -20,8 +20,9 @@ class SelectDir(QWidget):
         dir_path = QFileDialog.getExistingDirectory(
             self, "Select Directory"
         )
-        self.dir_line.setText(dir_path)
-        self.dir_line.update()
+        if dir_path:
+            self.dir_line.setText(dir_path)
+            self.dir_line.update()
         
 
 class SelectFile(QWidget):
