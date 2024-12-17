@@ -23,7 +23,7 @@ class AcquisitionController:
         self.tcp_settings.stop_server_button.clicked.connect(self._on_click_stop_server)
         
         # Init acquisition settings
-        self.acquisition_settings.select_overview_dir.dir_line.textChanged.connect(self._on_change_ov)
+        self.acquisition_settings.select_overview_dir_button.clicked.connect(self._on_change_ov)
         self.acquisition_settings.fine_thickness_spinbox.valueChanged.connect(self.acquisition_model.set_fine_thickness)
         
         # Init roi settings
@@ -58,26 +58,26 @@ class AcquisitionController:
         self.tcp_settings.host_line_edit.setEnabled(True)
         self.tcp_settings.port_spinbox.setEnabled(True)
         
-    def _on_select_overview_dir(self, ov_dir):
+    def _on_change_ov(self):
+        ov_dir = self.acquisition_settings.open_overview_dir_dialog()
+        if not ov_dir:
+            return
         try:
+            self._on_reset_overview()
             self.acquisition_model.live_viewer.init_images(ov_dir)
         except ValueError as e:
             self._handle_overview_error(e)
             return
         self.roi_settings.roi_combo_box.setEnabled(True)
         self.acquisition_settings.coarse_thickness_label.setText(f"{self.acquisition_model.live_viewer.pixel_size_z*1e3:.0f}")
+        self.acquisition_settings.overview_dir_line.setText(ov_dir)
         create_worker(self.acquisition_model.live_viewer.watch, 
                       _connect={'yielded': self.acquisition_model.live_viewer.append, 'errored': self._handle_overview_error})
-        
-    def _on_change_ov(self):
-        self._on_reset_overview()
-        ov_dir = self.acquisition_settings.select_overview_dir.dir_line.text()
-        if ov_dir:
-            self._on_select_overview_dir(ov_dir)
-        
+            
     def _on_reset_overview(self):
         self.acquisition_model.live_viewer.reset()
         self.acquisition_settings.coarse_thickness_label.setText("")
+        self.acquisition_settings.overview_dir_line.setText("")
         self.roi_settings.reset()
         
     def _on_roi_layer_changed(self):
@@ -100,7 +100,7 @@ class AcquisitionController:
         
     def _handle_overview_error(self, error):
         self.acquisition_settings.show_error("Error adding images", str(error))
-        self.acquisition_settings.select_overview_dir.dir_line.setText("")
+        self._on_reset_overview()
         
     def _get_roi_layer_names(self):
         return [x.name for x in self.acquisition_model.viewer.layers if isinstance(x, Labels)]
