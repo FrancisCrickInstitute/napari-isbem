@@ -22,39 +22,32 @@ class AcquisitionModel(QObject):
         self.tcp_server.request_received.connect(self.process_request)
     
     def process_request(self, request):
-        slice_thickness = request['slice_thickness']
-        z_depth = request['z_depth']
-        ov_dirs = request['overviews']['ov_dirs']
-        is_paused = request['paused']
-        
-        # emit signals to update the GUI
-        self.overviews_updated.emit(ov_dirs)
-        self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
-        self.last_z_depth = z_depth
-        
-        ov_idx = self._get_overview_idx(ov_dirs)
-        if ov_idx is None:
-            # no overview is selected - pause acquisition
-            self.tcp_server.pause_acquisition()
-            self.tcp_server.send_response()
-            return
-        
         try:
+            slice_thickness = request['slice_thickness']
+            z_depth = request['z_depth']
+            ov_dirs = request['overviews']['ov_dirs']
+            is_paused = request['paused']
+            
+            # emit signals to update the GUI
+            self.overviews_updated.emit(ov_dirs)
+            self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
+            self.last_z_depth = z_depth
+            
+            # check if fine thickness is a multiple of coarse thickness
             self._check_fine_thickness()
-        except Exception as e:
-            self.errored.emit("Cutting thickness error", str(e))
-            self.tcp_server.pause_acquisition()
-            self.tcp_server.send_response()
-            return
 
-        # add response commands
-        self._update_rois(z_depth)
-        self._update_cutting_depth(z_depth)
-        
-        # emit signal with updated ROI information
-        self.rois_updated.emit(self.roi_data)
-        
-        self.tcp_server.send_response()
+            # add response commands
+            self._update_rois(z_depth)
+            self._update_cutting_depth(z_depth)
+            
+            # emit signal with updated ROI information
+            self.rois_updated.emit(self.roi_data)
+            
+        except Exception as e:
+            self.errored.emit("Acquisition error", str(e))
+            self.tcp_server.pause_acquisition()
+        finally:
+            self.tcp_server.send_response()
         
     def set_roi_layer(self, roi_layer):
         self.roi_data.clear()
@@ -118,24 +111,11 @@ class AcquisitionModel(QObject):
         elif is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
             self.tcp_server.set_slice_thickness(self.live_viewer.pixel_size_z * 1e3)
             self.is_cutting_thin = False
-    
-    def _update_overview(self, z_depth, ov_idx):
-        # if the z-depth is a multiple of the coarse thickness, enable the overview, else disable it
-        if is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
-            self.tcp_server.activate_overview(ov_idx)
-        else:
-            self.tcp_server.deactivate_overview(ov_idx)
         
     def _check_fine_thickness(self):
         if self.fine_thickness is None:
             raise ValueError("Fine thickness is not set.")
         coarse_thickness = self.live_viewer.pixel_size_z*1e3
         assert coarse_thickness % self.fine_thickness == 0, "Coarse thickness must be a multiple of fine thickness."       
-    
-    def _get_overview_idx(self, ov_dirs):
-        # Given a list of overview directories, return the index of the current overview directory
-        for i, ov_dir in enumerate(ov_dirs):
-            if self.live_viewer.image_dir == ov_dir:
-                return i
-        return None
+        
     
