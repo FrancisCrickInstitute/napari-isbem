@@ -7,7 +7,6 @@ from napari_sbem_viewer._utils.general_utils import is_multiple
 
 class AcquisitionModel(QObject):
     errored = Signal(str, str)
-    overviews_updated = Signal(list)
     acquisition_info_updated = Signal(float, float, bool)
     rois_updated = Signal(ROIData)
     def __init__(self, viewer):
@@ -25,13 +24,14 @@ class AcquisitionModel(QObject):
         try:
             slice_thickness = request['slice_thickness']
             z_depth = request['z_depth']
-            ov_dirs = request['overviews']['ov_dirs']
             is_paused = request['paused']
             
             # emit signals to update the GUI
-            self.overviews_updated.emit(ov_dirs)
             self.acquisition_info_updated.emit(z_depth, slice_thickness, is_paused)
             self.last_z_depth = z_depth
+            
+            if not self.live_viewer.is_initialized():
+                raise ValueError('Select overview directory before using TCP')
             
             # check if fine thickness is a multiple of coarse thickness
             self._check_fine_thickness()
@@ -46,6 +46,7 @@ class AcquisitionModel(QObject):
         except Exception as e:
             self.errored.emit("Acquisition error", str(e))
             self.tcp_server.pause_acquisition()
+            
         finally:
             self.tcp_server.send_response()
         

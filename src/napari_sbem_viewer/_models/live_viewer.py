@@ -28,6 +28,9 @@ class LiveViewer():
         self.dtype = None
         self.layer_name = layer_name
         self.layer = None
+        
+    def is_initialized(self):
+        return len(self.added_files) > 1
     
     def init_images(self, image_dir):
         """
@@ -78,6 +81,9 @@ class LiveViewer():
         return self.layer.data_to_world((self.layer.data.shape[0], 0, 0))[0]
     
     def reset(self):
+        self.watching = False
+        # Wait until the worker thread has finished processing the current loop
+        time.sleep(self.time_interval)  # TODO: look into this: might be better to kill worker thread instead
         self.added_files = set()
         self.skipped_files = set()
         self.image_shapes = []
@@ -90,7 +96,6 @@ class LiveViewer():
         self.dtype = None
         self.res_unit = None
         self.image_dir = None
-        self.watching = False
         self._remove_layer()
         
     def _get_images_from_dir(self):
@@ -112,7 +117,7 @@ class LiveViewer():
                         self.added_files.add(filename)
                         yield tiff
                 else:
-                    self.skipped_files.add(filename)    
+                    self.skipped_files.add(filename)
         
     def _init_metadata(self, tiff):
         # Get ome metadata from tiff
