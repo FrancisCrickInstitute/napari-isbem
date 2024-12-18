@@ -5,6 +5,7 @@ from qtpy.QtWidgets import (QTableView,
                             QHeaderView,
                             QGroupBox, 
                             QVBoxLayout, 
+                            QHBoxLayout,
                             QComboBox, 
                             QMessageBox)
 
@@ -19,10 +20,13 @@ class ROISettings(QGroupBox):
         super().__init__("ROI settings")
         self.setLayout(QVBoxLayout())
         
-        self.layout().addWidget(QLabel("ROI layer"))
         self.roi_combo_box = QComboBox()
         self.roi_combo_box.setEnabled(False)
-        self.layout().addWidget(self.roi_combo_box)
+        roi_lyt = QHBoxLayout()
+        roi_lyt.addWidget(QLabel("ROI layer"))
+        # add stretch to the combo box
+        roi_lyt.addWidget(self.roi_combo_box, 1)
+        self.layout().addLayout(roi_lyt)
         
         self.table_view = QTableView()
         self.layout().addWidget(self.table_view)
