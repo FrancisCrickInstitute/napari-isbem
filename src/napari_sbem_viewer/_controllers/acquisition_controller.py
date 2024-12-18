@@ -10,6 +10,7 @@ class AcquisitionController:
         self.roi_settings = roi_settings
         self.acquisition_info = acquisition_info
         self._init_signals()
+        self._populate_roi_combo_box()
         
     def _init_signals(self):
         # Init acquisition model
@@ -28,12 +29,15 @@ class AcquisitionController:
         
         # Init roi settings
         self.roi_settings.roi_combo_box.currentIndexChanged.connect(self._on_roi_layer_changed)
+        self.roi_settings.destroyed.connect(self._on_close)
 
         # Init viewer events
         self.acquisition_model.viewer.layers.events.inserted.connect(self._on_add_layer)
         self.acquisition_model.viewer.layers.events.removed.connect(self._on_remove_layer)
         self.acquisition_model.viewer.dims.events.current_step.connect(self._on_change_z_depth)
-        self._populate_roi_combo_box()
+    
+    def _on_close(self):
+        self.acquisition_model.live_viewer.watching = False
 
     def _on_change_z_depth(self):
         if not self.acquisition_model.live_viewer.image_dir:

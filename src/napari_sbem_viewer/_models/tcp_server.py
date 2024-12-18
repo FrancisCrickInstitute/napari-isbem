@@ -85,9 +85,6 @@ class TCPServer(QThread):
                     # Check the flag periodically
                     if not self.is_running:
                         print("RemoteTCP:", "Connection closed.")
-                        
-                        # Alert the main thread that the connection is closed
-                        # self.command_trigger.transmit("STOP SERVER")
                         break
     
     def close(self):
