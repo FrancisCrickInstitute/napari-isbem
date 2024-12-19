@@ -3,4 +3,3 @@ from napari_sbem_viewer._models.stack_viewer import StackViewer
 from napari_sbem_viewer._views.registration.align_planes import AlignPlanes
 from napari_sbem_viewer._views.registration.manual_registration import ManualRegistration
 from napari_sbem_viewer._views.registration.precomputed_transformation import PrecomputedTransformation
-from napari_sbem_viewer._views.registration.registration_options import RegistrationOptions

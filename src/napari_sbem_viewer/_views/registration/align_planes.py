@@ -1,29 +1,35 @@
 import os
 
 from napari._qt.widgets._slider_compat import QDoubleSlider
-from qtpy.QtWidgets import QPushButton, QFormLayout, QFileDialog, QGridLayout, QLabel, QWidget, QLabel, QMessageBox
+from qtpy.QtWidgets import (QPushButton, 
+                            QFormLayout, 
+                            QFileDialog, 
+                            QGridLayout, 
+                            QLabel, 
+                            QGroupBox,
+                            QLabel, 
+                            QMessageBox)
 from qtpy.QtCore import Qt
 
 
 
-class AlignPlanes(QWidget):
+class AlignPlanes(QGroupBox):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(title='3D rotation', parent=parent)
         self.setMinimumWidth(180)
         self.setLayout(QGridLayout())
-        self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.upload_transform_button = QPushButton("Upload transform")
-        self.layout().addWidget(self.upload_transform_button, 0, 0, 1, 2)
+        self.layout().addWidget(self.upload_transform_button, 0, 0)
         
         self.save_transform_button = QPushButton("Save transform")
-        self.layout().addWidget(self.save_transform_button, 1, 0)
+        self.layout().addWidget(self.save_transform_button, 0, 1)
         
         self.save_ome_zarr_button = QPushButton("Save as OME-Zarr")
-        self.layout().addWidget(self.save_ome_zarr_button, 1, 1)
+        # self.layout().addWidget(self.save_ome_zarr_button, 1, 1)
         
-        self.show_button = QPushButton("Show")
-        self.layout().addWidget(self.show_button, 2, 0, 1, 2)
+        self.show_button = QPushButton("Show rotation")
+        self.layout().addWidget(self.show_button, 1, 0, 1, 2)
         
         form_layout = QFormLayout()
         self.zy_degrees_slider = QDoubleSlider(Qt.Horizontal)
@@ -39,10 +45,10 @@ class AlignPlanes(QWidget):
         self.position_slider.setSingleStep(0.01)
         form_layout.addRow(QLabel("Position"), self.position_slider)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        self.layout().addLayout(form_layout, 3, 0, 1, 2)
+        self.layout().addLayout(form_layout, 2, 0, 1, 2)
         
-        self.apply_transform_button = QPushButton("Apply transform")
-        self.layout().addWidget(self.apply_transform_button, 4, 0, 1, 2)
+        self.apply_transform_button = QPushButton("Apply rotation")
+        self.layout().addWidget(self.apply_transform_button, 3, 0, 1, 2)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)
