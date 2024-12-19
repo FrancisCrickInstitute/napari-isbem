@@ -11,6 +11,7 @@ class AcquisitionController:
         self.acquisition_info = acquisition_info
         self._init_signals()
         self._populate_roi_combo_box()
+        self._on_change_pause_after_acquire_roi(self.acquisition_settings.pause_after_acquire_roi_checkbox.checkState())
         
     def _init_signals(self):
         # Init acquisition model
@@ -26,6 +27,7 @@ class AcquisitionController:
         # Init acquisition settings
         self.acquisition_settings.select_overview_dir_button.clicked.connect(self._on_change_ov)
         self.acquisition_settings.fine_thickness_spinbox.valueChanged.connect(self.acquisition_model.set_fine_thickness)
+        self.acquisition_settings.pause_after_acquire_roi_checkbox.stateChanged.connect(self._on_change_pause_after_acquire_roi)
         
         # Init roi settings
         self.roi_settings.roi_combo_box.currentIndexChanged.connect(self._on_roi_layer_changed)
@@ -35,6 +37,10 @@ class AcquisitionController:
         self.acquisition_model.viewer.layers.events.inserted.connect(self._on_add_layer)
         self.acquisition_model.viewer.layers.events.removed.connect(self._on_remove_layer)
         self.acquisition_model.viewer.dims.events.current_step.connect(self._on_change_z_depth)
+        
+    def _on_change_pause_after_acquire_roi(self, check_state):
+        is_checked = check_state == 2
+        self.acquisition_model.pause_after_acquire_roi = is_checked
     
     def _on_close(self):
         self.acquisition_model.live_viewer.watching = False

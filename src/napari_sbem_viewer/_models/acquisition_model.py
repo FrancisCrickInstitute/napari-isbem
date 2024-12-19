@@ -18,6 +18,7 @@ class AcquisitionModel(QObject):
         self.fine_thickness = None
         self.is_cutting_thin = False
         self.last_z_depth = None
+        self.pause_after_acquire_roi = False
         self.tcp_server.request_received.connect(self.process_request)
     
     def process_request(self, request):
@@ -93,13 +94,15 @@ class AcquisitionModel(QObject):
                 # if new roi is reached
                 if roi.id not in self.roi_data.acquiring_rois:
                     self.roi_data.acquiring_rois.add(roi.id)
-                    self.tcp_server.pause_acquisition()
+                    if self.pause_after_acquire_roi:
+                        self.tcp_server.pause_acquisition()
             else:
                 self.tcp_server.deactivate_grid(roi.id)
                 # if the roi has been fully imaged
                 if roi.id in self.roi_data.acquiring_rois:
                     self.roi_data.acquiring_rois.remove(roi.id)
-                    self.tcp_server.pause_acquisition()
+                    if self.pause_after_acquire_roi:
+                        self.tcp_server.pause_acquisition()
                     
     def _update_cutting_depth(self, z_depth):
         if self.roi_data.acquiring_rois:
