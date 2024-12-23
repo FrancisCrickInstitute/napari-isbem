@@ -47,8 +47,8 @@ class AlignPlanes(QGroupBox):
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.layout().addLayout(form_layout, 2, 0, 1, 2)
         
-        self.apply_transform_button = QPushButton("Apply rotation")
-        self.layout().addWidget(self.apply_transform_button, 3, 0, 1, 2)
+        self.apply_rotation_button = QPushButton("Apply rotation")
+        self.layout().addWidget(self.apply_rotation_button, 3, 0, 1, 2)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)

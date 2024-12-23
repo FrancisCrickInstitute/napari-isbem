@@ -1,13 +1,12 @@
 from copy import copy
 
-from qtpy.QtCore import QObject
+from qtpy.QtCore import QObject, Signal
 import numpy as np
 from napari.layers import Image
+from napari.qt import create_worker
 
-from napari_sbem_viewer._utils.registration_utils import ( line_parametric_equation, 
-                                                          find_intersections, 
-                                                          calculate_t, 
-                                                          rotation_matrix_from_zy_zx_angles,
+
+from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
                                                           is_rotation_matrix,
                                                           decompose_rotation_matrix,
                                                           rotation_matrix_from_zy_zx_angles,
@@ -17,6 +16,8 @@ from napari_sbem_viewer._utils.image_utils import save_ome_zarr, create_image_py
 
 
 class AlignPlanesModel(QObject):
+    rotation_finished = Signal()
+    rotation_errored = Signal(Exception)
     def __init__(self, viewer, align_planes_window):
         super().__init__()
         self.viewer = viewer
@@ -47,10 +48,23 @@ class AlignPlanesModel(QObject):
                         name=self.moving_image_layer.name, 
                         scales=scales)
     
-    def apply_transform(self, zy_degrees, zx_degrees):
+    def apply_rotation(self, zy_degrees, zx_degrees):
+        if self.moving_image_layer is None:
+            raise ValueError("No image layer selected.")
         normal = calculate_normal(zy_degrees, zx_degrees)
-        self.rotated_layer = rotate_layer(self.moving_image_layer, np.asarray([0, 0, 1]), np.asarray(normal[::-1]))
-        self.viewer.add_layer(self.rotated_layer)
+        create_worker(rotate_layer, 
+                      self.moving_image_layer,
+                      np.asarray([0, 0, 1]),
+                      np.asarray(normal[::-1]),
+                      _connect={'returned': self._on_finish_apply_rotation, 
+                                'errored': self._on_error_apply_rotation})
+    
+    def _on_finish_apply_rotation(self, rotated_layer):
+        self.rotated_layer = rotated_layer
+        self.rotation_finished.emit()
+    
+    def _on_error_apply_rotation(self, e):
+        self.rotation_errored.emit(e)
             
     def load_transform(self, file_path):
         rotation_matrix = np.loadtxt(file_path, delimiter=',')
