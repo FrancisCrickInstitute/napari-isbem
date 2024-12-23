@@ -34,6 +34,20 @@ class LabelSettings(QGroupBox):
                                                    "", 
                                                    "TIFF Files (*.tif *.tiff);;All Files (*)")
         return file_path
+
+    def disable_ui(self):
+        self.autofill_checkbox.setEnabled(False)
+        self.export_labels_button.setEnabled(False)
+        self.connected_components_button.setEnabled(False)
+        self.reset_labels_button.setEnabled(False)
+        self.interpolate_button.setEnabled(False)
+        
+    def enable_ui(self):
+        self.autofill_checkbox.setEnabled(True)
+        self.export_labels_button.setEnabled(True)
+        self.connected_components_button.setEnabled(True)
+        self.reset_labels_button.setEnabled(True)
+        self.interpolate_button.setEnabled(True)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)

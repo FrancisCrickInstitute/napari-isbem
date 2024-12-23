@@ -13,6 +13,8 @@ class DrawROIsModel(QObject):
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
+    labels_added = Signal()
+    labels_removed = Signal()
     def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
@@ -36,6 +38,7 @@ class DrawROIsModel(QObject):
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
         self.image_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
+        self.labels_added.emit()
         
     def upload_labels(self, file_path, image_layer_name):
         self.image_layer = self._get_layer(image_layer_name)
@@ -54,6 +57,7 @@ class DrawROIsModel(QObject):
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
         self.image_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
+        self.labels_added.emit()
         
     def export_labels(self, file_path):
         if self.labels_layer is None:
@@ -109,6 +113,7 @@ class DrawROIsModel(QObject):
         self.image_layer = None
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
+        self.labels_removed.emit()
         
     def _add_interpolated_labels(self, interpolated_labels):
         self.labels_layer.data = interpolated_labels

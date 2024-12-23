@@ -1,4 +1,11 @@
-from qtpy.QtWidgets import QGroupBox, QVBoxLayout, QLabel, QComboBox, QPushButton, QMessageBox, QFileDialog
+from qtpy.QtWidgets import (QGroupBox, 
+                            QVBoxLayout, 
+                            QHBoxLayout, 
+                            QLabel, 
+                            QComboBox, 
+                            QPushButton, 
+                            QMessageBox, 
+                            QFileDialog)
 
 class AddLabels(QGroupBox):
     def __init__(self, parent=None):
@@ -11,10 +18,16 @@ class AddLabels(QGroupBox):
         self.upload_labels_button = QPushButton("Import labels")
         
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(QLabel("Image layer"))
-        self.layout().addWidget(self.image_layer_combo_box)
-        self.layout().addWidget(QLabel("Downsample factor"))
-        self.layout().addWidget(self.downsample_combo_box)
+        img_lyt = QHBoxLayout()
+        img_lyt.addWidget(QLabel("Image layer"))
+        img_lyt.addWidget(self.image_layer_combo_box, 1)
+        self.layout().addLayout(img_lyt)
+        
+        downsample_lyt = QHBoxLayout()
+        downsample_lyt.addWidget(QLabel("Downsample"))
+        downsample_lyt.addWidget(self.downsample_combo_box, 1)
+        self.layout().addLayout(downsample_lyt)
+        
         self.layout().addWidget(self.add_labels_button)
         self.layout().addWidget(self.upload_labels_button)
         

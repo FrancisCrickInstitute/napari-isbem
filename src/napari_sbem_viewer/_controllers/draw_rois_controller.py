@@ -8,11 +8,13 @@ class DrawROIsController:
         self.label_settings = label_settings
         self._populate_image_layer_combo_box()
         self._connect_signals()
+        self._update_label_settings()
+        self._update_autofill_checkbox()
         
     def _connect_signals(self):
         self.add_labels.add_labels_button.clicked.connect(self._on_click_add_labels)
         self.add_labels.upload_labels_button.clicked.connect(self._on_click_upload_labels)
-        self.label_settings.autofill_checkbox.stateChanged.connect(self._on_autofill_labels_changed)
+        self.label_settings.autofill_checkbox.stateChanged.connect(self._update_autofill_checkbox)
         self.label_settings.export_labels_button.clicked.connect(self._on_click_export_labels)
         self.label_settings.connected_components_button.clicked.connect(self.model.connected_components)
         self.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
@@ -23,6 +25,8 @@ class DrawROIsController:
         self.model.interpolation_started.connect(lambda: self.label_settings.interpolate_button.setEnabled(False))
         self.model.interpolation_finished.connect(lambda: self.label_settings.interpolate_button.setEnabled(True))
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
+        self.model.labels_added.connect(self.label_settings.enable_ui)
+        self.model.labels_removed.connect(self.label_settings.disable_ui)
         
     def _on_click_add_labels(self):
         try:
@@ -69,8 +73,14 @@ class DrawROIsController:
             if event.value == self.model.labels_layer:
                 self.model.reset()
                 
-    def _on_autofill_labels_changed(self):
+    def _update_autofill_checkbox(self):
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
+        
+    def _update_label_settings(self):
+        if self.model.labels_layer is not None:
+            self.label_settings.enable_ui()
+        else:
+            self.label_settings.disable_ui()
         
     def _populate_image_layer_combo_box(self):
         for layer in self.model.viewer.layers:
