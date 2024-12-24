@@ -41,7 +41,7 @@ class AlignPlanes(QGroupBox):
         self.zx_degrees_slider.setDecimals(1)
         form_layout.addRow(QLabel("Rotate Z-X"), self.zx_degrees_slider)
         self.position_slider = QDoubleSlider(Qt.Horizontal)
-        self.position_slider.setRange(-1, 1)
+        self.position_slider.setRange(0, 1)
         self.position_slider.setSingleStep(0.01)
         form_layout.addRow(QLabel("Position"), self.position_slider)
         form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
@@ -90,5 +90,5 @@ class AlignPlanes(QGroupBox):
     def reset_ui(self):
         self.zy_degrees_slider.setValue(0)
         self.zx_degrees_slider.setValue(0)
-        self.position_slider.setValue(0)
+        self.position_slider.setValue(0.5)
         

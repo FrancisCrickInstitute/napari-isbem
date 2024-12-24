@@ -24,8 +24,10 @@ class AlignPlanesModel(QObject):
         self.align_planes_window = align_planes_window
         self.rotated_layer = None
         self.moving_image_layer = None
-        self.r_max = None
+        self.plane_layer = None
         self.shape = None
+        self.t = None
+        self.intersection_points = None
     
     def save_ome_zarr(self, save_path):
         if self.rotated_layer is None:
@@ -96,7 +98,7 @@ class AlignPlanesModel(QObject):
         self.plane_layer.colormap = 'cyan'
         self.shape = self.plane_layer.data.shape if isinstance(self.plane_layer.data, np.ndarray) else self.plane_layer.data.shapes[-1]
         self.plane_layer.plane.position = np.array(self.shape) / 2
-        self.r_max = max(self.shape)
+        self._calculate_intersection_points()
         
         self.align_planes_window.viewer.add_layer(self.image_layer)
         self.align_planes_window.viewer.add_layer(self.plane_layer)
@@ -106,8 +108,9 @@ class AlignPlanesModel(QObject):
         self.image_layer = None
         self.plane_layer = None
         self.layer = None
-        self.r_max = None
         self.shape = None
+        self.t = None
+        self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
 
@@ -117,13 +120,45 @@ class AlignPlanesModel(QObject):
         
         normal = calculate_normal(zy_degrees, zx_degrees)
         self.plane_layer.plane.normal = normal
+        self._calculate_intersection_points()
+        
+    def _calculate_intersection_points(self):
+        # contruct 3D points for corners of image
+        points = np.array(
+            [[0, 0, 0], 
+             [0, 0, self.shape[2]], 
+             [0, self.shape[1], 0], 
+             [0, self.shape[1], self.shape[2]],
+             [self.shape[0], 0, 0], 
+             [self.shape[0], 0, self.shape[2]], 
+             [self.shape[0], self.shape[1], 0],
+             [self.shape[0], self.shape[1], self.shape[2]],
+             ])
+        position = self.plane_layer.plane.position
+        normal = self.plane_layer.plane.normal
+        
+        # calculate min distances from the plane to each corner
+        distances = np.dot(points - position, normal)
+        
+        # find the corners that are closest and farthest from the plane
+        max_dist = np.max(distances)
+        min_dist = np.min(distances)
+        min_corners = points[np.where(distances == max_dist)]
+        max_corners = points[np.where(distances == min_dist)]
+        
+        # if there are multiple corners with the same distance, take the average.
+        # position slider moves plane between intersection points
+        self.intersection_points = [np.mean(min_corners, axis=0), 
+                                    np.mean(max_corners, axis=0)]
         
     def update_plane_position(self, t):
         if self.plane_layer is None:
             return
-        normal = self.plane_layer.plane.normal
-        normal = normal / np.linalg.norm(normal)
-        center = np.asarray(self.shape) / 2
-        position = normal * t * self.r_max / 2
-        self.plane_layer.plane.position = position + center
+        new_position = (1 - t) * self.intersection_points[0] + t * self.intersection_points[1]
+        self.plane_layer.plane.position = new_position
+        self.t = t
             
+            
+def find_min_max_corners(normal, p, points):
+    distances = np.dot(points - p, normal)
+    return distances.min(), distances.max()

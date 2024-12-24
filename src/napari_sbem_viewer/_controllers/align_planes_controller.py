@@ -63,6 +63,8 @@ class AlignPlanesController:
         self.model.update_plane_angle(
             self.align_planes.zy_degrees_slider.value(), 
             self.align_planes.zx_degrees_slider.value())
+        if self.model.t is not None:
+            self.align_planes.position_slider.setValue(self.model.t)
     
     def _on_update_position(self):
         self.model.update_plane_position(self.align_planes.position_slider.value())
