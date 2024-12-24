@@ -121,6 +121,7 @@ class AlignPlanesModel(QObject):
         normal = calculate_normal(zy_degrees, zx_degrees)
         self.plane_layer.plane.normal = normal
         self._calculate_intersection_points()
+        self._calculate_current_position()
         
     def _calculate_intersection_points(self):
         # contruct 3D points for corners of image
@@ -150,6 +151,12 @@ class AlignPlanesModel(QObject):
         # position slider moves plane between intersection points
         self.intersection_points = [np.mean(min_corners, axis=0), 
                                     np.mean(max_corners, axis=0)]
+        
+    def _calculate_current_position(self):
+        num = -np.dot(self.plane_layer.plane.normal, self.intersection_points[0] - self.plane_layer.plane.position)
+        denom = np.dot(self.plane_layer.plane.normal, self.intersection_points[1] - self.intersection_points[0])
+        t = num / denom
+        self.t = t
         
     def update_plane_position(self, t):
         if self.plane_layer is None:
