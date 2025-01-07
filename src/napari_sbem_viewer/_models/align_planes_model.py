@@ -52,7 +52,7 @@ class AlignPlanesModel(QObject):
     
     def apply_rotation(self, zy_degrees, zx_degrees):
         if self.moving_image_layer is None:
-            raise ValueError("No image layer selected.")
+            raise ValueError("No moving image selected.")
         normal = calculate_normal(zy_degrees, zx_degrees)
         create_worker(rotate_layer, 
                       self.moving_image_layer,
@@ -63,6 +63,7 @@ class AlignPlanesModel(QObject):
     
     def _on_finish_apply_rotation(self, rotated_layer):
         self.rotated_layer = rotated_layer
+        self.viewer.add_layer(rotated_layer)
         self.rotation_finished.emit()
     
     def _on_error_apply_rotation(self, e):
