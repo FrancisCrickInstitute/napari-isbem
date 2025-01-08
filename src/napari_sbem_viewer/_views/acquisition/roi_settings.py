@@ -1,5 +1,7 @@
+import functools
+
 from qtpy.QtGui import QStandardItemModel, QStandardItem, QColor
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QTableView,
                             QLabel, 
                             QHeaderView,
@@ -18,6 +20,7 @@ TEMPLATE_COMBOBOX_ITEMS = ['0', '1', '2', '3', '4']
 
 
 class ROISettings(QGroupBox):
+    roi_template_changed = Signal(int, int)
     def __init__(self):
         super().__init__("ROI settings")
         self.setLayout(QVBoxLayout())
@@ -54,6 +57,8 @@ class ROISettings(QGroupBox):
                     self.model.item(r, c).setData(QColor("grey"), Qt.TextColorRole)
             template_combo_box = QComboBox()
             template_combo_box.addItems(TEMPLATE_COMBOBOX_ITEMS)
+            template_combo_box.setCurrentIndex(roi.template_grid)
+            template_combo_box.currentIndexChanged.connect(functools.partial(self.roi_template_changed.emit, r))
             self.table_view.setIndexWidget(self.model.index(r, 3), template_combo_box)
                     
     def reset(self):

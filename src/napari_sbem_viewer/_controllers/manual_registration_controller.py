@@ -1,5 +1,3 @@
-import functools
-
 from napari_sbem_viewer._models.manual_registration_model import AffineTransformChoices
 
 

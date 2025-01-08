@@ -91,6 +91,7 @@ class MaskROI:
         self.z2 = position[0] + size[0]
         self.center = np.array([(self.z1 + self.z2) / 2, (self.y1 + self.y2) / 2, (self.x1 + self.x2) / 2])
         self.size = size
+        self.template_grid = 0
         
     def get_current_slice(self, z_depth):
         if not (self.z1 <= z_depth <= self.z2):
@@ -112,6 +113,7 @@ class BoundingBoxROI:
         self.update_coords(position, size)
         self.state = ROIState.REMAINING
         self.mask = None
+        self.template_grid = 0
         
     def update_coords(self, position, size):
         self.x1 = position[2]

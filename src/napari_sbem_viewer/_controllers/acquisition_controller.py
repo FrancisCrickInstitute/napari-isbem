@@ -32,6 +32,7 @@ class AcquisitionController:
         # Init roi settings
         self.roi_settings.roi_combo_box.currentIndexChanged.connect(self._on_roi_layer_changed)
         self.roi_settings.table_view.clicked.connect(self._on_click_table)
+        self.roi_settings.roi_template_changed.connect(self._update_roi_template)
         self.roi_settings.destroyed.connect(self._on_close)
 
         # Init viewer events
@@ -52,6 +53,9 @@ class AcquisitionController:
     def _on_change_pause_after_acquire_roi(self, check_state):
         is_checked = check_state == 2
         self.acquisition_model.pause_after_acquire_roi = is_checked
+    
+    def _update_roi_template(self, roi_id, template_grid):
+        self.acquisition_model.roi_data.rois[roi_id].template_grid = template_grid
     
     def _on_close(self):
         self.acquisition_model.live_viewer.watching = False

@@ -102,9 +102,20 @@ class AcquisitionModel(QObject):
             y, x = roi.center[1:]
             h, w = roi.size[1:]
             if roi.mask is not None and roi.state == ROIState.ACQUIRING:
-                self.tcp_server.add_grid(roi.id, x, y, w, h, roi.get_current_slice(z_depth).tolist())
+                self.tcp_server.add_grid(roi.id, 
+                                         x, 
+                                         y, 
+                                         w, 
+                                         h, 
+                                         roi.template_grid, 
+                                         roi.get_current_slice(z_depth).tolist())
             else:
-                self.tcp_server.add_grid(roi.id, x, y, w, h)
+                self.tcp_server.add_grid(roi.id, 
+                                         x, 
+                                         y, 
+                                         w, 
+                                         h,
+                                         roi.template_grid)
             if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
                 # if new roi is reached
