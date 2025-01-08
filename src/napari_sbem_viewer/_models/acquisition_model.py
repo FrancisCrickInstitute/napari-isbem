@@ -78,7 +78,21 @@ class AcquisitionModel(QObject):
         
     def get_viewer_z_depth(self):
         return self.viewer.dims.point[0] + self.live_viewer.position_z
-        
+    
+    def focus_on_roi(self, idx, region='center'):
+        roi = self.roi_data.rois[idx]
+        center_coords = self.roi_data.roi_to_world_coords(roi.center)
+        if region == 'center':
+            z = center_coords[0]
+        elif region == 'top':
+            z = roi.z2
+        elif region == 'bottom':
+            z = roi.z1
+        else:
+            raise ValueError(f"Invalid region: {region}")
+        self.viewer.camera.center = center_coords
+        self.viewer.dims.set_point(0, z)
+
     def _update_rois(self, z_depth):
         self.roi_data.update_z_depth(z_depth)
         self.tcp_server.delete_all_grids()
