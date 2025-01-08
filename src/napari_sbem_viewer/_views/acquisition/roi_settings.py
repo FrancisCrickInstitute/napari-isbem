@@ -13,6 +13,8 @@ from napari_sbem_viewer._models import ROIState
 
 
 DEFAULT_FINE_THICKNESS = 50
+HEADERS = ['ROI ID', 'z1 (µm)', 'z2 (µm)', 'Template']
+TEMPLATE_COMBOBOX_ITEMS = ['0', '1', '2', '3', '4']
 
 
 class ROISettings(QGroupBox):
@@ -38,9 +40,9 @@ class ROISettings(QGroupBox):
         
     def update_roi_info(self, roi_data):
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.model.setHorizontalHeaderLabels(HEADERS)
         for r, roi in enumerate(roi_data.rois):
-            for c, val in enumerate([f'{roi.id}', f'{roi.z1:.2f}', f'{roi.z2:.2f}']):
+            for c, val in enumerate([f'{roi.id}', f'{roi.z1:.2f}', f'{roi.z2:.2f}', '']):
                 item = QStandardItem(val)
                 item.setEditable(False)
                 item.setCheckable(False)
@@ -50,10 +52,13 @@ class ROISettings(QGroupBox):
                     self.model.item(r, c).setData(QColor("green"), Qt.TextColorRole)
                 elif roi.state == ROIState.ACQUIRED:
                     self.model.item(r, c).setData(QColor("grey"), Qt.TextColorRole)
+            template_combo_box = QComboBox()
+            template_combo_box.addItems(TEMPLATE_COMBOBOX_ITEMS)
+            self.table_view.setIndexWidget(self.model.index(r, 3), template_combo_box)
                     
     def reset(self):
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.model.setHorizontalHeaderLabels(HEADERS)
         self.roi_combo_box.setCurrentIndex(0)
         self.roi_combo_box.setEnabled(False)
     
