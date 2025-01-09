@@ -56,6 +56,13 @@ class ROISettings(QGroupBox):
                 elif roi.state == ROIState.ACQUIRED:
                     self.model.item(r, c).setData(QColor("grey"), Qt.TextColorRole)
             template_combo_box = QComboBox()
+            template_combo_box.setAttribute(Qt.WA_TranslucentBackground)
+            template_combo_box.setStyleSheet("""
+                QComboBox {
+                    background: transparent;
+                }
+                """)
+            # template_combo_box.setStyleSheet("background-color: rgba(255, 255, 255, 0);")
             template_combo_box.addItems(TEMPLATE_COMBOBOX_ITEMS)
             template_combo_box.setCurrentIndex(roi.template_grid)
             template_combo_box.currentIndexChanged.connect(functools.partial(self.roi_template_changed.emit, r))
