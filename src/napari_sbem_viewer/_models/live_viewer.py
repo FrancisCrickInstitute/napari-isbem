@@ -72,6 +72,11 @@ class LiveViewer():
 
         image_pyramids = load_as_dask(tiff, self.dtype)
         self._append_to_layer(image_pyramids)
+        self.reset_z_view()
+        
+    def reset_z_view(self):
+        if self.layer is None:
+            return
         latest_z_value_um = self.layer.data_to_world((self.layer.data.shape[0] - 1, 0, 0))[0]
         self.viewer.dims.set_point(0, latest_z_value_um)
         

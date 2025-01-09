@@ -34,6 +34,9 @@ class AcquisitionController:
         self.roi_settings.table_view.clicked.connect(self._on_click_table)
         self.roi_settings.roi_template_changed.connect(self._update_roi_template)
         self.roi_settings.destroyed.connect(self._on_close)
+        
+        # Init acquisition info
+        self.acquisition_info.reset_view_button.clicked.connect(self._on_reset_view)
 
         # Init viewer events
         self.acquisition_model.viewer.layers.events.inserted.connect(self._on_add_layer)
@@ -49,6 +52,9 @@ class AcquisitionController:
         else:
             region = 'center'
         self.acquisition_model.focus_on_roi(roi_id, region)
+    
+    def _on_reset_view(self):
+        self.acquisition_model.reset_view()
         
     def _on_change_pause_after_acquire_roi(self, check_state):
         is_checked = check_state == 2

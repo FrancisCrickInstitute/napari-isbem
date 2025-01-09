@@ -94,6 +94,10 @@ class AcquisitionModel(QObject):
             np.array([z, roi.center[1], roi.center[2]]))
         self.viewer.camera.center = coords
         self.viewer.dims.set_point(0, coords[0])
+        
+    def reset_view(self):
+        self.viewer.reset_view()
+        self.live_viewer.reset_z_view()
 
     def _update_rois(self, z_depth):
         self.roi_data.update_z_depth(z_depth)
