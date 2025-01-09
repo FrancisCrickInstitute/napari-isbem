@@ -1,10 +1,13 @@
 from qtpy.QtWidgets import (QGroupBox, 
                             QVBoxLayout, 
+                            QHBoxLayout,
+                            QLabel,
                             QPushButton, 
                             QProgressBar, 
                             QMessageBox, 
                             QCheckBox,
-                            QFileDialog)
+                            QFileDialog,
+                            QSpinBox)
 
 
 class LabelSettings(QGroupBox):
@@ -15,7 +18,13 @@ class LabelSettings(QGroupBox):
         self.autofill_checkbox = QCheckBox("Autofill")
         self.autofill_checkbox.setChecked(True)
         self.export_labels_button = QPushButton("Export labels")
-        self.connected_components_button = QPushButton("Connected components")
+        self.split_connected_components_button = QPushButton("Split connected components")
+        self.merge_tolerance_label = QLabel("Merge tolerance (µm)")
+        self.merge_tolerance_spinbox = QSpinBox()
+        self.merge_tolerance_spinbox.setMaximum(999)
+        self.merge_tolerance_spinbox.setMinimum(1)
+        self.merge_tolerance_spinbox.setValue(10)
+        self.merge_connected_components_button = QPushButton("Merge connected components")
         self.reset_labels_button = QPushButton("Reset interpolation")
         self.interpolate_button = QPushButton("Interpolate labels")
         self.progress_bar = QProgressBar()
@@ -23,7 +32,12 @@ class LabelSettings(QGroupBox):
         
         self.layout().addWidget(self.autofill_checkbox)
         self.layout().addWidget(self.export_labels_button)
-        self.layout().addWidget(self.connected_components_button)
+        self.layout().addWidget(self.split_connected_components_button)
+        merge_components_lyt = QHBoxLayout()
+        merge_components_lyt.addWidget(self.merge_tolerance_label)
+        merge_components_lyt.addWidget(self.merge_tolerance_spinbox)
+        self.layout().addLayout(merge_components_lyt)
+        self.layout().addWidget(self.merge_connected_components_button)
         self.layout().addWidget(self.reset_labels_button)
         self.layout().addWidget(self.interpolate_button)
         self.layout().addWidget(self.progress_bar)
@@ -38,16 +52,24 @@ class LabelSettings(QGroupBox):
     def disable_ui(self):
         self.autofill_checkbox.setEnabled(False)
         self.export_labels_button.setEnabled(False)
-        self.connected_components_button.setEnabled(False)
+        self.split_connected_components_button.setEnabled(False)
+        self.merge_tolerance_label.setEnabled(False)
+        self.merge_tolerance_spinbox.setEnabled(False)
+        self.merge_connected_components_button.setEnabled(False)
         self.reset_labels_button.setEnabled(False)
         self.interpolate_button.setEnabled(False)
+        self.progress_bar.setEnabled(False)
         
     def enable_ui(self):
         self.autofill_checkbox.setEnabled(True)
         self.export_labels_button.setEnabled(True)
-        self.connected_components_button.setEnabled(True)
+        self.split_connected_components_button.setEnabled(True)
+        self.merge_tolerance_label.setEnabled(True)
+        self.merge_tolerance_spinbox.setEnabled(True)
+        self.merge_connected_components_button.setEnabled(True)
         self.reset_labels_button.setEnabled(True)
         self.interpolate_button.setEnabled(True)
+        self.progress_bar.setEnabled(True)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)

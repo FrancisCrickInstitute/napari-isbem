@@ -57,3 +57,7 @@ def get_roi_center(coords_list):
     max_coords = np.max(coords_list, axis=0)
     center_coords = (min_coords + max_coords) / 2
     return center_coords
+
+
+def round_up_to_odd(f):
+    return int(np.ceil(f) // 2 * 2 + 1)

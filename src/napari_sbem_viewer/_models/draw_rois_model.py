@@ -2,11 +2,13 @@ import numpy as np
 from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
+from scipy.ndimage.morphology import binary_dilation
 from napari.qt import create_worker
 import tifffile
 from skimage import measure
 
 from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
+from napari_sbem_viewer._utils.general_utils import round_up_to_odd
 
 
 class DrawROIsModel(QObject):
@@ -64,31 +66,23 @@ class DrawROIsModel(QObject):
             raise ValueError("No labels layer found")
         tifffile.imsave(file_path, self.labels_layer.data)
         
-    def connected_components(self):
+    def split_connected_components(self):
         if self.labels_layer is None:
             raise ValueError("No labels layer found")
-        cc_mask = measure.label(self.labels_layer.data).astype(np.uint8)
+        cc_mask = measure.label(self.labels_layer.data > 0).astype(np.uint8)
         self.labels_layer.data = cc_mask
         self.annotated_labels = cc_mask.copy()
         
-    def _on_affine_changed(self):
-        self.labels_layer.affine = convert_affine_to_ndims(
-            self.image_layer.affine.affine_matrix, self.labels_layer.ndim
-            )
-        
-    def _on_labels_data_changed(self, event):
-        if event.type != 'paint':
-            return
-        layer = event.source
-        z_coord = event.value[0][0][0][0]
-        label = int(event.value[0][2])
-        if label > 0 and self.autofill_labels:
-            x_coords = np.array([coord[2][0] for coord, _, _ in event.value])
-            y_coords = np.array([coord[1][0] for coord, _, _ in event.value])
-            contours = create_contour(x_coords, y_coords)
-            cv2.fillPoly(layer.data[z_coord], [contours], color=label)
-            layer.data = layer.data
-        self.annotated_labels[z_coord] = layer.data[z_coord]
+    def merge_connected_components(self, tolerance):
+        tolerance_px = round_up_to_odd(tolerance / self.labels_layer.scale[0])
+        structure = np.ones((tolerance_px, tolerance_px, tolerance_px), dtype=np.uint8)        
+        mask_dilated = binary_dilation(self.labels_layer.data.copy(), structure=structure)
+        mask_dilated = measure.label(mask_dilated).astype(np.uint8)
+        layer = self.viewer.add_labels(mask_dilated, name="Merged ROIs", scale=self.labels_layer.scale)
+        layer.affine = self.labels_layer.affine
+        mask_dilated[self.labels_layer.data == 0] = 0
+        self.labels_layer.data = mask_dilated
+        self.annotated_labels = mask_dilated.copy()
         
     def interpolate_labels(self):
         if self.annotated_labels is None:
@@ -114,6 +108,25 @@ class DrawROIsModel(QObject):
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
         self.labels_removed.emit()
+        
+    def _on_affine_changed(self):
+        self.labels_layer.affine = convert_affine_to_ndims(
+            self.image_layer.affine.affine_matrix, self.labels_layer.ndim
+            )
+        
+    def _on_labels_data_changed(self, event):
+        if event.type != 'paint':
+            return
+        layer = event.source
+        z_coord = event.value[0][0][0][0]
+        label = int(event.value[0][2])
+        if label > 0 and self.autofill_labels:
+            x_coords = np.array([coord[2][0] for coord, _, _ in event.value])
+            y_coords = np.array([coord[1][0] for coord, _, _ in event.value])
+            contours = create_contour(x_coords, y_coords)
+            cv2.fillPoly(layer.data[z_coord], [contours], color=label)
+            layer.data = layer.data
+        self.annotated_labels[z_coord] = layer.data[z_coord]
         
     def _add_interpolated_labels(self, interpolated_labels):
         self.labels_layer.data = interpolated_labels

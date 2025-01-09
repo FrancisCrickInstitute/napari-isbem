@@ -16,7 +16,8 @@ class DrawROIsController:
         self.add_labels.upload_labels_button.clicked.connect(self._on_click_upload_labels)
         self.label_settings.autofill_checkbox.stateChanged.connect(self._update_autofill_checkbox)
         self.label_settings.export_labels_button.clicked.connect(self._on_click_export_labels)
-        self.label_settings.connected_components_button.clicked.connect(self.model.connected_components)
+        self.label_settings.split_connected_components_button.clicked.connect(self.model.split_connected_components)
+        self.label_settings.merge_connected_components_button.clicked.connect(self._merge_connected_components)
         self.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
         self.label_settings.interpolate_button.clicked.connect(self._on_click_interpolate)
         self.model.viewer.layers.events.inserted.connect(self._on_add_layer)
@@ -27,6 +28,9 @@ class DrawROIsController:
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
         self.model.labels_added.connect(self.label_settings.enable_ui)
         self.model.labels_removed.connect(self.label_settings.disable_ui)
+        
+    def _merge_connected_components(self):
+        self.model.merge_connected_components(self.label_settings.merge_tolerance_spinbox.value())
         
     def _on_click_add_labels(self):
         try:
