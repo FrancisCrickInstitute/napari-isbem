@@ -37,18 +37,18 @@ class SelectImages(QGroupBox):
     
     def _populate_combo_boxes(self):
         for layer in self.viewer.layers:
-            if isinstance(layer, Image):
+            if isinstance(layer, Image) or isinstance(layer, Labels):
                 self.fixed_combo_box.addItem(layer.name)
                 self.moving_combo_box.addItem(layer.name)
                 
     def _on_add_layer(self, event):
-        if not isinstance(event.value, Image):
+        if not (isinstance(event.value, Image) or isinstance(event.value, Labels)):
             return
         self.fixed_combo_box.addItem(event.value.name)
         self.moving_combo_box.addItem(event.value.name)
         
     def _on_remove_layer(self, event):
-        if isinstance(event.value, Image):
+        if isinstance(event.value, Image) or isinstance(event.value, Labels):
             idx = self.fixed_combo_box.findText(event.value.name)
             if idx >= 0:
                 self.fixed_combo_box.removeItem(idx)
