@@ -8,6 +8,7 @@ import tifffile
 from skimage import measure
 
 from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
+from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects
 from napari_sbem_viewer._utils.general_utils import round_up_to_odd
 
 
@@ -69,20 +70,15 @@ class DrawROIsModel(QObject):
     def split_connected_components(self):
         if self.labels_layer is None:
             raise ValueError("No labels layer found")
-        cc_mask = measure.label(self.labels_layer.data > 0).astype(np.uint8)
+        cc_mask = connected_components_sitk(self.labels_layer.data)
         self.labels_layer.data = cc_mask
         self.annotated_labels = cc_mask.copy()
         
     def merge_connected_components(self, tolerance):
         tolerance_px = round_up_to_odd(tolerance / self.labels_layer.scale[0])
-        structure = np.ones((tolerance_px, tolerance_px, tolerance_px), dtype=np.uint8)        
-        mask_dilated = binary_dilation(self.labels_layer.data.copy(), structure=structure)
-        mask_dilated = measure.label(mask_dilated).astype(np.uint8)
-        layer = self.viewer.add_labels(mask_dilated, name="Merged ROIs", scale=self.labels_layer.scale)
-        layer.affine = self.labels_layer.affine
-        mask_dilated[self.labels_layer.data == 0] = 0
-        self.labels_layer.data = mask_dilated
-        self.annotated_labels = mask_dilated.copy()
+        merged_labels = merge_nearby_objects(self.annotated_labels, tolerance_px)
+        self.labels_layer.data = merged_labels
+        self.annotated_labels = merged_labels.copy()
         
     def interpolate_labels(self):
         if self.annotated_labels is None:
@@ -141,8 +137,10 @@ class DrawROIsModel(QObject):
         except KeyError:
             raise ValueError(f"Layer '{layer_name}' not found.")
         
+        
 def calculate_scale(source_shape, target_shape):
     return [dim1 / dim2 for dim1, dim2 in zip(target_shape, source_shape)]
+        
         
 def create_contour(x_coords, y_coords):
     """

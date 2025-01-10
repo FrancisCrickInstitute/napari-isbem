@@ -151,6 +151,32 @@ def downsample_3d_image(image, downsample_factor):
     return downsampled_image
 
 
+def merge_nearby_objects(mask, tolerance):
+    mask_dilated = dilate_with_sphere_sitk(mask, tolerance)
+    mask_dilated = connected_components_sitk(mask_dilated)
+    mask_dilated[mask == 0] = 0
+    return mask_dilated
+
+
+def dilate_with_sphere_sitk(mask, radius):
+    if mask.ndim != 3:
+        raise ValueError("Input array must be 3-dimensional.")
+
+    sitk_image = sitk.GetImageFromArray(mask.astype(np.uint8))
+    structuring_element = sitk.sitkBall
+    dilated_mask = sitk.BinaryDilate(sitk_image, (radius, radius, radius), structuring_element)
+    return sitk.GetArrayFromImage(dilated_mask).astype(mask.dtype)
+
+
+def connected_components_sitk(mask):
+    if mask.ndim != 3:
+        raise ValueError("Input mask must be 3-dimensional.")
+
+    sitk_image = sitk.GetImageFromArray(mask.astype(np.uint8))
+    labeled_mask = sitk.ConnectedComponent(sitk_image)
+    return sitk.GetArrayFromImage(labeled_mask).astype(mask.dtype)
+
+
 def convert_to_uint8(image):
     # if image.dtype == np.uint8:
     #     image = image
