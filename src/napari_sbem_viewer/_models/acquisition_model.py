@@ -57,7 +57,7 @@ class AcquisitionModel(QObject):
         if roi_layer is not None:
             self.roi_data.set_offset(
                 self.live_viewer.layer,
-                [self.live_viewer.position_z, self.live_viewer.position_y, self.live_viewer.position_x]
+                [self.live_viewer.position_z, -self.live_viewer.size_y // 2, -self.live_viewer.size_x // 2]
                 )
             
             # if the roi layer exists, update the roi data
@@ -86,9 +86,20 @@ class AcquisitionModel(QObject):
             y, x = roi.center[1:]
             h, w = roi.size[1:]
             if roi.mask is not None and roi.state == ROIState.ACQUIRING:
-                self.tcp_server.add_grid(roi.id, x, y, w, h, roi.get_current_slice(z_depth).tolist())
+                self.tcp_server.add_grid(roi.id, 
+                                         x, 
+                                         y, 
+                                         w, 
+                                         h,
+                                         [self.live_viewer.position_x, self.live_viewer.position_y],
+                                         mask=roi.get_current_slice(z_depth).tolist())
             else:
-                self.tcp_server.add_grid(roi.id, x, y, w, h)
+                self.tcp_server.add_grid(roi.id, 
+                                         x, 
+                                         y, 
+                                         w, 
+                                         h, 
+                                         [self.live_viewer.position_x, self.live_viewer.position_y])
             if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
                 # if new roi is reached
@@ -109,11 +120,11 @@ class AcquisitionModel(QObject):
             self.is_cutting_thin = True
 
         if self.roi_data.acquiring_rois:
-            self.tcp_server.set_slice_thickness(self.fine_thickness)
+            self.tcp_server.set_slice_thickness(int(self.fine_thickness))
             
         # only set the cutting depth back to coarse thickness if the current depth is a multiple of coarse thickness
         elif is_multiple(z_depth - self.live_viewer.position_z, self.live_viewer.pixel_size_z):
-            self.tcp_server.set_slice_thickness(self.live_viewer.pixel_size_z * 1e3)
+            self.tcp_server.set_slice_thickness(int(self.live_viewer.pixel_size_z * 1e3))
             self.is_cutting_thin = False
         
     def _check_fine_thickness(self):

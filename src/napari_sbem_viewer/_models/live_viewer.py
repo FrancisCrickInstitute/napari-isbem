@@ -25,6 +25,8 @@ class LiveViewer():
         self.position_x = 0
         self.position_y = 0
         self.position_z = 0
+        self.size_x = 0
+        self.size_y = 0
         self.dtype = None
         self.layer_name = layer_name
         self.layer = None
@@ -93,6 +95,8 @@ class LiveViewer():
         self.position_x = 0
         self.position_y = 0
         self.position_z = 0
+        self.size_x = 0
+        self.size_y = 0
         self.dtype = None
         self.res_unit = None
         self.image_dir = None
@@ -143,9 +147,9 @@ class LiveViewer():
         if not len(self.added_files):
             self.pixel_size_x = get_ome_pixel_size(metadata_dict, 'X')
             self.pixel_size_y = get_ome_pixel_size(metadata_dict, 'Y')
-            size_y, size_x = self._get_size_um()
-            self.position_x = get_ome_position(metadata_dict, 'X') - size_x // 2
-            self.position_y = get_ome_position(metadata_dict, 'Y') - size_y // 2
+            self.size_y, self.size_x = self._get_size_um()
+            self.position_x = get_ome_position(metadata_dict, 'X')
+            self.position_y = get_ome_position(metadata_dict, 'Y')
             self.position_z = get_ome_position(metadata_dict, 'Z')
             self.dtype = tiff.pages[0].asarray().dtype
             return True
