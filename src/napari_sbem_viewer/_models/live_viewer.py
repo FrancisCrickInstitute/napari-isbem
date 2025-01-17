@@ -114,14 +114,17 @@ class LiveViewer():
 
         # yield every tiff file after checking the metadata is correct
         for filename in sorted_files:
-            if filename.endswith('.tif') or filename.endswith('.tiff') or not filename.startswith('grab'):
-                tiff = TiffFile(os.path.join(self.image_dir, filename))
-                if (filename not in self.added_files) and (filename not in self.skipped_files):
-                    if self._init_metadata(tiff):
-                        self.added_files.add(filename)
-                        yield tiff
-                else:
-                    self.skipped_files.add(filename)
+            if not filename.endswith('.tif') and not filename.endswith('.tiff'):
+                continue
+            if filename.startswith('grab'):
+                continue
+            tiff = TiffFile(os.path.join(self.image_dir, filename))
+            if (filename not in self.added_files) and (filename not in self.skipped_files):
+                if self._init_metadata(tiff):
+                    self.added_files.add(filename)
+                    yield tiff
+            else:
+                self.skipped_files.add(filename)
         
     def _init_metadata(self, tiff):
         # Get ome metadata from tiff
