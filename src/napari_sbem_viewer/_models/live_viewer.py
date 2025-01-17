@@ -114,7 +114,7 @@ class LiveViewer():
 
         # yield every tiff file after checking the metadata is correct
         for filename in sorted_files:
-            if filename.endswith('.tif') or filename.endswith('.tiff'):
+            if filename.endswith('.tif') or filename.endswith('.tiff') or filename.startswith('grab'):
                 tiff = TiffFile(os.path.join(self.image_dir, filename))
                 if (filename not in self.added_files) and (filename not in self.skipped_files):
                     if self._init_metadata(tiff):
