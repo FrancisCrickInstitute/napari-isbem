@@ -22,8 +22,11 @@ class TCPServer(QThread):
     def delete_all_grids(self):
         self.response_commands.append({'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}})
         
-    def add_grid(self, roi_id, x, y, w, h, ov_position, mask=None):
-        self.response_commands.append({'msg': 'ADD ARRAY GRID', 'args': [None, roi_id, [x, y], [w, h], ov_position, mask], 'kwargs': {}})
+    def add_grid(self, roi_id, roi_center, roi_size, ov_position):
+        self.response_commands.append({'msg': 'ADD ARRAY GRID', 'args': [None, roi_id, roi_center, roi_size, ov_position], 'kwargs': {}})
+        
+    def update_grid_tiles_with_mask(self, roi_id, mask):
+        self.response_commands.append({'msg': 'UPDATE GRID TILES WITH MASK', 'args': [None, roi_id, mask], 'kwargs': {}})
         
     def activate_grid(self, roi_id):
         self.response_commands.append({'msg': 'ACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}})
@@ -75,8 +78,16 @@ class TCPServer(QThread):
                                 
                                 # Block until the main process processes the data and sends back the result
                                 res = self.response_queue.get()
-                                # print("RemoteTCP:", f"Sending response: {res}")
                                 conn.sendall(json.dumps(res).encode('utf-8'))
+                                
+                                # Remove the 'mask' attribute from the response before printing
+                                for cmd in res['commands']:
+                                    if cmd['msg'] == 'UPDATE GRID TILES WITH MASK':
+                                        if len(cmd['args']) == 3:
+                                            cmd['args'][2] = 'MASK'
+                                        elif 'mask' in cmd['kwargs']:
+                                            cmd['kwargs']['mask'] = 'MASK'
+                                print("RemoteTCP:", f"Sent response: {res}")
                                 
                             except json.decoder.JSONDecodeError:
                                 print("RemoteTCP:", "JSON decode error.")

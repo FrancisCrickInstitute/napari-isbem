@@ -91,6 +91,9 @@ class AcquisitionController:
         ov_dir = self.acquisition_settings.open_overview_dir_dialog()
         if not ov_dir:
             return
+        self._set_ov(ov_dir)
+        
+    def _set_ov(self, ov_dir):
         try:
             self._on_reset_overview()
             self.acquisition_model.live_viewer.init_images(ov_dir)
@@ -101,7 +104,7 @@ class AcquisitionController:
         self.acquisition_settings.coarse_thickness_label.setText(f"{self.acquisition_model.live_viewer.pixel_size_z*1e3:.0f}")
         self.acquisition_settings.overview_dir_line.setText(ov_dir)
         create_worker(self.acquisition_model.live_viewer.watch, 
-                      _connect={'yielded': self.acquisition_model.live_viewer.append, 'errored': self._handle_overview_error})
+                      _connect={'yielded': self.acquisition_model.live_viewer.append, 'errored': self._handle_overview_error})        
             
     def _on_reset_overview(self):
         self.acquisition_model.live_viewer.reset()

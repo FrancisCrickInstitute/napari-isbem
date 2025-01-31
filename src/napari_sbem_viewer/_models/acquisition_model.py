@@ -19,6 +19,7 @@ class AcquisitionModel(QObject):
         self.is_cutting_thin = False
         self.last_z_depth = None
         self.pause_after_acquire_roi = False
+        self.reset_rois = True
         self.tcp_server.request_received.connect(self.process_request)
     
     def process_request(self, request):
@@ -70,6 +71,12 @@ class AcquisitionModel(QObject):
             # update the acquisition state of the rois using previous z-depth
             if self.last_z_depth is not None:
                 self.roi_data.update_z_depth(self.last_z_depth)
+            
+            # don't reset ROIs in SBEMimage after setting the ROI layer
+            self.reset_rois = False
+        
+        else:
+            self.reset_rois = True
                      
         self.rois_updated.emit(self.roi_data)
         
@@ -80,28 +87,19 @@ class AcquisitionModel(QObject):
         return self.viewer.dims.point[0] + self.live_viewer.position_z
         
     def _update_rois(self, z_depth):
+        if self.reset_rois:
+            self.tcp_server.delete_all_grids()
         self.roi_data.update_z_depth(z_depth)
-        self.tcp_server.delete_all_grids()
         for roi in self.roi_data.rois:
             y, x = roi.center[1:]
             h, w = roi.size[1:]
-            if roi.mask is not None and roi.state == ROIState.ACQUIRING:
-                self.tcp_server.add_grid(roi.id, 
-                                         x, 
-                                         y, 
-                                         w, 
-                                         h,
-                                         [self.live_viewer.position_x, self.live_viewer.position_y],
-                                         mask=roi.get_current_slice(z_depth).tolist())
-            else:
-                self.tcp_server.add_grid(roi.id, 
-                                         x, 
-                                         y, 
-                                         w, 
-                                         h, 
-                                         [self.live_viewer.position_x, self.live_viewer.position_y])
+            self.tcp_server.add_grid(roi.id, 
+                                     [float(x), float(y)], 
+                                     [float(w), float(h)], 
+                                     [self.live_viewer.position_x, self.live_viewer.position_y])
             if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
+                self.tcp_server.update_grid_tiles_with_mask(roi.id, roi.get_current_slice(z_depth).tolist())
                 # if new roi is reached
                 if roi.id not in self.roi_data.acquiring_rois:
                     self.roi_data.acquiring_rois.add(roi.id)
