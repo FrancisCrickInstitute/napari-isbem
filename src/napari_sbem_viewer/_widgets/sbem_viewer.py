@@ -10,11 +10,11 @@ class SBEMViewerWidget(QTabWidget):
         self.viewer = napari_viewer
         self.setLayout(QVBoxLayout())
 
-        self.sbem_image_integration = AcquisitionWidget(napari_viewer)
-        self.insertTab(0, self.sbem_image_integration, "Acquisition")
+        self.acquisition = AcquisitionWidget(napari_viewer)
+        self.insertTab(0, self.acquisition, "Acquisition")
            
-        self.image_registration = RegistrationWidget(napari_viewer)
-        self.insertTab(1, self.image_registration, "Registration")
+        self.registration = RegistrationWidget(napari_viewer)
+        self.insertTab(1, self.registration, "Registration")
         
         self.draw_rois = DrawROIsWidget(napari_viewer)
         self.insertTab(3, self.draw_rois, "Draw ROIs")
