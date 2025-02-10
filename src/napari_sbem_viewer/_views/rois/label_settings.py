@@ -18,7 +18,7 @@ class LabelSettings(QGroupBox):
         self.autofill_checkbox = QCheckBox("Autofill")
         self.autofill_checkbox.setChecked(True)
         self.export_labels_button = QPushButton("Export labels")
-        self.split_connected_components_button = QPushButton("Split connected components")
+        self.split_connected_components_button = QPushButton("Connected components")
         self.merge_tolerance_label = QLabel("Merge tolerance (µm)")
         self.merge_tolerance_spinbox = QSpinBox()
         self.merge_tolerance_spinbox.setMaximum(999)
