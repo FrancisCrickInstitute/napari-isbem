@@ -18,6 +18,7 @@ class AcquisitionModel(QObject):
         self.fine_thickness = None
         self.is_cutting_thin = False
         self.last_z_depth = None
+        self.pause_before_acquire_roi = False
         self.pause_after_acquire_roi = False
         self.reset_rois = True
         self.tcp_server.request_received.connect(self.process_request)
@@ -103,7 +104,7 @@ class AcquisitionModel(QObject):
                 # if new roi is reached
                 if roi.id not in self.roi_data.acquiring_rois:
                     self.roi_data.acquiring_rois.add(roi.id)
-                    if self.pause_after_acquire_roi:
+                    if self.pause_before_acquire_roi:
                         self.tcp_server.pause_acquisition()
             else:
                 self.tcp_server.deactivate_grid(roi.id)

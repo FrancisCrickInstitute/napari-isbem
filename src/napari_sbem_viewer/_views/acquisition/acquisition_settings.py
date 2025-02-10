@@ -25,6 +25,7 @@ class AcquisitionSettings(QGroupBox):
         self.select_overview_dir_button = QPushButton("...")
         self.coarse_thickness_label = QLabel("")
         self.fine_thickness_spinbox = QSpinBox(maximum=999, value=DEFAULT_FINE_THICKNESS)
+        self.pause_before_acquire_roi_checkbox = QCheckBox("Pause before acquiring ROIs")
         self.pause_after_acquire_roi_checkbox = QCheckBox("Pause after acquiring ROIs")
         
         ov_dir_lyt = QHBoxLayout()
@@ -37,6 +38,7 @@ class AcquisitionSettings(QGroupBox):
         cutting_depth_layout.addWidget(QLabel("Fine thickness (nm):"), 1, 0)
         cutting_depth_layout.addWidget(self.fine_thickness_spinbox, 1, 1)
         self.layout().addLayout(cutting_depth_layout)
+        self.layout().addWidget(self.pause_before_acquire_roi_checkbox)
         self.layout().addWidget(self.pause_after_acquire_roi_checkbox)
         
     def open_overview_dir_dialog(self):
