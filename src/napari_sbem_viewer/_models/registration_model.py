@@ -8,7 +8,7 @@ from napari_sbem_viewer._models import ManualRegistrationModel, AlignPlanesModel
 
 
 class RegistrationModel(QObject):
-    moving_layer_added = Signal()
+    moving_layer_added = Signal(Layer)
     moving_layer_removed = Signal()
     def __init__(self, viewer, stack_viewer):
         super().__init__()
@@ -21,7 +21,7 @@ class RegistrationModel(QObject):
             raise ValueError("Invalid file format. Must be an OME-Zarr file.")
         reader = napari_get_reader(file_path)
         layer = Layer.create(*reader(file_path)[0])
-        self._on_add_moving_image(layer)
+        self.add_moving_image(layer)
         self.viewer.add_layer(layer)
         
     def load_transform(self, file_path):
@@ -31,24 +31,18 @@ class RegistrationModel(QObject):
         self.manual_registration_model.load_transform(rotation_matrix)
         return angle_zy, angle_zx
         
-    def on_load_live_viewer(self, layer):
-        self._on_add_fixed_image(layer)
-        
-    def on_remove_live_viewer(self):
-        self._on_remove_fixed_image()
-        
-    def _on_add_fixed_image(self, layer):
+    def add_fixed_image(self, layer):
         self.manual_registration_model.set_fixed_image(layer)
         
-    def _on_remove_fixed_image(self):
+    def remove_fixed_image(self):
         self.manual_registration_model.remove_fixed_image()
         
-    def _on_add_moving_image(self, layer):
+    def add_moving_image(self, layer):
         self.align_planes_model.set_moving_layer(layer)
         self.manual_registration_model.set_moving_image(layer)
-        self.moving_layer_added.emit()
+        self.moving_layer_added.emit(layer)
         
-    def _on_remove_moving_image(self):
+    def remove_moving_image(self):
         self.align_planes_model.reset()
         self.manual_registration_model.remove_moving_image()
         self.moving_layer_removed.emit()
@@ -56,7 +50,7 @@ class RegistrationModel(QObject):
     def _on_remove_layer(self, event):
         if (event.value == self.manual_registration_model.moving_image_layer or 
             event.value == self.align_planes_model.moving_image_layer):
-            self._on_remove_moving_image()
+            self.remove_moving_image()
         if event.value == self.manual_registration_model.fixed_image_layer:
-            self._on_remove_fixed_image()
+            self.remove_fixed_image()
         

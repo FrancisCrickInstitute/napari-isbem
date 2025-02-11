@@ -19,6 +19,7 @@ class SBEMViewerWidget(QTabWidget):
         self.draw_rois = DrawROIsWidget(napari_viewer)
         self.insertTab(3, self.draw_rois, "Draw ROIs")
         
-        self.acquisition.acquisition_model.live_viewer.initialized.connect(self.registration.registration_model.on_load_live_viewer)
-        self.acquisition.acquisition_model.live_viewer.cleared.connect(self.registration.registration_model.on_remove_live_viewer)
-        
+        self.acquisition.acquisition_model.live_viewer.initialized.connect(self.registration.registration_model.add_fixed_image)
+        self.acquisition.acquisition_model.live_viewer.cleared.connect(self.registration.registration_model.remove_fixed_image)
+        self.registration.registration_model.moving_layer_added.connect(self.draw_rois.draw_rois_model.add_reference_layer)
+        self.registration.registration_model.moving_layer_removed.connect(self.draw_rois.draw_rois_model.remove_reference_layer)

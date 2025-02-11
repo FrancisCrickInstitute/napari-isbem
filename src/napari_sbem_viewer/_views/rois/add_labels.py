@@ -11,7 +11,6 @@ class AddLabels(QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setTitle("Add labels")
-        self.image_layer_combo_box = QComboBox()
         self.downsample_combo_box = QComboBox()
         self.downsample_combo_box.addItems(["None", "2", "4", "8", "16"])
         self.add_labels_button = QPushButton("Add labels layer")
@@ -19,8 +18,6 @@ class AddLabels(QGroupBox):
         
         self.setLayout(QVBoxLayout())
         img_lyt = QHBoxLayout()
-        img_lyt.addWidget(QLabel("Image layer"))
-        img_lyt.addWidget(self.image_layer_combo_box, 1)
         self.layout().addLayout(img_lyt)
         
         downsample_lyt = QHBoxLayout()

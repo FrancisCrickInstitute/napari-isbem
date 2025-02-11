@@ -18,39 +18,47 @@ class DrawROIsModel(QObject):
     interpolation_finished = Signal()
     labels_added = Signal()
     labels_removed = Signal()
+    reference_layer_added = Signal()
+    reference_layer_removed = Signal()
     def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
         self.labels_layer = None
         self.annotated_labels = None
-        self.image_layer = None
         self.autofill_labels = False
+        self.reference_layer = None
         
-    def add_labels_layer(self, image_layer_name, downsample_factor):
-        self.image_layer = self._get_layer(image_layer_name)
+    def add_reference_layer(self, layer):
+        self.reference_layer = layer
+        self.reference_layer_added.emit()
+    
+    def remove_reference_layer(self):
+        self.reference_layer = None
+        self.reference_layer_removed.emit()
+        
+    def add_labels_layer(self, downsample_factor):
         if self.labels_layer is not None:
             raise ValueError("Labels layer already exists")
-        labels_shape = [dim // downsample_factor for dim in self.image_layer.data.shape]
+        labels_shape = [dim // downsample_factor for dim in self.reference_layer.data.shape]
         labels = np.zeros(labels_shape, dtype=np.uint8)
         self.labels_layer = self.viewer.add_labels(
             labels,
             name="ROIs",
-            scale=[downsample_factor * s for s in self.image_layer.scale],
+            scale=[downsample_factor * s for s in self.reference_layer.scale],
             )
         self.annotated_labels = np.zeros_like(labels)
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
-        self.image_layer.events.affine.connect(self._on_affine_changed)
+        self.reference_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
         self.labels_added.emit()
         
-    def upload_labels(self, file_path, image_layer_name):
-        self.image_layer = self._get_layer(image_layer_name)
+    def upload_labels(self, file_path):
         if self.labels_layer is not None:
             raise ValueError("Labels layer already exists")
         
         labels = tifffile.imread(file_path)
-        scale_factors = calculate_scale(labels.shape, self.image_layer.data.shape)
-        scale = [s * f for s, f in zip(self.image_layer.scale, scale_factors)]
+        scale_factors = calculate_scale(labels.shape, self.reference_layer.data.shape)
+        scale = [s * f for s, f in zip(self.reference_layer.scale, scale_factors)]
         self.annotated_labels = labels.copy()
         self.labels_layer = self.viewer.add_labels(
             labels,
@@ -58,7 +66,7 @@ class DrawROIsModel(QObject):
             scale=scale,
             )
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
-        self.image_layer.events.affine.connect(self._on_affine_changed)
+        self.reference_layer.events.affine.connect(self._on_affine_changed)
         self._on_affine_changed()
         self.labels_added.emit()
         
@@ -99,15 +107,14 @@ class DrawROIsModel(QObject):
     def reset(self):
         self.labels_layer = None
         self.annotated_labels = None
-        self.image_layer.events.affine.disconnect(self._on_affine_changed)
-        self.image_layer = None
+        self.reference_layer.events.affine.disconnect(self._on_affine_changed)
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
         self.labels_removed.emit()
         
     def _on_affine_changed(self):
         self.labels_layer.affine = convert_affine_to_ndims(
-            self.image_layer.affine.affine_matrix, self.labels_layer.ndim
+            self.reference_layer.affine.affine_matrix, self.labels_layer.ndim
             )
         
     def _on_labels_data_changed(self, event):
