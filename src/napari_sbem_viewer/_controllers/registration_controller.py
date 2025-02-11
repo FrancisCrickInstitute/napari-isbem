@@ -11,9 +11,11 @@ class RegistrationController:
         self.manual_registration_model = self.model.manual_registration_model
         self.manual_registration_model.do_transform = self._on_affine_transform
         self.select_images = select_images
+        self._reset_align_planes_ui()
+        self._reset_affine_transform_ui()
+        self.align_planes.setEnabled(False)
+        self.manual_registration.setEnabled(False)
         self._init_signals()
-        self.align_planes.reset_ui()
-        self._disable_ui()
     
     def _init_signals(self):
         self.select_images.import_targeting_image_button.clicked.connect(self._on_click_import_targeting_image)
@@ -27,6 +29,8 @@ class RegistrationController:
         self.align_planes.apply_rotation_button.clicked.connect(self._on_click_rotate)
         self.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
         self.align_planes_model.rotation_errored.connect(self._on_error_rotate)
+        self.align_planes_model.activated.connect(lambda: self.align_planes.setEnabled(True))
+        self.align_planes_model.deactivated.connect(lambda: self.align_planes.setEnabled(False))
         
         self.manual_registration.upload_transform_button.clicked.connect(self._on_click_upload_transform)
         self.manual_registration.save_button.clicked.connect(self._on_click_save_transform)
@@ -39,6 +43,10 @@ class RegistrationController:
         self.manual_registration.start_button.clicked.connect(self._on_click_start)
         self.manual_registration.stop_button.clicked.connect(self._on_click_stop)
         self.manual_registration.remove_outliers_checkbox.stateChanged.connect(self.manual_registration_model.do_transform)
+        self.manual_registration_model.activated.connect(self._on_activate_manual_registration)
+        self.manual_registration_model.deactivated.connect(self._on_deactivate_manual_registration)
+        
+        self.model.viewer.layers.events.removed.connect(self.model._on_remove_layer)
         
     def _on_click_import_targeting_image(self):
         file_path = self.select_images.open_file_dialog()
@@ -139,10 +147,10 @@ class RegistrationController:
     def _on_click_start(self):
         try:
             self.manual_registration_model.start_registration()
-            self._enable_ui()
+            self._start_affine_transform_ui()
         except Exception as e:
             self.manual_registration.show_error(f"Failed to start registration: {e}")
-            self._disable_ui()
+            self._reset_affine_transform_ui()
     
     def _on_affine_transform(self):
         self.manual_registration_model._do_transform(
@@ -151,6 +159,16 @@ class RegistrationController:
             # transform_method=AffineTransformChoices[self.manual_registration.model_combobox.currentText()].value,
             remove_outliers=self.manual_registration.remove_outliers_checkbox.isChecked()
         )
+        
+    def _on_activate_manual_registration(self):
+        self.manual_registration.setEnabled(True)
+        self._update_reverse_checkbox()
+        
+    def _on_deactivate_manual_registration(self):
+        self.manual_registration.setEnabled(False)
+        self.manual_registration.reverse_checkbox.blockSignals(True)
+        self.manual_registration.reverse_checkbox.setChecked(False)
+        self.manual_registration.reverse_checkbox.blockSignals(True)
         
     def _update_reverse_checkbox(self):
         self.manual_registration.reverse_checkbox.blockSignals(True)
@@ -161,14 +179,19 @@ class RegistrationController:
         self.manual_registration.reverse_checkbox.blockSignals(False)
             
     def _on_click_stop(self):
-        self._disable_ui()
+        self._reset_affine_transform_ui()
         self.manual_registration_model.stop_registration()
             
-    def _enable_ui(self):
+    def _start_affine_transform_ui(self):
         self.manual_registration.start_button.setEnabled(False)
-        self.manual_registration.stop_button.setEnabled(True)
-        
-    def _disable_ui(self):        
+        self.manual_registration.stop_button.setEnabled(True)  
+    
+    def _reset_affine_transform_ui(self):
         self.manual_registration.start_button.setEnabled(True)
         self.manual_registration.stop_button.setEnabled(False)
+        
+    def _reset_align_planes_ui(self):
+        self.align_planes.zy_degrees_slider.setValue(0)
+        self.align_planes.zx_degrees_slider.setValue(0)
+        self.align_planes.position_slider.setValue(0.5)
         

@@ -1,7 +1,7 @@
 from enum import Enum
 
 import numpy as np
-from qtpy.QtCore import QObject
+from qtpy.QtCore import QObject, Signal
 from napari.layers.base._base_constants import Mode, ActionType
 from napari.layers import Image
 from skimage.transform import (
@@ -20,6 +20,8 @@ from napari_sbem_viewer._utils.general_utils import reset_view
 
 
 class ManualRegistrationModel(QObject):
+    activated = Signal()
+    deactivated = Signal()
     def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
@@ -30,8 +32,22 @@ class ManualRegistrationModel(QObject):
         self.is_doing_registration = False
         
     def set_moving_image(self, layer):
-        self.reset()
         self.moving_image_layer = layer
+        if self.fixed_image_layer is not None:
+            self.activate.emit()
+            
+    def set_fixed_image(self, layer):
+        self.fixed_image_layer = layer
+        if self.moving_image_layer is not None:
+            self.activated.emit()
+            
+    def remove_moving_image(self):
+        self.moving_image_layer = None
+        self.deactivated.emit()
+    
+    def remove_fixed_image(self):
+        self.fixed_image_layer = None
+        self.deactivated.emit()
         
     def reset(self):
         self.moving_image_layer = None

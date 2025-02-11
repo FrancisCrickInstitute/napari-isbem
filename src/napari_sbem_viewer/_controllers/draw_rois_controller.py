@@ -26,8 +26,16 @@ class DrawROIsController:
         self.model.interpolation_started.connect(lambda: self.label_settings.interpolate_button.setEnabled(False))
         self.model.interpolation_finished.connect(lambda: self.label_settings.interpolate_button.setEnabled(True))
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
-        self.model.labels_added.connect(self.label_settings.enable_ui)
-        self.model.labels_removed.connect(self.label_settings.disable_ui)
+        self.model.labels_added.connect(self._enable_label_settings)
+        self.model.labels_removed.connect(self._disable_label_settings)
+        
+    def _enable_label_settings(self):
+        self.label_settings.setEnabled(True)
+        self.add_labels.setEnabled(False)
+    
+    def _disable_label_settings(self):
+        self.label_settings.setEnabled(False)
+        self.add_labels.setEnabled(True)
         
     def _merge_connected_components(self):
         self.model.merge_connected_components(self.label_settings.merge_tolerance_spinbox.value())
@@ -82,9 +90,9 @@ class DrawROIsController:
         
     def _update_label_settings(self):
         if self.model.labels_layer is not None:
-            self.label_settings.enable_ui()
+            self._enable_label_settings()
         else:
-            self.label_settings.disable_ui()
+            self._disable_label_settings()
         
     def _populate_image_layer_combo_box(self):
         for layer in self.model.viewer.layers:

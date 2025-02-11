@@ -20,4 +20,5 @@ class SBEMViewerWidget(QTabWidget):
         self.insertTab(3, self.draw_rois, "Draw ROIs")
         
         self.acquisition.acquisition_model.live_viewer.initialized.connect(self.registration.registration_model.on_load_live_viewer)
+        self.acquisition.acquisition_model.live_viewer.cleared.connect(self.registration.registration_model.on_remove_live_viewer)
         

@@ -22,12 +22,8 @@ class SelectImages(QGroupBox):
         self.layout().addLayout(lyt)
 
     def open_file_dialog(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, 
-                                                   "Open File", 
-                                                   "", 
-                                                   "Text Files (*.ome.zarr);;All Files (*)")
-        return file_path
+        return QFileDialog.getExistingDirectory(self, "Select targeting OME-Zarr directory")
         
-    def show_error(self, e):
-        QMessageBox.critical(self, "Error", f"{e}")
+    def show_error(self, title, message):
+        QMessageBox.warning(self, title, message)
         

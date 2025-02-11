@@ -14,6 +14,7 @@ from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_po
 
 class LiveViewer(QObject):
     initialized = Signal(Layer)
+    cleared = Signal()
     def __init__(self, napari_viewer, layer_name):
         super().__init__()
         self.viewer = napari_viewer
@@ -58,6 +59,7 @@ class LiveViewer(QObject):
         dask_arrays_transposed = list(zip(*dask_arrays))
         stack = [da.stack(slices, axis=0) for slices in dask_arrays_transposed]
         self.layer = self._create_layer(stack)
+        self.initialized.emit(self.layer)
             
     def watch(self):
         """
@@ -105,6 +107,7 @@ class LiveViewer(QObject):
         self.res_unit = None
         self.image_dir = None
         self._remove_layer()
+        self.cleared.emit()
         
     def _get_images_from_dir(self):
         """
@@ -213,4 +216,4 @@ class LiveViewer(QObject):
         except Exception:
             pass
         self.layer = None
-            
+        

@@ -87,8 +87,3 @@ class AlignPlanes(QGroupBox):
             return None
         return save_path
         
-    def reset_ui(self):
-        self.zy_degrees_slider.setValue(0)
-        self.zx_degrees_slider.setValue(0)
-        self.position_slider.setValue(0.5)
-        

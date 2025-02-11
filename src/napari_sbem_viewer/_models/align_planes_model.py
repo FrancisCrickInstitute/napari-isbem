@@ -16,6 +16,8 @@ from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_z
 class AlignPlanesModel(QObject):
     rotation_finished = Signal()
     rotation_errored = Signal(Exception)
+    activated = Signal()
+    deactivated = Signal()
     def __init__(self, viewer, stack_viewer):
         super().__init__()
         self.viewer = viewer
@@ -61,9 +63,9 @@ class AlignPlanesModel(QObject):
         self.reset()
         self.moving_image_layer = layer
         self.original_data = layer.data
+        self.activated.emit()
         
     def show_align_planes_window(self):
-        print('showing planes window')
         moving_layer = self.moving_image_layer
         if not isinstance(moving_layer, Image):
             raise ValueError("Can only show image layers.")
@@ -98,6 +100,7 @@ class AlignPlanesModel(QObject):
         self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
+        self.deactivated.emit()
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
         if self.plane_layer is None:
