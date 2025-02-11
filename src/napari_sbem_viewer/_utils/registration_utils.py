@@ -452,3 +452,14 @@ def rotate_layer(layer, v1, v2):
             rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion, interpolator))
     rotated_layer = Layer.create(rotated_data, {'scale': layer.scale, 'name': layer.name + ' (rotated)'}, layer_type)
     return rotated_layer
+
+
+def rotate_layer_data(image, v1, v2):
+    quaternion = quaternion_from_vectors(v1, v2)
+    if isinstance(image, np.ndarray):
+        rotated_data = rotate_image_3d_sitk(image, quaternion, 'linear')
+    else:
+        rotated_data = []
+        for pyramid_level in image:
+            rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion, 'linear'))
+    return rotated_data

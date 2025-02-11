@@ -1,6 +1,5 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Labels
-
 from napari_sbem_viewer._models import ROIData, ROIState, TCPServer, LiveViewer
 from napari_sbem_viewer._utils.general_utils import is_multiple
 
@@ -130,6 +129,5 @@ class AcquisitionModel(QObject):
         if self.fine_thickness is None:
             raise ValueError("Fine thickness is not set.")
         coarse_thickness = self.live_viewer.pixel_size_z*1e3
-        assert coarse_thickness % self.fine_thickness == 0, "Coarse thickness must be a multiple of fine thickness."       
+        assert coarse_thickness % self.fine_thickness == 0, "Coarse thickness must be a multiple of fine thickness."
         
-    

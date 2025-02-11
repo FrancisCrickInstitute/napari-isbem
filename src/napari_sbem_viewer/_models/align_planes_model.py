@@ -5,72 +5,49 @@ import numpy as np
 from napari.layers import Image
 from napari.qt import create_worker
 
-
 from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
                                                           is_rotation_matrix,
                                                           decompose_rotation_matrix,
                                                           rotation_matrix_from_zy_zx_angles,
                                                           calculate_normal,
-                                                          rotate_layer)
-from napari_sbem_viewer._utils.image_utils import save_ome_zarr, create_image_pyramid, get_pyramid_scales
+                                                          rotate_layer_data)
 
 
 class AlignPlanesModel(QObject):
     rotation_finished = Signal()
     rotation_errored = Signal(Exception)
-    def __init__(self, viewer, align_planes_window):
+    def __init__(self, viewer, stack_viewer):
         super().__init__()
         self.viewer = viewer
-        self.align_planes_window = align_planes_window
-        self.rotated_layer = None
+        self.align_planes_window = stack_viewer
         self.moving_image_layer = None
         self.plane_layer = None
         self.shape = None
         self.t = None
         self.intersection_points = None
     
-    def save_ome_zarr(self, save_path):
-        if self.rotated_layer is None:
-            raise ValueError("Apply transform before saving as OME-Zarr.")
-        
-        if isinstance(self.rotated_layer.data, np.ndarray):
-            image_pyramid = create_image_pyramid(self.rotated_layer.data)
-            shapes = [image.shape for image in image_pyramid]
-            scales = get_pyramid_scales(self.rotated_layer.scale, shapes)
-            save_ome_zarr(save_path,
-                        image_pyramid,
-                        chunksize=256,
-                        name=self.moving_image_layer.name,
-                        scales=scales)
-        else:
-            scales = get_pyramid_scales(self.rotated_layer.scale, self.rotated_layer.data.shapes)
-            save_ome_zarr(save_path, 
-                        self.rotated_layer.data,
-                        chunksize=self.moving_image_layer.data[0].chunksize,
-                        name=self.moving_image_layer.name, 
-                        scales=scales)
-    
     def apply_rotation(self, zy_degrees, zx_degrees):
         if self.moving_image_layer is None:
             raise ValueError("No moving image selected.")
         normal = calculate_normal(zy_degrees, zx_degrees)
-        create_worker(rotate_layer, 
-                      self.moving_image_layer,
+        create_worker(rotate_layer_data, 
+                      self.original_data,
                       np.asarray([0, 0, 1]),
                       np.asarray(normal[::-1]),
                       _connect={'returned': self._on_finish_apply_rotation, 
                                 'errored': self._on_error_apply_rotation})
     
-    def _on_finish_apply_rotation(self, rotated_layer):
-        self.rotated_layer = rotated_layer
-        self.viewer.add_layer(rotated_layer)
+    def _on_finish_apply_rotation(self, rotated_image):
+        self.moving_image_layer.data = rotated_image
         self.rotation_finished.emit()
+        
+    def reset_rotation(self):
+        self.moving_image_layer.data = self.original_data
     
     def _on_error_apply_rotation(self, e):
         self.rotation_errored.emit(e)
             
-    def load_transform(self, file_path):
-        rotation_matrix = np.loadtxt(file_path, delimiter=',')
+    def load_transform(self, rotation_matrix):
         if not is_rotation_matrix(rotation_matrix):
             raise ValueError("Invalid rotation matrix")
         angle_zy, angle_zx = decompose_rotation_matrix(rotation_matrix)
@@ -80,13 +57,20 @@ class AlignPlanesModel(QObject):
         rotation_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
         np.savetxt(file_path, rotation_matrix, delimiter=',')
         
+    def set_moving_layer(self, layer):
+        self.reset()
+        self.moving_image_layer = layer
+        self.original_data = layer.data
+        
     def show_align_planes_window(self):
+        print('showing planes window')
         moving_layer = self.moving_image_layer
         if not isinstance(moving_layer, Image):
             raise ValueError("Can only show image layers.")
         
         self.align_planes_window.viewer.layers.clear()
         self.image_layer = copy(moving_layer)
+        self.image_layer.data = self.original_data
         self.image_layer.affine = None
         self.image_layer.name = 'image'
         self.image_layer.blending = 'translucent'

@@ -12,10 +12,12 @@ class SBEMViewerWidget(QTabWidget):
 
         self.acquisition = AcquisitionWidget(napari_viewer)
         self.insertTab(0, self.acquisition, "Acquisition")
-           
+
         self.registration = RegistrationWidget(napari_viewer)
         self.insertTab(1, self.registration, "Registration")
         
         self.draw_rois = DrawROIsWidget(napari_viewer)
         self.insertTab(3, self.draw_rois, "Draw ROIs")
+        
+        self.acquisition.acquisition_model.live_viewer.initialized.connect(self.registration.registration_model.on_load_live_viewer)
         

@@ -5,4 +5,5 @@ from napari_sbem_viewer._models.stack_viewer import StackViewer
 from napari_sbem_viewer._models.acquisition_model import AcquisitionModel
 from napari_sbem_viewer._models.align_planes_model import AlignPlanesModel
 from napari_sbem_viewer._models.manual_registration_model import ManualRegistrationModel
+from napari_sbem_viewer._models.registration_model import RegistrationModel
 from napari_sbem_viewer._models.draw_rois_model import DrawROIsModel

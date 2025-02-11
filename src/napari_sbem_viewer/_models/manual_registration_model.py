@@ -29,6 +29,16 @@ class ManualRegistrationModel(QObject):
         self.fixed_image_layer = None
         self.is_doing_registration = False
         
+    def set_moving_image(self, layer):
+        self.reset()
+        self.moving_image_layer = layer
+        
+    def reset(self):
+        self.moving_image_layer = None
+        self.is_doing_registration = False
+        self.fixed_image_layer = None
+        self._remove_points_layers()
+        
     def start_registration(self):
         if not self.moving_image_layer or not self.fixed_image_layer:
             raise ValueError("No images selected")
@@ -65,14 +75,13 @@ class ManualRegistrationModel(QObject):
     def reset_transform(self):
         self.moving_image_layer.affine = None
         
-    def upload_transform(self, file_path):
+    def load_transform(self, rotation_matrix):
         if self.moving_image_layer is None:
             raise ValueError("No moving image layer selected")
-        transform = np.loadtxt(file_path, delimiter=',')
-        if not is_2d_affine_matrix(transform):
-            raise ValueError("Transform must be a 2D affine transform")
+        if not is_2d_affine_matrix(rotation_matrix):
+            raise ValueError("Rotation matrix must be a 2D affine transform")
         self.moving_image_layer.affine = convert_affine_to_ndims(
-            transform, 
+            rotation_matrix, 
             self.moving_image_layer.ndim
             )
         
@@ -162,7 +171,8 @@ class ManualRegistrationModel(QObject):
             
     def _remove_points_layers(self):
         for layer in self.points_layers:
-            self.viewer.layers.remove(layer)
+            if layer in self.viewer.layers:
+                self.viewer.layers.remove(layer)
         self.points_layers = [None, None]
         
     def _affine_callback(self):

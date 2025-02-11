@@ -2,6 +2,8 @@ import os
 import time
 import math
 
+from qtpy.QtCore import QObject, Signal
+from napari.layers import Layer
 import dask.array as da
 from tifffile import TiffFile, xml2dict
 from skimage.io.collection import alphanumeric_key
@@ -10,8 +12,10 @@ import numpy as np
 from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_position, load_as_dask
 
 
-class LiveViewer():
+class LiveViewer(QObject):
+    initialized = Signal(Layer)
     def __init__(self, napari_viewer, layer_name):
+        super().__init__()
         self.viewer = napari_viewer
         self.watching = False
         self.time_interval = 1
