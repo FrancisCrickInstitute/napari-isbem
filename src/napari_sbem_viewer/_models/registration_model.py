@@ -62,6 +62,10 @@ class RegistrationModel(QObject):
         self.affine_model.remove_moving_image()
         self.moving_layer_removed.emit()
         
+    def reset_transforms(self):
+        self.align_planes_model.reset_transform()
+        self.affine_model.reset_transform()
+        
     def _on_remove_layer(self, event):
         if (event.value == self.affine_model.moving_image_layer or 
             event.value == self.align_planes_model.moving_layer_original):

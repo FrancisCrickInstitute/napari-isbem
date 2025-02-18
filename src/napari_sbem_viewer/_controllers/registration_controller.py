@@ -21,6 +21,7 @@ class RegistrationController:
         self.image_settings.import_targeting_image_button.clicked.connect(self._on_click_import_targeting_image)
         self.image_settings.upload_transform_button.clicked.connect(self._on_click_upload_transform)
         self.image_settings.save_transform_button.clicked.connect(self._on_click_save_transform)
+        self.image_settings.reset_transform_button.clicked.connect(self._on_click_reset_transform)
         
         self.align_planes.show_button.clicked.connect(self._on_click_show)
         self.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
@@ -92,6 +93,12 @@ class RegistrationController:
             self.model.save_transform(file_path)
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to save transform: {e}")
+            
+    def _on_click_reset_transform(self):
+        if self.image_settings.reset_confirmation_dialog():
+            self.model.reset_transforms()
+            self._reset_align_planes_ui()
+            self._reset_affine_transform_ui()
             
     def _on_click_show(self):
         try:

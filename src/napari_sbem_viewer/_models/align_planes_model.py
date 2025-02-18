@@ -131,6 +131,15 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
         self.deactivated.emit()
+        
+    def reset_transform(self):
+        self.moving_layer_transform.data = self.moving_layer_original.data
+        self.moving_layer_transform.affine = self.moving_layer_original.affine
+        self.moving_layer_transform.translate = self.moving_layer_original.translate
+        if self.labels_layer_transform is not None:
+            self.labels_layer_transform.data = self.labels_layer_original.data
+            self.labels_layer_transform.affine = self.moving_layer.affine
+            self.labels_layer_transform.translate = self.moving_layer.translate
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
         if self.align_planes_window.plane_layer is None:

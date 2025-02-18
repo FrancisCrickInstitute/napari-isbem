@@ -1,6 +1,5 @@
 from enum import Enum
 
-import numpy as np
 from qtpy.QtCore import QObject, Signal
 from napari.layers.base._base_constants import Mode, ActionType
 from napari.layers import Image
