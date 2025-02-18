@@ -6,14 +6,13 @@ from napari.layers import Image
 from napari.qt import create_worker
 
 from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
-                                                          is_rotation_matrix,
-                                                          decompose_rotation_matrix,
                                                           rotation_matrix_from_zy_zx_angles,
                                                           calculate_normal,
-                                                          rotate_layer_data)
+                                                          transform_layer)
 
 
 class AlignPlanesModel(QObject):
+    rotation_started = Signal()
     rotation_finished = Signal()
     rotation_errored = Signal(Exception)
     activated = Signal()
@@ -22,78 +21,109 @@ class AlignPlanesModel(QObject):
         super().__init__()
         self.viewer = viewer
         self.align_planes_window = stack_viewer
-        self.moving_image_layer = None
-        self.plane_layer = None
+        self.moving_layer_transform = None
+        self.moving_layer_original = None
+        self.labels_layer_transform = None
+        self.labels_layer_original = None
+        self.align_planes_window.image_layer = None
+        self.align_planes_window.plane_layer = None
         self.shape = None
         self.t = None
         self.intersection_points = None
+        self.affine_matrix = None
+        
+    def add_labels_layer(self, labels_layer):
+        self.labels_layer_original = copy(labels_layer)
+        self.labels_layer_transform = labels_layer
+        if self.affine_matrix is not None:
+            new_layer = transform_layer(self.labels_layer_original, self.affine_matrix)
+            self.labels_layer_transform.data = new_layer.data
+            if self.moving_layer_transform is not None:
+                self.labels_layer_transform.affine = self.moving_layer_transform.affine
+                self.labels_layer_transform.translate = self.moving_layer_transform.translate
+            
+    def remove_labels_layer(self):
+        self.labels_layer_original = None
+        self.labels_layer_transform = None
     
     def apply_rotation(self, zy_degrees, zx_degrees):
-        if self.moving_image_layer is None:
+        transform_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
+        self.apply_transform(transform_matrix)
+        
+    def apply_transform(self, transform_matrix):
+        if self.moving_layer_transform is None:
             raise ValueError("No moving image selected.")
-        normal = calculate_normal(zy_degrees, zx_degrees)
-        create_worker(rotate_layer_data, 
-                      self.original_data,
-                      np.asarray([0, 0, 1]),
-                      np.asarray(normal[::-1]),
-                      _connect={'returned': self._on_finish_apply_rotation, 
-                                'errored': self._on_error_apply_rotation})
+        self.rotation_started.emit()
+        create_worker(self._rotate_images,
+                      transform_matrix,
+                      _connect={'returned': lambda res: self._on_finish_apply_rotation(*res), 
+                                'errored': self.rotation_errored.emit})
+        self.affine_matrix = transform_matrix
+        
+    def _rotate_images(self, transform_matrix):
+        image = transform_layer(self.moving_layer_original, transform_matrix)
+        labels = None
+        if (self.labels_layer_transform is not None and 
+            self.labels_layer_original is not None):
+            labels = transform_layer(self.labels_layer_original, transform_matrix)
+        return image, labels
     
-    def _on_finish_apply_rotation(self, rotated_image):
-        self.moving_image_layer.data = rotated_image
+    def _on_finish_apply_rotation(self, image_layer, labels_layer):
+        self.moving_layer_transform.data = image_layer.data
+        self.moving_layer_transform.affine = image_layer.affine
+        self.moving_layer_transform.translate = image_layer.translate
+        if (self.labels_layer_transform is not None and 
+            labels_layer is not None):
+            self.labels_layer_transform.data = labels_layer.data
+            self.labels_layer_transform.affine = image_layer.affine
+            self.labels_layer_transform.translate = image_layer.translate
         self.rotation_finished.emit()
-        
-    def reset_rotation(self):
-        self.moving_image_layer.data = self.original_data
-    
-    def _on_error_apply_rotation(self, e):
-        self.rotation_errored.emit(e)
             
-    def load_transform(self, rotation_matrix):
-        if not is_rotation_matrix(rotation_matrix):
-            raise ValueError("Invalid rotation matrix")
-        angle_zy, angle_zx = decompose_rotation_matrix(rotation_matrix)
-        return np.degrees(angle_zy), np.degrees(angle_zx)
+    def load_transform(self, affine_matrix):
+        # if not is_rotation_matrix(rotation_matrix):
+        #     raise ValueError("Invalid rotation matrix")
+        self.apply_transform(affine_matrix)
         
-    def save_transform(self, file_path, zy_degrees, zx_degrees):
-        rotation_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
-        np.savetxt(file_path, rotation_matrix, delimiter=',')
+    def get_rotation_matrix(self):
+        return self.affine_matrix
         
     def set_moving_layer(self, layer):
         self.reset()
-        self.moving_image_layer = layer
-        self.original_data = layer.data
+        self.moving_layer_transform = layer
+        self.moving_layer_original = copy(layer)
+        self.moving_layer_transform.events.affine.connect(self._on_affine_changed)
         self.activated.emit()
         
     def show_align_planes_window(self):
-        moving_layer = self.moving_image_layer
+        moving_layer = self.moving_layer_transform
         if not isinstance(moving_layer, Image):
             raise ValueError("Can only show image layers.")
         
+        self.moving_layer_original.contrast_limits = self.moving_layer_transform.contrast_limits
         self.align_planes_window.viewer.layers.clear()
-        self.image_layer = copy(moving_layer)
-        self.image_layer.data = self.original_data
-        self.image_layer.affine = None
-        self.image_layer.name = 'image'
-        self.image_layer.blending = 'translucent'
+        self.align_planes_window.image_layer = copy(self.moving_layer_original)
+        self.align_planes_window.image_layer.affine = None
+        self.align_planes_window.image_layer.name = 'image'
+        self.align_planes_window.image_layer.blending = 'translucent'
         
-        self.plane_layer = copy(moving_layer)
-        self.plane_layer.affine = None
-        self.plane_layer.blending = 'translucent_no_depth'
-        self.plane_layer.name = 'plane'
-        self.plane_layer.depiction = 'plane'
-        self.plane_layer.colormap = 'cyan'
-        self.shape = self.plane_layer.data.shape if isinstance(self.plane_layer.data, np.ndarray) else self.plane_layer.data.shapes[-1]
-        self.plane_layer.plane.position = np.array(self.shape) / 2
+        self.align_planes_window.plane_layer = copy(self.moving_layer_original)
+        self.align_planes_window.plane_layer.affine = None
+        self.align_planes_window.plane_layer.blending = 'translucent_no_depth'
+        self.align_planes_window.plane_layer.name = 'plane'
+        self.align_planes_window.plane_layer.depiction = 'plane'
+        self.align_planes_window.plane_layer.colormap = 'cyan'
+        data = self.moving_layer_original.data
+        self.shape = data if isinstance(data, np.ndarray) else data.shapes[-1]
+        self.align_planes_window.plane_layer.plane.position = np.array(self.shape) / 2
         self._calculate_intersection_points()
         
-        self.align_planes_window.viewer.add_layer(self.image_layer)
-        self.align_planes_window.viewer.add_layer(self.plane_layer)
+        self.align_planes_window.viewer.add_layer(self.align_planes_window.image_layer)
+        self.align_planes_window.viewer.add_layer(self.align_planes_window.plane_layer)
         self.align_planes_window.show()
         
     def reset(self):
-        self.image_layer = None
-        self.plane_layer = None
+        self.align_planes_window.image_layer = None
+        self.align_planes_window.plane_layer = None
         self.layer = None
         self.shape = None
         self.t = None
@@ -103,11 +133,11 @@ class AlignPlanesModel(QObject):
         self.deactivated.emit()
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
-        if self.plane_layer is None:
+        if self.align_planes_window.plane_layer is None:
             return
         
         normal = calculate_normal(zy_degrees, zx_degrees)
-        self.plane_layer.plane.normal = normal
+        self.align_planes_window.plane_layer.plane.normal = normal
         self._calculate_intersection_points()
         self._calculate_current_position()
         
@@ -123,8 +153,8 @@ class AlignPlanesModel(QObject):
              [self.shape[0], self.shape[1], 0],
              [self.shape[0], self.shape[1], self.shape[2]],
              ])
-        position = self.plane_layer.plane.position
-        normal = self.plane_layer.plane.normal
+        position = self.align_planes_window.plane_layer.plane.position
+        normal = self.align_planes_window.plane_layer.plane.normal
         
         # calculate min distances from the plane to each corner
         distances = np.dot(points - position, normal)
@@ -141,17 +171,21 @@ class AlignPlanesModel(QObject):
                                     np.mean(max_corners, axis=0)]
         
     def _calculate_current_position(self):
-        num = -np.dot(self.plane_layer.plane.normal, self.intersection_points[0] - self.plane_layer.plane.position)
-        denom = np.dot(self.plane_layer.plane.normal, self.intersection_points[1] - self.intersection_points[0])
+        num = -np.dot(self.align_planes_window.plane_layer.plane.normal, self.intersection_points[0] - self.align_planes_window.plane_layer.plane.position)
+        denom = np.dot(self.align_planes_window.plane_layer.plane.normal, self.intersection_points[1] - self.intersection_points[0])
         t = num / denom
         self.t = t
         
     def update_plane_position(self, t):
-        if self.plane_layer is None:
+        if self.align_planes_window.plane_layer is None:
             return
         new_position = (1 - t) * self.intersection_points[0] + t * self.intersection_points[1]
-        self.plane_layer.plane.position = new_position
+        self.align_planes_window.plane_layer.plane.position = new_position
         self.t = t
+        
+    def _on_affine_changed(self):
+        if self.labels_layer_transform:
+            self.labels_layer_transform.affine = self.moving_layer_transform.affine
             
             
 def find_min_max_corners(normal, p, points):

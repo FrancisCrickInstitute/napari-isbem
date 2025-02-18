@@ -19,21 +19,20 @@ class RegistrationController:
     
     def _init_signals(self):
         self.select_images.import_targeting_image_button.clicked.connect(self._on_click_import_targeting_image)
+        self.select_images.upload_transform_button.clicked.connect(self._on_click_upload_transform)
+        self.select_images.save_transform_button.clicked.connect(self._on_click_save_transform)
         
-        self.align_planes.upload_transform_button.clicked.connect(self._on_click_upload_transform)
-        self.align_planes.save_transform_button.clicked.connect(self._on_click_save_transform)
         self.align_planes.show_button.clicked.connect(self._on_click_show)
         self.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.align_planes.zx_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.align_planes.position_slider.valueChanged.connect(self._on_update_position)
         self.align_planes.apply_rotation_button.clicked.connect(self._on_click_rotate)
+        self.align_planes_model.rotation_started.connect(lambda: self.align_planes.apply_rotation_button.setEnabled(False))
         self.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
         self.align_planes_model.rotation_errored.connect(self._on_error_rotate)
         self.align_planes_model.activated.connect(lambda: self.align_planes.setEnabled(True))
         self.align_planes_model.deactivated.connect(lambda: self.align_planes.setEnabled(False))
         
-        self.manual_registration.upload_transform_button.clicked.connect(self._on_click_upload_transform)
-        self.manual_registration.save_button.clicked.connect(self._on_click_save_transform)
         self.manual_registration.reset_button.clicked.connect(self._on_click_reset)
         self.manual_registration.reverse_checkbox.stateChanged.connect(self.manual_registration_model._flip_z)
         self.manual_registration.move_down_button.clicked.connect(self._on_click_move_down)
@@ -62,39 +61,18 @@ class RegistrationController:
         if not file_path:
             return
         try:
-            angle_zy, angle_zx = self.align_planes_model.load_transform(file_path)
-            self.align_planes.zy_degrees_slider.setValue(angle_zy)
-            self.align_planes.zx_degrees_slider.setValue(angle_zx)
+            self.model.load_transform(file_path)
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to load transform: {e}")
-            
-    def _on_click_upload_transform(self):
-        file_path = self.manual_registration.open_file_dialog()
-        if file_path:
-            try:
-                self.manual_registration_model.upload_transform(file_path)
-                self._update_reverse_checkbox()
-            except Exception as e:
-                self.manual_registration.show_error(f"Failed to load file: {e}")
         
     def _on_click_save_transform(self):
         file_path = self.align_planes.save_transform_file_dialog()
         if not file_path:
             return
         try:
-            zy_degrees = self.align_planes.zy_degrees_slider.value()
-            zx_degrees = self.align_planes.zx_degrees_slider.value()
-            self.align_planes_model.save_transform(file_path, zy_degrees, zx_degrees)
+            self.model.save_transform(file_path)
         except Exception as e:
             self.align_planes.show_error("Error", f"Failed to save transform: {e}")
-            
-    def _on_click_save_transform(self):
-        file_path = self.manual_registration.save_file_dialog()
-        if file_path:
-            try:
-                self.manual_registration_model.save_transform(file_path)
-            except Exception as e:
-                self.manual_registration.show_error(f"Failed to save file: {e}")
             
     def _on_click_show(self):
         try:
@@ -118,8 +96,7 @@ class RegistrationController:
         try:
             zy_degrees = self.align_planes.zy_degrees_slider.value()
             zx_degrees = self.align_planes.zx_degrees_slider.value()
-            self.align_planes.apply_rotation_button.setEnabled(False)
-            self.align_planes_model.apply_rotation(zy_degrees, zx_degrees)
+            self.align_planes_model.apply_rotation(-zy_degrees, -zx_degrees)
         except Exception as e:
             self._on_error_rotate(e)
     

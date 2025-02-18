@@ -123,7 +123,6 @@ def is_rotation_matrix(matrix):
     """
     if matrix.shape != (4, 4):
         return False
-
     # Extract the upper-left 3x3 submatrix
     rotation_matrix = matrix[:3, :3]
     
@@ -454,12 +453,19 @@ def rotate_layer(layer, v1, v2):
     return rotated_layer
 
 
-def rotate_layer_data(image, v1, v2):
-    quaternion = quaternion_from_vectors(v1, v2)
-    if isinstance(image, np.ndarray):
-        rotated_data = rotate_image_3d_sitk(image, quaternion, 'linear')
+def transform_layer(layer, affine_transform):
+    layer_type = 'image' if isinstance(layer, Image) else 'labels'
+    interpolator = 'linear' if layer_type == 'image' else 'nearest'
+    if isinstance(layer.data, np.ndarray):
+        transformed_image, offset = transform_image_3d_sitk(layer.data, affine_transform, interpolator)
     else:
-        rotated_data = []
-        for pyramid_level in image:
-            rotated_data.append(rotate_image_3d_sitk(pyramid_level.compute(), quaternion, 'linear'))
-    return rotated_data
+        transformed_image = []
+        offset = None
+        for i, pyramid_level in enumerate(layer.data):
+            if i == 0:
+                transform_level, offset = transform_image_3d_sitk(pyramid_level.compute(), affine_transform, interpolator)
+            else:
+                transform_level, _ = transform_image_3d_sitk(pyramid_level.compute(), affine_transform, interpolator)
+            transformed_image.append(transform_level)   
+    rotated_layer = Layer.create(transformed_image, {'scale': layer.scale, 'name': layer.name, 'translate': offset}, layer_type)
+    return rotated_layer

@@ -101,10 +101,10 @@ class ManualRegistrationModel(QObject):
             self.moving_image_layer.ndim
             )
         
-    def save_transform(self, file_path):
+    def get_affine_matrix(self):
         if self.moving_image_layer is None:
             raise ValueError("No moving image layer selected")
-        np.savetxt(file_path, np.asarray(self.moving_image_layer.affine.affine_matrix), delimiter=',')
+        return self.moving_image_layer.affine.affine_matrix
         
     def is_moving_image_flipped(self):
         if not self.moving_image_layer:

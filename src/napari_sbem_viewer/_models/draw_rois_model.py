@@ -2,12 +2,10 @@ import numpy as np
 from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
-from scipy.ndimage.morphology import binary_dilation
 from napari.qt import create_worker
+from napari.layers import Labels
 import tifffile
-from skimage import measure
 
-from napari_sbem_viewer._utils.registration_utils import convert_affine_to_ndims
 from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects
 from napari_sbem_viewer._utils.general_utils import round_up_to_odd
 
@@ -16,7 +14,7 @@ class DrawROIsModel(QObject):
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
-    labels_added = Signal()
+    labels_added = Signal(Labels)
     labels_removed = Signal()
     reference_layer_added = Signal()
     reference_layer_removed = Signal()
@@ -48,9 +46,7 @@ class DrawROIsModel(QObject):
             )
         self.annotated_labels = np.zeros_like(labels)
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
-        self.reference_layer.events.affine.connect(self._on_affine_changed)
-        self._on_affine_changed()
-        self.labels_added.emit()
+        self.labels_added.emit(self.labels_layer)
         
     def upload_labels(self, file_path):
         if self.labels_layer is not None:
@@ -66,9 +62,7 @@ class DrawROIsModel(QObject):
             scale=scale,
             )
         self.labels_layer.events.paint.connect(self._on_labels_data_changed)
-        self.reference_layer.events.affine.connect(self._on_affine_changed)
-        self._on_affine_changed()
-        self.labels_added.emit()
+        self.labels_added.emit(self.labels_layer)
         
     def export_labels(self, file_path):
         if self.labels_layer is None:
@@ -107,15 +101,9 @@ class DrawROIsModel(QObject):
     def reset(self):
         self.labels_layer = None
         self.annotated_labels = None
-        self.reference_layer.events.affine.disconnect(self._on_affine_changed)
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
         self.labels_removed.emit()
-        
-    def _on_affine_changed(self):
-        self.labels_layer.affine = convert_affine_to_ndims(
-            self.reference_layer.affine.affine_matrix, self.labels_layer.ndim
-            )
         
     def _on_labels_data_changed(self, event):
         if event.type != 'paint':
