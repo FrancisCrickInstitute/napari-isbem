@@ -2,6 +2,7 @@ import os
 import time
 import math
 
+from napari.qt import create_worker
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Layer
 import dask.array as da
@@ -15,6 +16,7 @@ from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_po
 class LiveViewer(QObject):
     initialized = Signal(Layer)
     cleared = Signal()
+    errored = Signal()
     def __init__(self, napari_viewer, layer_name):
         super().__init__()
         self.viewer = napari_viewer
@@ -60,6 +62,11 @@ class LiveViewer(QObject):
         stack = [da.stack(slices, axis=0) for slices in dask_arrays_transposed]
         self.layer = self._create_layer(stack)
         self.initialized.emit(self.layer)
+        
+    def start_watching(self, ov_dir):
+        self.init_images(ov_dir)
+        create_worker(self.watch, 
+                      _connect={'yielded': self.append, 'errored': self.errored.emit})  
             
     def watch(self):
         """

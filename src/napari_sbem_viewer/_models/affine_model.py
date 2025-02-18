@@ -19,7 +19,7 @@ from napari_sbem_viewer._utils.registration_utils import (flip_transform_matrix,
 from napari_sbem_viewer._utils.general_utils import reset_view
 
 
-class ManualRegistrationModel(QObject):
+class AffineModel(QObject):
     activated = Signal()
     deactivated = Signal()
     def __init__(self, viewer):

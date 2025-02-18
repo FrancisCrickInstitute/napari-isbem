@@ -1,4 +1,3 @@
-from napari.qt import create_worker
 from napari.layers import Labels
 
 
@@ -9,6 +8,7 @@ class AcquisitionController:
         self.acquisition_settings = acquisition_settings
         self.roi_settings = roi_settings
         self.acquisition_info = acquisition_info
+        self.roi_settings.setEnabled(False)
         self._init_signals()
         self._populate_roi_combo_box()
         self._on_change_pause_before_acquire_roi(self.acquisition_settings.pause_before_acquire_roi_checkbox.checkState())
@@ -20,6 +20,9 @@ class AcquisitionController:
         self.acquisition_model.rois_updated.connect(self.roi_settings.update_roi_info)
         self.acquisition_model.set_fine_thickness(self.acquisition_settings.fine_thickness_spinbox.value())
         self.acquisition_model.errored.connect(self.acquisition_settings.show_error)
+        self.acquisition_model.live_viewer.initialized.connect(self._on_add_overview)
+        self.acquisition_model.live_viewer.cleared.connect(self._on_reset_overview)
+        self.acquisition_model.live_viewer.errored.connect(self._on_error_overview)
 
         # Init tcp settings
         self.tcp_settings.start_server_button.clicked.connect(self._on_click_start_server)
@@ -39,6 +42,19 @@ class AcquisitionController:
         self.acquisition_model.viewer.layers.events.inserted.connect(self._on_add_layer)
         self.acquisition_model.viewer.layers.events.removed.connect(self._on_remove_layer)
         self.acquisition_model.viewer.dims.events.current_step.connect(self._on_change_z_depth)
+        
+    def _on_add_overview(self):
+        self.roi_settings.reset()
+        self.acquisition_settings.coarse_thickness_label.setText(f"{self.acquisition_model.live_viewer.pixel_size_z*1e3:.0f}")
+        self.acquisition_settings.overview_dir_line.setText(self.acquisition_model.live_viewer.image_dir)
+        self.roi_settings.setEnabled(True)
+    
+    def _on_reset_overview(self):
+        self.roi_settings.reset()
+        self.acquisition_model.live_viewer.reset()
+        self.acquisition_settings.coarse_thickness_label.setText("")
+        self.acquisition_settings.overview_dir_line.setText("")
+        self.roi_settings.setEnabled(False)
         
     def _on_change_pause_before_acquire_roi(self, check_state):
         is_checked = check_state == 2
@@ -68,7 +84,7 @@ class AcquisitionController:
             if idx >= 0:
                 self.roi_settings.roi_combo_box.removeItem(idx)
         if event.value == self.acquisition_model.live_viewer.layer:
-            self._on_reset_overview()
+            self.acquisition_model.live_viewer.reset()
             
     def _populate_roi_combo_box(self):
         self.roi_settings.roi_combo_box.addItem("")
@@ -97,32 +113,17 @@ class AcquisitionController:
         ov_dir = self.acquisition_settings.open_overview_dir_dialog()
         if not ov_dir:
             return
-        self._set_ov(ov_dir)
-        
-    def _set_ov(self, ov_dir):
         try:
-            self._on_reset_overview()
-            self.acquisition_model.live_viewer.init_images(ov_dir)
+            self.acquisition_model.live_viewer.start_watching(ov_dir)
         except ValueError as e:
-            self._handle_overview_error(e)
-            return
-        self.roi_settings.roi_combo_box.setEnabled(True)
-        self.acquisition_settings.coarse_thickness_label.setText(f"{self.acquisition_model.live_viewer.pixel_size_z*1e3:.0f}")
-        self.acquisition_settings.overview_dir_line.setText(ov_dir)
-        create_worker(self.acquisition_model.live_viewer.watch, 
-                      _connect={'yielded': self.acquisition_model.live_viewer.append, 'errored': self._handle_overview_error})        
-            
-    def _on_reset_overview(self):
-        self.acquisition_model.live_viewer.reset()
-        self.acquisition_settings.coarse_thickness_label.setText("")
-        self.acquisition_settings.overview_dir_line.setText("")
-        self.roi_settings.reset()
+            self._on_error_overview(e)
+            return     
         
     def _on_roi_layer_changed(self):
         roi_layer = self._get_roi_layer()
         self.acquisition_model.set_roi_layer(roi_layer)
         
-    def _handle_overview_error(self, error):
+    def _on_error_overview(self, error):
         self._on_reset_overview()
         self.acquisition_settings.show_error("Error adding images", str(error))
         

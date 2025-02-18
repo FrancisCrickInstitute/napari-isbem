@@ -21,7 +21,6 @@ class ROISettings(QGroupBox):
         self.setLayout(QVBoxLayout())
         
         self.roi_combo_box = QComboBox()
-        self.roi_combo_box.setEnabled(False)
         roi_lyt = QHBoxLayout()
         roi_lyt.addWidget(QLabel("ROI layer"))
         # add stretch to the combo box
@@ -55,7 +54,6 @@ class ROISettings(QGroupBox):
         self.model.clear()
         self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
         self.roi_combo_box.setCurrentIndex(0)
-        self.roi_combo_box.setEnabled(False)
     
     def show_error(self, title, text):
         QMessageBox.warning(self, title, text)

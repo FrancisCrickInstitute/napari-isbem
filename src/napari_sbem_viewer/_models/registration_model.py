@@ -3,7 +3,7 @@ from napari.layers import Layer
 from napari_ome_zarr import napari_get_reader
 import numpy as np
 
-from napari_sbem_viewer._models import ManualRegistrationModel, AlignPlanesModel
+from napari_sbem_viewer._models import AffineModel, AlignPlanesModel
 from napari_sbem_viewer._utils.registration_utils import is_2d_affine_matrix
 
 
@@ -14,7 +14,7 @@ class RegistrationModel(QObject):
         super().__init__()
         self.viewer = viewer
         self.align_planes_model = AlignPlanesModel(self.viewer, stack_viewer)
-        self.manual_registration_model = ManualRegistrationModel(self.viewer)
+        self.affine_model = AffineModel(self.viewer)
         
     def import_targeting_image(self, file_path):
         if not file_path.endswith('.ome.zarr'):
@@ -27,7 +27,7 @@ class RegistrationModel(QObject):
     def load_transform(self, file_path):
         transform_matrix = np.loadtxt(file_path, delimiter=',')
         if is_2d_affine_matrix(transform_matrix):
-            self.manual_registration_model.load_transform(transform_matrix)
+            self.affine_model.load_transform(transform_matrix)
         else:
             self.align_planes_model.load_transform(transform_matrix)
             
@@ -42,30 +42,30 @@ class RegistrationModel(QObject):
         
     def save_transform(self, file_path):
         rotation_matrix = self.align_planes_model.get_rotation_matrix()
-        affine_matrix_2d = self.manual_registration_model.get_affine_matrix()
+        affine_matrix_2d = self.affine_model.get_affine_matrix()
         transform_matrix = affine_matrix_2d @ rotation_matrix
         np.savetxt(file_path, transform_matrix, delimiter=',')
         
     def add_fixed_image(self, layer):
-        self.manual_registration_model.set_fixed_image(layer)
+        self.affine_model.set_fixed_image(layer)
         
     def remove_fixed_image(self):
-        self.manual_registration_model.remove_fixed_image()
+        self.affine_model.remove_fixed_image()
         
     def add_moving_image(self, layer):
         self.align_planes_model.set_moving_layer(layer)
-        self.manual_registration_model.set_moving_image(layer)
+        self.affine_model.set_moving_image(layer)
         self.moving_layer_added.emit(self.align_planes_model.moving_layer_original)
         
     def remove_moving_image(self):
         self.align_planes_model.reset()
-        self.manual_registration_model.remove_moving_image()
+        self.affine_model.remove_moving_image()
         self.moving_layer_removed.emit()
         
     def _on_remove_layer(self, event):
-        if (event.value == self.manual_registration_model.moving_image_layer or 
+        if (event.value == self.affine_model.moving_image_layer or 
             event.value == self.align_planes_model.moving_layer_original):
             self.remove_moving_image()
-        if event.value == self.manual_registration_model.fixed_image_layer:
+        if event.value == self.affine_model.fixed_image_layer:
             self.remove_fixed_image()
             

@@ -2,12 +2,12 @@ import napari
 from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QFileDialog, QMessageBox
 
 
-class SelectImages(QGroupBox):
+class ImageSettings(QGroupBox):
     def __init__(self,
                  viewer: napari.Viewer,
                  parent=None
                  ):
-        super().__init__("Select images", parent=parent)
+        super().__init__("Image settings", parent=parent)
         self.viewer = viewer
         self.setLayout(QVBoxLayout())
         
