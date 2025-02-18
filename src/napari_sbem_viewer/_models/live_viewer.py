@@ -16,7 +16,7 @@ from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_po
 class LiveViewer(QObject):
     initialized = Signal(Layer)
     cleared = Signal()
-    errored = Signal()
+    errored = Signal(Exception)
     def __init__(self, napari_viewer, layer_name):
         super().__init__()
         self.viewer = napari_viewer
@@ -132,13 +132,13 @@ class LiveViewer(QObject):
                 continue
             if filename.startswith('grab'):
                 continue
-            tiff = TiffFile(os.path.join(self.image_dir, filename))
             if (filename not in self.added_files) and (filename not in self.skipped_files):
+                tiff = TiffFile(os.path.join(self.image_dir, filename))
                 if self._init_metadata(tiff):
                     self.added_files.add(filename)
                     yield tiff
-            else:
-                self.skipped_files.add(filename)
+                else:
+                    self.skipped_files.add(filename)
         
     def _init_metadata(self, tiff):
         # Get ome metadata from tiff

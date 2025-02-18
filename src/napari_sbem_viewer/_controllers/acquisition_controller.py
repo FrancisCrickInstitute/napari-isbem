@@ -51,7 +51,6 @@ class AcquisitionController:
     
     def _on_reset_overview(self):
         self.roi_settings.reset()
-        self.acquisition_model.live_viewer.reset()
         self.acquisition_settings.coarse_thickness_label.setText("")
         self.acquisition_settings.overview_dir_line.setText("")
         self.roi_settings.setEnabled(False)
@@ -115,7 +114,7 @@ class AcquisitionController:
             return
         try:
             self.acquisition_model.live_viewer.start_watching(ov_dir)
-        except ValueError as e:
+        except Exception as e:
             self._on_error_overview(e)
             return     
         
