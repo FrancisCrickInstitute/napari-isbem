@@ -29,10 +29,11 @@ class DrawROIsController:
         self.model.labels_removed.connect(self._update_ui)
         self.model.reference_layer_added.connect(self._update_ui)
         self.model.reference_layer_removed.connect(self._update_ui)
+        self.model.editing_updated.connect(self._update_ui)
         
     def _update_ui(self):
         if self.model.labels_layer is not None:
-            self.label_settings.setEnabled(True)
+            self.label_settings.setEnabled(self.model.editing_enabled)
             self.add_labels.setEnabled(False)
         else:
             self.label_settings.setEnabled(False)

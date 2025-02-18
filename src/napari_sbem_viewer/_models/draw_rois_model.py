@@ -18,6 +18,7 @@ class DrawROIsModel(QObject):
     labels_removed = Signal()
     reference_layer_added = Signal()
     reference_layer_removed = Signal()
+    editing_updated = Signal()
     def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
@@ -25,6 +26,7 @@ class DrawROIsModel(QObject):
         self.annotated_labels = None
         self.autofill_labels = False
         self.reference_layer = None
+        self.editing_enabled = True
         
     def add_reference_layer(self, layer):
         self.reference_layer = layer
@@ -45,7 +47,7 @@ class DrawROIsModel(QObject):
             scale=[downsample_factor * s for s in self.reference_layer.scale],
             )
         self.annotated_labels = np.zeros_like(labels)
-        self.labels_layer.events.paint.connect(self._on_labels_data_changed)
+        self.labels_layer.events.paint.connect(self._on_paint_labels)
         self.labels_added.emit(self.labels_layer)
         
     def upload_labels(self, file_path):
@@ -61,7 +63,8 @@ class DrawROIsModel(QObject):
             name="ROIs",
             scale=scale,
             )
-        self.labels_layer.events.paint.connect(self._on_labels_data_changed)
+        self.labels_layer.events.paint.connect(self._on_paint_labels)
+        self.labels_layer.events.data.connect(self._on_labels_data_changed)
         self.labels_added.emit(self.labels_layer)
         
     def export_labels(self, file_path):
@@ -104,8 +107,14 @@ class DrawROIsModel(QObject):
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
         self.labels_removed.emit()
+
+    def enable_editing(self, enabled):
+        self.editing_enabled = enabled == True
+        self.editing_updated.emit()
         
-    def _on_labels_data_changed(self, event):
+    def _on_paint_labels(self, event):
+        if not self.editing_enabled:
+            return
         if event.type != 'paint':
             return
         layer = event.source

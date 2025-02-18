@@ -52,6 +52,7 @@ class RegistrationController:
         self.image_settings.import_targeting_image_button.setEnabled(False)
         self.image_settings.upload_transform_button.setEnabled(True)
         self.image_settings.save_transform_button.setEnabled(True)
+        self.image_settings.reset_transform_button.setEnabled(True)
         self.align_planes.setEnabled(True)
         self.z_alignment.setEnabled(True)
         self._update_reverse_checkbox()
@@ -61,6 +62,7 @@ class RegistrationController:
         self.image_settings.import_targeting_image_button.setEnabled(True)
         self.image_settings.upload_transform_button.setEnabled(False)
         self.image_settings.save_transform_button.setEnabled(False)
+        self.image_settings.reset_transform_button.setEnabled(False)
         self.align_planes.setEnabled(False)
         self.z_alignment.setEnabled(False)
         self.z_alignment.reverse_checkbox.blockSignals(True)
@@ -126,9 +128,10 @@ class RegistrationController:
         except Exception as e:
             self._on_error_rotate(e)
     
-    def _on_finish_rotate(self):
+    def _on_finish_rotate(self, affine_matrix):
         self.align_planes.apply_rotation_button.setEnabled(True)
-        self.align_planes.show_info("Success", "Image rotated successfully")
+        if affine_matrix is not None:
+            self.align_planes.show_info("Success", "Image rotated successfully")
     
     def _on_error_rotate(self, e):
         self.align_planes.apply_rotation_button.setEnabled(True)

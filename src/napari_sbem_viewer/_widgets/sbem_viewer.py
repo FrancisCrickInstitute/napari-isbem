@@ -26,4 +26,5 @@ class SBEMViewerWidget(QTabWidget):
         # connect add ROI event to add an ROI layer to the registration model
         self.draw_rois.draw_rois_model.labels_added.connect(self.registration.registration_model.align_planes_model.add_labels_layer)
         self.draw_rois.draw_rois_model.labels_removed.connect(self.registration.registration_model.align_planes_model.remove_labels_layer)
+        self.registration.registration_model.align_planes_model.rotation_finished.connect(lambda m: self.draw_rois.draw_rois_model.enable_editing(m is None))
         

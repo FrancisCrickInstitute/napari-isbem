@@ -13,7 +13,7 @@ from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_z
 
 class AlignPlanesModel(QObject):
     rotation_started = Signal()
-    rotation_finished = Signal()
+    rotation_finished = Signal(object)
     rotation_errored = Signal(Exception)
     activated = Signal()
     deactivated = Signal()
@@ -35,12 +35,12 @@ class AlignPlanesModel(QObject):
     def add_labels_layer(self, labels_layer):
         self.labels_layer_original = copy(labels_layer)
         self.labels_layer_transform = labels_layer
+        self.labels_layer_transform.events.data.connect(self._on_labels_data_changed)
         if self.affine_matrix is not None:
             new_layer = transform_layer(self.labels_layer_original, self.affine_matrix)
             self.labels_layer_transform.data = new_layer.data
-            if self.moving_layer_transform is not None:
-                self.labels_layer_transform.affine = self.moving_layer_transform.affine
-                self.labels_layer_transform.translate = self.moving_layer_transform.translate
+        if self.moving_layer_transform is not None:
+            self.labels_layer_transform.affine = self.moving_layer_transform.affine
             
     def remove_labels_layer(self):
         self.labels_layer_original = None
@@ -71,13 +71,11 @@ class AlignPlanesModel(QObject):
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
         self.moving_layer_transform.data = image_layer.data
         self.moving_layer_transform.affine = image_layer.affine
-        self.moving_layer_transform.translate = image_layer.translate
         if (self.labels_layer_transform is not None and 
             labels_layer is not None):
             self.labels_layer_transform.data = labels_layer.data
             self.labels_layer_transform.affine = image_layer.affine
-            self.labels_layer_transform.translate = image_layer.translate
-        self.rotation_finished.emit()
+        self.rotation_finished.emit(self.affine_matrix)
             
     def load_transform(self, affine_matrix):
         # if not is_rotation_matrix(rotation_matrix):
@@ -133,13 +131,13 @@ class AlignPlanesModel(QObject):
         self.deactivated.emit()
         
     def reset_transform(self):
+        self.affine_matrix = None
         self.moving_layer_transform.data = self.moving_layer_original.data
         self.moving_layer_transform.affine = self.moving_layer_original.affine
-        self.moving_layer_transform.translate = self.moving_layer_original.translate
         if self.labels_layer_transform is not None:
             self.labels_layer_transform.data = self.labels_layer_original.data
-            self.labels_layer_transform.affine = self.moving_layer.affine
-            self.labels_layer_transform.translate = self.moving_layer.translate
+            self.labels_layer_transform.affine = self.moving_layer_original.affine
+        self.rotation_finished.emit(self.affine_matrix)
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
         if self.align_planes_window.plane_layer is None:
@@ -191,6 +189,10 @@ class AlignPlanesModel(QObject):
         new_position = (1 - t) * self.intersection_points[0] + t * self.intersection_points[1]
         self.align_planes_window.plane_layer.plane.position = new_position
         self.t = t
+        
+    def _on_labels_data_changed(self):
+        if self.labels_layer_transform and self.affine_matrix is None:
+            self.labels_layer_original.data = self.labels_layer_transform.data
         
     def _on_affine_changed(self):
         if self.labels_layer_transform:
