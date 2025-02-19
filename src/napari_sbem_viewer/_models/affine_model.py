@@ -33,7 +33,7 @@ class AffineModel(QObject):
     def set_moving_image(self, layer):
         self.moving_image_layer = layer
         if self.fixed_image_layer is not None:
-            self.activate.emit()
+            self.activated.emit()
             
     def set_fixed_image(self, layer):
         self.fixed_image_layer = layer
@@ -88,6 +88,7 @@ class AffineModel(QObject):
         self.is_doing_registration = False
             
     def reset_transform(self):
+        self.reset()
         self.moving_image_layer.affine = None
         
     def load_transform(self, rotation_matrix):

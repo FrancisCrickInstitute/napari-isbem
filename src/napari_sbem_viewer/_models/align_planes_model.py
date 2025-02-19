@@ -2,7 +2,7 @@ from copy import copy
 
 from qtpy.QtCore import QObject, Signal
 import numpy as np
-from napari.layers import Image
+from napari.layers import Image, Labels
 from napari.qt import create_worker
 
 from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
@@ -33,7 +33,7 @@ class AlignPlanesModel(QObject):
         self.affine_matrix = None
         
     def add_labels_layer(self, labels_layer):
-        self.labels_layer_original = copy(labels_layer)
+        self.labels_layer_original = Labels(labels_layer.data, affine=labels_layer.affine, name=labels_layer.name, scale=labels_layer.scale)
         self.labels_layer_transform = labels_layer
         self.labels_layer_transform.events.data.connect(self._on_labels_data_changed)
         if self.affine_matrix is not None:
@@ -41,6 +41,7 @@ class AlignPlanesModel(QObject):
             self.labels_layer_transform.data = new_layer.data
         if self.moving_layer_transform is not None:
             self.labels_layer_transform.affine = self.moving_layer_transform.affine
+            self.labels_layer_transform.translate = self.moving_layer_transform.translate
             
     def remove_labels_layer(self):
         self.labels_layer_original = None
@@ -71,10 +72,12 @@ class AlignPlanesModel(QObject):
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
         self.moving_layer_transform.data = image_layer.data
         self.moving_layer_transform.affine = image_layer.affine
+        self.moving_layer_transform.translate = image_layer.translate
         if (self.labels_layer_transform is not None and 
             labels_layer is not None):
             self.labels_layer_transform.data = labels_layer.data
             self.labels_layer_transform.affine = image_layer.affine
+            self.labels_layer_transform.translate = image_layer.translate
         self.rotation_finished.emit(self.affine_matrix)
             
     def load_transform(self, affine_matrix):
@@ -88,7 +91,7 @@ class AlignPlanesModel(QObject):
     def set_moving_layer(self, layer):
         self.reset()
         self.moving_layer_transform = layer
-        self.moving_layer_original = copy(layer)
+        self.moving_layer_original = Image(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
         self.moving_layer_transform.events.affine.connect(self._on_affine_changed)
         self.activated.emit()
         
@@ -134,9 +137,11 @@ class AlignPlanesModel(QObject):
         self.affine_matrix = None
         self.moving_layer_transform.data = self.moving_layer_original.data
         self.moving_layer_transform.affine = self.moving_layer_original.affine
+        self.moving_layer_transform.translate = self.moving_layer_original.translate
         if self.labels_layer_transform is not None:
             self.labels_layer_transform.data = self.labels_layer_original.data
             self.labels_layer_transform.affine = self.moving_layer_original.affine
+            self.labels_layer_transform.translate = self.moving_layer_original.translate
         self.rotation_finished.emit(self.affine_matrix)
 
     def update_plane_angle(self, zy_degrees, zx_degrees):

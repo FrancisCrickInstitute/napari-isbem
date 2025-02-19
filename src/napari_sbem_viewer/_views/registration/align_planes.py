@@ -1,6 +1,6 @@
 import os
 
-from napari._qt.widgets._slider_compat import QDoubleSlider
+from superqt import QLabeledDoubleSlider
 from qtpy.QtWidgets import (QPushButton, 
                             QFormLayout, 
                             QFileDialog, 
@@ -26,15 +26,15 @@ class AlignPlanes(QGroupBox):
         self.layout().addWidget(self.show_button, 0, 0, 1, 2)
         
         form_layout = QFormLayout()
-        self.zy_degrees_slider = QDoubleSlider(Qt.Horizontal)
+        self.zy_degrees_slider = QLabeledDoubleSlider(Qt.Horizontal)
         self.zy_degrees_slider.setRange(-90, 90)
         self.zy_degrees_slider.setDecimals(1)
         form_layout.addRow(QLabel("Rotate Z-Y"), self.zy_degrees_slider)
-        self.zx_degrees_slider = QDoubleSlider(Qt.Horizontal)
+        self.zx_degrees_slider = QLabeledDoubleSlider(Qt.Horizontal)
         self.zx_degrees_slider.setRange(-90, 90)
         self.zx_degrees_slider.setDecimals(1)
         form_layout.addRow(QLabel("Rotate Z-X"), self.zx_degrees_slider)
-        self.position_slider = QDoubleSlider(Qt.Horizontal)
+        self.position_slider = QLabeledDoubleSlider(Qt.Horizontal)
         self.position_slider.setRange(0, 1)
         self.position_slider.setSingleStep(0.01)
         form_layout.addRow(QLabel("Position"), self.position_slider)

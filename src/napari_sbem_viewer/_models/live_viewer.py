@@ -4,7 +4,6 @@ import math
 
 from napari.qt import create_worker
 from qtpy.QtCore import QObject, Signal
-from napari.layers import Layer
 import dask.array as da
 from tifffile import TiffFile, xml2dict
 from skimage.io.collection import alphanumeric_key
@@ -14,7 +13,7 @@ from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_po
 
 
 class LiveViewer(QObject):
-    initialized = Signal(Layer)
+    initialized = Signal(object)
     cleared = Signal()
     errored = Signal(Exception)
     def __init__(self, napari_viewer, layer_name):

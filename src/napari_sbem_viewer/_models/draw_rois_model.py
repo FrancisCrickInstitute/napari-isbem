@@ -3,7 +3,6 @@ from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
 from napari.qt import create_worker
-from napari.layers import Labels
 import tifffile
 
 from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects
@@ -14,7 +13,7 @@ class DrawROIsModel(QObject):
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
-    labels_added = Signal(Labels)
+    labels_added = Signal(object)
     labels_removed = Signal()
     reference_layer_added = Signal()
     reference_layer_removed = Signal()
