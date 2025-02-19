@@ -5,6 +5,7 @@ from scipy.ndimage import affine_transform
 import SimpleITK as sitk
 from sklearn.linear_model import RANSACRegressor
 from napari.layers import Image, Layer
+from scipy.spatial.transform import Rotation as R
 
 
 def quaternion_from_vectors(v1, v2):
@@ -67,19 +68,9 @@ def rotation_matrix_from_vectors(vec1, vec2):
 
 
 def rotation_matrix_from_zy_zx_angles(zy_angle, zx_angle):
-    transform_matrix_zy = np.asarray([
-    [np.cos(np.radians(zy_angle)), -np.sin(np.radians(zy_angle)), 0, 0],
-    [np.sin(np.radians(zy_angle)), np.cos(np.radians(zy_angle)), 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-    ])
-    transform_matrix_zx = np.asarray([
-        [np.cos(np.radians(zx_angle)), 0, np.sin(np.radians(zx_angle)), 0],
-        [0, 1, 0, 0],
-        [-np.sin(np.radians(zx_angle)), 0, np.cos(np.radians(zx_angle)), 0],
-        [0, 0, 0, 1]
-    ])
-    return transform_matrix_zy @ transform_matrix_zx
+    mat = np.eye(4)
+    mat[:3, :3] = R.from_euler('zyx', [zy_angle, zx_angle, 0], degrees=True).as_matrix()
+    return mat
 
 
 def rotation_matrix_from_axis_angle(axis, angle):
@@ -161,11 +152,6 @@ def is_2d_affine_matrix(matrix):
         return False
 
     return True
-
-
-def decompose_rotation_matrix(matrix):
-    # return the angles of rotation around the x-axis (zy direction) and around the y-axis (zx direction)
-    return -np.arcsin(matrix[0, 1]), -np.arcsin(matrix[2, 0])
         
         
 def get_transformation_matrix_2d(moving_points, fixed_points):
@@ -469,3 +455,37 @@ def transform_layer(layer, affine_transform):
             transformed_image.append(transform_level)   
     rotated_layer = Layer.create(transformed_image, {'scale': layer.scale, 'name': layer.name, 'translate': offset}, layer_type)
     return rotated_layer
+
+
+def decompose_transform(transform_matrix):
+    zy_degrees, zx_degrees = zy_zx_angles_from_matrix(transform_matrix)
+    rot_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
+    affine_matrix_2d = transform_matrix @ np.linalg.inv(rot_matrix)
+    affine_matrix_2d[np.abs(affine_matrix_2d) < 1e-6] = 0
+    affine_matrix_2d[np.abs(affine_matrix_2d - 1) < 1e-6] = 1
+    return rot_matrix, affine_matrix_2d
+
+
+def zy_zx_angles_from_matrix(matrix):
+    R_mat = enforce_orthogonality(matrix[:3, :3])
+    R_mat = correct_rotation_matrix_for_flips(R_mat)
+    euler_angles = R.from_matrix(R_mat).as_euler('zyx', degrees=True)
+    return euler_angles[0], euler_angles[1]
+
+
+def enforce_orthogonality(matrix):
+    U, _, Vt = np.linalg.svd(matrix)
+    return U @ Vt
+
+
+def correct_rotation_matrix_for_flips(R_mat):
+    flipped_axes = detect_flipped_axes(R_mat)
+    R_mat[flipped_axes] *= -1
+    return R_mat
+
+
+def detect_flipped_axes(matrix):
+    # Compute the dot product of each column with the unit vectors
+    # Flipped axes will have a dot product close to -1
+    return np.einsum('ij,ij->i', matrix, np.eye(3)) < -0.9
+    

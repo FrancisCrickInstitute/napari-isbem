@@ -89,6 +89,7 @@ class AffineModel(QObject):
     def reset_transform(self):
         self.reset()
         self.moving_image_layer.affine = None
+        self.transform_loaded.emit()
         
     def load_transform(self, affine_matrix):
         if not is_2d_affine_matrix(affine_matrix):
