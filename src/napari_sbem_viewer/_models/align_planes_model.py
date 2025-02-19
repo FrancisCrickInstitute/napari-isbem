@@ -8,7 +8,8 @@ from napari.qt import create_worker
 from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
                                                           rotation_matrix_from_zy_zx_angles,
                                                           calculate_normal,
-                                                          transform_layer)
+                                                          transform_layer,
+                                                          is_rotation_matrix)
 
 
 class AlignPlanesModel(QObject):
@@ -52,8 +53,6 @@ class AlignPlanesModel(QObject):
         self.apply_transform(transform_matrix)
         
     def apply_transform(self, transform_matrix):
-        if self.moving_layer_transform is None:
-            raise ValueError("No moving image selected.")
         self.rotation_started.emit()
         create_worker(self._rotate_images,
                       transform_matrix,
@@ -71,18 +70,18 @@ class AlignPlanesModel(QObject):
     
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
         self.moving_layer_transform.data = image_layer.data
-        self.moving_layer_transform.affine = image_layer.affine
         self.moving_layer_transform.translate = image_layer.translate
         if (self.labels_layer_transform is not None and 
             labels_layer is not None):
             self.labels_layer_transform.data = labels_layer.data
-            self.labels_layer_transform.affine = image_layer.affine
-            self.labels_layer_transform.translate = image_layer.translate
+            self.labels_layer_transform.affine = self.moving_layer_transform.affine
+            self.labels_layer_transform.translate = self.moving_layer_transform.translate
         self.rotation_finished.emit(self.affine_matrix)
             
     def load_transform(self, affine_matrix):
-        # if not is_rotation_matrix(rotation_matrix):
-        #     raise ValueError("Invalid rotation matrix")
+        if not is_rotation_matrix(affine_matrix):
+            print(affine_matrix)
+            raise ValueError("Invalid transform matrix. Must be a rotation matrix.")
         self.apply_transform(affine_matrix)
         
     def get_rotation_matrix(self):

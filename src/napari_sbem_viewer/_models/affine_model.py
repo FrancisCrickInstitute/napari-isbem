@@ -21,6 +21,7 @@ from napari_sbem_viewer._utils.general_utils import reset_view
 class AffineModel(QObject):
     activated = Signal()
     deactivated = Signal()
+    transform_loaded = Signal()
     def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
@@ -49,9 +50,7 @@ class AffineModel(QObject):
         self.deactivated.emit()
         
     def reset(self):
-        self.moving_image_layer = None
         self.is_doing_registration = False
-        self.fixed_image_layer = None
         self._remove_points_layers()
         
     def start_registration(self):
@@ -91,15 +90,15 @@ class AffineModel(QObject):
         self.reset()
         self.moving_image_layer.affine = None
         
-    def load_transform(self, rotation_matrix):
-        if self.moving_image_layer is None:
-            raise ValueError("No moving image layer selected")
-        if not is_2d_affine_matrix(rotation_matrix):
-            raise ValueError("Rotation matrix must be a 2D affine transform")
+    def load_transform(self, affine_matrix):
+        if not is_2d_affine_matrix(affine_matrix):
+            print(affine_matrix)
+            raise ValueError("Invalid transform matrix. Must be a 2D affine matrix.")
         self.moving_image_layer.affine = convert_affine_to_ndims(
-            rotation_matrix, 
+            affine_matrix, 
             self.moving_image_layer.ndim
             )
+        self.transform_loaded.emit()
         
     def get_affine_matrix(self):
         if self.moving_image_layer is None:

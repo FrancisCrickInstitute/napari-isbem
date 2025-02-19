@@ -28,7 +28,7 @@ class RegistrationController:
         self.align_planes.zx_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.align_planes.position_slider.valueChanged.connect(self._on_update_position)
         self.align_planes.apply_rotation_button.clicked.connect(self._on_click_rotate)
-        self.align_planes_model.rotation_started.connect(lambda: self.align_planes.apply_rotation_button.setEnabled(False))
+        self.align_planes_model.rotation_started.connect(self._deactivate_transform_buttons)
         self.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
         self.align_planes_model.rotation_errored.connect(self._on_error_rotate)
         self.align_planes_model.activated.connect(lambda: self.align_planes.setEnabled(True))
@@ -43,10 +43,23 @@ class RegistrationController:
         self.affine_2d.remove_outliers_checkbox.stateChanged.connect(self.affine_model.do_transform)
         self.affine_model.activated.connect(lambda: self.affine_2d.setEnabled(True))
         self.affine_model.deactivated.connect(lambda: self.affine_2d.setEnabled(False))
+        self.affine_model.transform_loaded.connect(self._update_reverse_checkbox)
         
         self.model.viewer.layers.events.removed.connect(self.model._on_remove_layer)
         self.model.moving_layer_added.connect(self._on_add_moving_image)
         self.model.moving_layer_removed.connect(self._on_remove_moving_image)
+        
+    def _deactivate_transform_buttons(self):
+        self.align_planes.apply_rotation_button.setEnabled(False)
+        self.image_settings.upload_transform_button.setEnabled(False)
+        self.image_settings.save_transform_button.setEnabled(False)
+        self.image_settings.reset_transform_button.setEnabled(False)
+        
+    def _activate_transform_buttons(self):
+        self.align_planes.apply_rotation_button.setEnabled(True)
+        self.image_settings.upload_transform_button.setEnabled(True)
+        self.image_settings.save_transform_button.setEnabled(True)
+        self.image_settings.reset_transform_button.setEnabled(True)
         
     def _on_add_moving_image(self):
         self.image_settings.import_targeting_image_button.setEnabled(False)
@@ -129,12 +142,12 @@ class RegistrationController:
             self._on_error_rotate(e)
     
     def _on_finish_rotate(self, affine_matrix):
-        self.align_planes.apply_rotation_button.setEnabled(True)
+        self._activate_transform_buttons()
         if affine_matrix is not None:
             self.align_planes.show_info("Success", "Image rotated successfully")
     
     def _on_error_rotate(self, e):
-        self.align_planes.apply_rotation_button.setEnabled(True)
+        self._activate_transform_buttons()
         self.align_planes.show_error("Error", f"Failed to rotate image: {e}")
       
     def _on_click_move_down(self):

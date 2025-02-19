@@ -1,10 +1,11 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Layer
 from napari_ome_zarr import napari_get_reader
+from scipy.spatial.transform import Rotation as R
 import numpy as np
 
 from napari_sbem_viewer._models import AffineModel, AlignPlanesModel
-from napari_sbem_viewer._utils.registration_utils import is_2d_affine_matrix
+from napari_sbem_viewer._utils.registration_utils import is_2d_affine_matrix, is_rotation_matrix
 
 
 class RegistrationModel(QObject):
@@ -26,10 +27,16 @@ class RegistrationModel(QObject):
         
     def load_transform(self, file_path):
         transform_matrix = np.loadtxt(file_path, delimiter=',')
+        
+        # If transform only includes 2D affine component, load it into the affine model
         if is_2d_affine_matrix(transform_matrix):
             self.affine_model.load_transform(transform_matrix)
-        else:
-            self.align_planes_model.load_transform(transform_matrix)
+            return
+        
+        # If transform includes a rotation, decompose it into rotation and affine components
+        rot_matrix, affine_matrix_2d = decompose_transform(transform_matrix)
+        self.affine_model.load_transform(affine_matrix_2d)
+        self.align_planes_model.load_transform(rot_matrix)
             
     def rotation_finished(self, image_layer, labels_layer):
         self.viewer.layers.remove(self.align_planes_model.moving_layer_transform)
@@ -73,3 +80,21 @@ class RegistrationModel(QObject):
         if event.value == self.affine_model.fixed_image_layer:
             self.remove_fixed_image()
             
+            
+def decompose_transform(transform_matrix):
+    R_mat = transform_matrix[:3, :3]
+    U, _, Vt = np.linalg.svd(R_mat)
+    R_mat = U @ Vt
+    is_flip_z = np.linalg.det(R_mat) < 0
+    if is_flip_z:
+        R_mat[:, 0] *= -1
+    euler_angles = R.from_matrix(R_mat).as_euler('yzx', degrees=True)
+    euler_angles[-1] = 0
+    if is_flip_z:
+        euler_angles *= -1
+    rot_matrix = np.eye(4)
+    rot_matrix[:3, :3] = R.from_euler('yzx', euler_angles, degrees=True).as_matrix()
+    affine_matrix_2d = transform_matrix @ np.linalg.inv(rot_matrix)
+    affine_matrix_2d[np.abs(affine_matrix_2d) < 1e-6] = 0
+    affine_matrix_2d[np.abs(affine_matrix_2d - 1) < 1e-6] = 1
+    return rot_matrix, affine_matrix_2d
