@@ -74,6 +74,10 @@ class ROIData:
                 
     def world_to_roi_coords(self, coords):
         return coords + self._offset
+    
+    def roi_to_world_coords(self, coords):
+        return coords - self._offset
+          
                 
 class MaskROI:
     def __init__(self, position, size, mask, id_):

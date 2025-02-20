@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QGroupBox, QGridLayout, QLabel
+from qtpy.QtWidgets import QGroupBox, QGridLayout, QLabel, QPushButton
 
 
 class AcquisitionInfo(QGroupBox):
@@ -17,6 +17,8 @@ class AcquisitionInfo(QGroupBox):
         self.layout().addWidget(QLabel('Pause status:'), 3, 0)
         self.pause_status = QLabel('')
         self.layout().addWidget(self.pause_status, 3, 1)
+        self.reset_view_button = QPushButton('Reset view')
+        self.layout().addWidget(self.reset_view_button, 4, 0, 1, 2)
         
     def reset(self):
         self.model.clear()

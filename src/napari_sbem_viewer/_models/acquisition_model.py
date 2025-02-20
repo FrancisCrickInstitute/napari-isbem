@@ -1,5 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Labels
+import numpy as np
+
 from napari_sbem_viewer._models import ROIData, ROIState, TCPServer, LiveViewer
 from napari_sbem_viewer._utils.general_utils import is_multiple
 
@@ -85,7 +87,26 @@ class AcquisitionModel(QObject):
         
     def get_viewer_z_depth(self):
         return self.viewer.dims.point[0] + self.live_viewer.position_z
+    
+    def focus_on_roi(self, idx, region='center'):
+        roi = self.roi_data.rois[idx]
+        if region == 'center':
+            z = roi.center[0]
+        elif region == 'top':
+            z = roi.z2
+        elif region == 'bottom':
+            z = roi.z1
+        else:
+            raise ValueError(f"Invalid region: {region}")
+        coords = self.roi_data.roi_to_world_coords(
+            np.array([z, roi.center[1], roi.center[2]]))
+        self.viewer.camera.center = coords
+        self.viewer.dims.set_point(0, coords[0])
         
+    def reset_view(self):
+        self.viewer.reset_view()
+        self.live_viewer.reset_z_view()
+
     def _update_rois(self, z_depth):
         if self.reset_rois:
             self.tcp_server.delete_all_grids()

@@ -13,6 +13,7 @@ from napari_sbem_viewer._models import ROIState
 
 
 DEFAULT_FINE_THICKNESS = 50
+HEADERS = ['ROI ID', 'z1 (µm)', 'z2 (µm)']
 
 
 class ROISettings(QGroupBox):
@@ -37,7 +38,7 @@ class ROISettings(QGroupBox):
         
     def update_roi_info(self, roi_data):
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.model.setHorizontalHeaderLabels(HEADERS)
         for r, roi in enumerate(roi_data.rois):
             for c, val in enumerate([f'{roi.id}', f'{roi.z1:.2f}', f'{roi.z2:.2f}']):
                 item = QStandardItem(val)
@@ -52,7 +53,7 @@ class ROISettings(QGroupBox):
                     
     def reset(self):
         self.model.clear()
-        self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
+        self.model.setHorizontalHeaderLabels(HEADERS)
         self.roi_combo_box.setCurrentIndex(0)
     
     def show_error(self, title, text):
