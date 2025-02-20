@@ -71,14 +71,14 @@ class DrawROIsModel(QObject):
             raise ValueError("No labels layer found")
         tifffile.imsave(file_path, self.labels_layer.data)
         
-    def split_connected_components(self):
+    def connected_components(self):
         if self.labels_layer is None:
             raise ValueError("No labels layer found")
         cc_mask = connected_components_sitk(self.labels_layer.data)
         self.labels_layer.data = cc_mask
         self.annotated_labels = cc_mask.copy()
         
-    def merge_connected_components(self, tolerance):
+    def merge_nearby_labels(self, tolerance):
         tolerance_px = round_up_to_odd(tolerance / self.labels_layer.scale[0])
         merged_labels = merge_nearby_objects(self.annotated_labels, tolerance_px)
         self.labels_layer.data = merged_labels

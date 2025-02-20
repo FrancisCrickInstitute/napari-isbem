@@ -16,8 +16,8 @@ class DrawROIsController:
         self.add_labels.upload_labels_button.clicked.connect(self._on_click_upload_labels)
         self.label_settings.autofill_checkbox.stateChanged.connect(self._update_autofill_checkbox)
         self.label_settings.export_labels_button.clicked.connect(self._on_click_export_labels)
-        self.label_settings.split_connected_components_button.clicked.connect(self.model.split_connected_components)
-        self.label_settings.merge_connected_components_button.clicked.connect(self._merge_connected_components)
+        self.label_settings.connected_components_button.clicked.connect(self.model.connected_components)
+        self.label_settings.merge_nearby_labels_button.clicked.connect(self._on_click_merge_nearby_labels)
         self.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
         self.label_settings.interpolate_button.clicked.connect(self._on_click_interpolate)
         self.model.viewer.layers.events.removed.connect(self._on_remove_layer)
@@ -39,8 +39,8 @@ class DrawROIsController:
             self.label_settings.setEnabled(False)
             self.add_labels.setEnabled(self.model.reference_layer is not None)
         
-    def _merge_connected_components(self):
-        self.model.merge_connected_components(self.label_settings.merge_tolerance_spinbox.value())
+    def _on_click_merge_nearby_labels(self):
+        self.model.merge_nearby_labels(self.label_settings.merge_tolerance_spinbox.value())
         
     def _on_click_add_labels(self):
         try:

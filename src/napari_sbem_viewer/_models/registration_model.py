@@ -21,6 +21,7 @@ class RegistrationModel(QObject):
             raise ValueError("Invalid file format. Must be an OME-Zarr file.")
         reader = napari_get_reader(file_path)
         layer = Layer.create(*reader(file_path)[0])
+        layer.contrast_limits = (0, 65535)
         self.add_moving_image(layer)
         self.viewer.add_layer(layer)
         
