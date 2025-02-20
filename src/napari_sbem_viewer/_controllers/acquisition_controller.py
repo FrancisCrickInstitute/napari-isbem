@@ -123,7 +123,6 @@ class AcquisitionController:
         self.acquisition_model.set_roi_layer(roi_layer)
         
     def _on_error_overview(self, error):
-        self._on_reset_overview()
         self.acquisition_settings.show_error("Error adding images", str(error))
         
     def _get_roi_layer_names(self):

@@ -63,10 +63,11 @@ class LiveViewer(QObject):
         self.initialized.emit(self.layer)
         
     def start_watching(self, ov_dir):
+        self.reset()
         self.init_images(ov_dir)
         create_worker(self.watch, 
-                      _connect={'yielded': self.append, 'errored': self.errored.emit})  
-            
+                      _connect={'yielded': self.append, 'errored': self._handle_error})  
+        
     def watch(self):
         """
         Repeatedly watches image_dir and yields tiffs that should be added to the viewer.
@@ -215,6 +216,10 @@ class LiveViewer(QObject):
         layer = self.viewer.layers[self.layer_name]
         layer.data = [da.concatenate([layer.data[i], image_pyramid[i][np.newaxis]], axis=0) 
                       for i in range(len(image_pyramid))]
+        
+    def _handle_error(self, e):
+        self.reset()
+        self.errored.emit(e)
     
     def _remove_layer(self):
         try:
