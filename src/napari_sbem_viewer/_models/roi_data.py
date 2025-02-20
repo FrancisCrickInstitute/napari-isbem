@@ -43,6 +43,10 @@ class ROIData:
             roi = MaskROI(position, size, mask_t, len(self.rois)+1)
             self.rois.append(roi)
         
+    def sort(self):
+        # sort the rois in order of when they appear in stack
+        self.rois.sort(key=lambda x: x.z1)
+        
     def set_offset(self, layer, offset):
         self._offset = np.asarray(offset) + layer.data_to_world([0, 0, 0])
         
@@ -106,6 +110,7 @@ class MaskROI:
         idx = round(perc * (self.mask.shape[0] - 1))
 
         return self.mask[idx]
+            
             
 class BoundingBoxROI:
     def __init__(self, position, size, id_):

@@ -221,24 +221,6 @@ def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
     write_multiscale(pyramid=image_pyramid, group=root, axes="zyx", storage_options=dict(chunks=chunksize))
     metadata = create_ome_metadata(scales, name)
     root.attrs["multiscales"] = metadata
-    
-    
-def get_bounding_boxes_from_mask(mask):
-    regions = measure.regionprops(mask)
-    bounding_boxes = []
-    for region in regions:
-        assert len(region.bbox) == 6
-        min_z, min_y, min_x, max_z, max_y, max_x = region.bbox
-        bounding_boxes.append([
-            [min_z, min_y, min_x],
-            [max_z, min_y, min_x],
-            [min_z, min_y, max_x],
-            [max_z, min_y, max_x],
-            [min_z, max_y, max_x],
-            [max_z, max_y, max_x],
-            [min_z, max_y, min_x],
-            [max_z, max_y, min_x]])
-    return bounding_boxes
 
 
 def get_bounds_from_labels(labels):

@@ -69,6 +69,7 @@ class AcquisitionModel(QObject):
             else:
                 for roi in roi_layer.data:
                     self.roi_data.add_bounding_box(roi)
+            self.roi_data.sort()
                     
             # update the acquisition state of the rois using previous z-depth
             if self.last_z_depth is not None:
