@@ -49,6 +49,8 @@ class RegistrationModel(QObject):
     def save_transform(self, file_path):
         rotation_matrix = self.align_planes_model.get_rotation_matrix()
         affine_matrix_2d = self.affine_model.get_affine_matrix()
+        if rotation_matrix is None:
+            rotation_matrix = np.eye(4)
         transform_matrix = affine_matrix_2d @ rotation_matrix
         np.savetxt(file_path, transform_matrix, delimiter=',')
         

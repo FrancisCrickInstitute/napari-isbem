@@ -40,6 +40,7 @@ class AlignPlanesModel(QObject):
         if self.affine_matrix is not None:
             new_layer = transform_layer(self.labels_layer_original, self.affine_matrix)
             self.labels_layer_transform.data = new_layer.data
+            self.labels_layer_transform.scale = new_layer.scale
         if self.moving_layer_transform is not None:
             self.labels_layer_transform.affine = self.moving_layer_transform.affine
             self.labels_layer_transform.translate = self.moving_layer_transform.translate
@@ -71,9 +72,11 @@ class AlignPlanesModel(QObject):
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
         self.moving_layer_transform.data = image_layer.data
         self.moving_layer_transform.translate = image_layer.translate
+        self.moving_layer_transform.scale = image_layer.scale
         if (self.labels_layer_transform is not None and 
             labels_layer is not None):
             self.labels_layer_transform.data = labels_layer.data
+            self.labels_layer_transform.scale = labels_layer.scale
             self.labels_layer_transform.affine = self.moving_layer_transform.affine
             self.labels_layer_transform.translate = self.moving_layer_transform.translate
         self.rotation_finished.emit(self.affine_matrix)

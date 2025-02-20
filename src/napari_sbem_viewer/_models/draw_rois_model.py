@@ -63,7 +63,6 @@ class DrawROIsModel(QObject):
             scale=scale,
             )
         self.labels_layer.events.paint.connect(self._on_paint_labels)
-        self.labels_layer.events.data.connect(self._on_labels_data_changed)
         self.labels_added.emit(self.labels_layer)
         
     def export_labels(self, file_path):

@@ -282,7 +282,6 @@ def transform_image_3d_sitk(image, transformation_matrix, interpolator='linear')
                                       transform, 
                                       interpolator,
                                       output_origin)
-    
     return sitk.GetArrayFromImage(image_transformed).astype(image.dtype), min_coords
 
 
@@ -442,6 +441,8 @@ def rotate_layer(layer, v1, v2):
 def transform_layer(layer, affine_transform):
     layer_type = 'image' if isinstance(layer, Image) else 'labels'
     interpolator = 'linear' if layer_type == 'image' else 'nearest'
+    if layer.scale is not None:
+        affine_transform = add_scale_to_transform_matrix(affine_transform, layer.scale)
     if isinstance(layer.data, np.ndarray):
         transformed_image, offset = transform_image_3d_sitk(layer.data, affine_transform, interpolator)
     else:
@@ -453,7 +454,7 @@ def transform_layer(layer, affine_transform):
             else:
                 transform_level, _ = transform_image_3d_sitk(pyramid_level.compute(), affine_transform, interpolator)
             transformed_image.append(transform_level)   
-    rotated_layer = Layer.create(transformed_image, {'scale': layer.scale, 'name': layer.name, 'translate': offset}, layer_type)
+    rotated_layer = Layer.create(transformed_image, {'scale': (1, 1, 1), 'name': layer.name, 'translate': offset}, layer_type)
     return rotated_layer
 
 
