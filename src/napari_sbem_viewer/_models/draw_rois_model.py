@@ -33,6 +33,7 @@ class DrawROIsModel(QObject):
     
     def remove_reference_layer(self):
         self.reference_layer = None
+        self.reset()
         self.reference_layer_removed.emit()
         
     def add_labels_layer(self, downsample_factor):
@@ -100,6 +101,11 @@ class DrawROIsModel(QObject):
         self.labels_layer.data = self.annotated_labels
         
     def reset(self):
+        # remove the labels layer if not already removed
+        try:
+            self.viewer.layers.remove(self.labels_layer)
+        except:
+            pass
         self.labels_layer = None
         self.annotated_labels = None
         self.interpolation_progress_updated.emit(0)
