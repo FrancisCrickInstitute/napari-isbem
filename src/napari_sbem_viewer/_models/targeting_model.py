@@ -10,7 +10,7 @@ from napari_sbem_viewer._utils.image_utils import connected_components_sitk, mer
 from napari_sbem_viewer._utils.general_utils import round_up_to_odd
 
 
-class DrawROIsModel(QObject):
+class TargetingModel(QObject):
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()

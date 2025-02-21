@@ -6,5 +6,5 @@ from napari_sbem_viewer._models.acquisition_model import AcquisitionModel
 from napari_sbem_viewer._models.align_planes_model import AlignPlanesModel
 from napari_sbem_viewer._models.affine_model import AffineModel
 from napari_sbem_viewer._models.registration_model import RegistrationModel
-from napari_sbem_viewer._models.draw_rois_model import DrawROIsModel
+from napari_sbem_viewer._models.targeting_model import TargetingModel
 from napari_sbem_viewer._models.layer_model import LayerModel

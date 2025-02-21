@@ -2,9 +2,9 @@ from napari.layers import Image
 
 
 class TargetingController:
-    def __init__(self, view, draw_rois_model):
+    def __init__(self, view, targeting_model):
         self.view = view
-        self.model = draw_rois_model
+        self.model = targeting_model
         self._populate_image_layer_combo_box()
         self._connect_signals()
         self._update_ui()
