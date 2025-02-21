@@ -1,6 +1,11 @@
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
 
-from napari_sbem_viewer._views.acquisition import TCPSettings, AcquisitionSettings, AcquisitionInfo, ROISettings
+from napari_sbem_viewer._views.acquisition import (
+    TCPSettings, 
+    AcquisitionSettings, 
+    AcquisitionInfo, 
+    ROISettings,
+    )
 
 
 class AcquisitionView(QWidget):

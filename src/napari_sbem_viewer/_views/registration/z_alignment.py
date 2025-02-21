@@ -1,9 +1,11 @@
-from qtpy.QtWidgets import (QGridLayout, 
-                            QPushButton, 
-                            QDoubleSpinBox,
-                            QLabel, 
-                            QCheckBox, 
-                            QGroupBox)
+from qtpy.QtWidgets import (
+    QGridLayout, 
+    QPushButton, 
+    QDoubleSpinBox,
+    QLabel, 
+    QCheckBox, 
+    QGroupBox,
+    )
 
 
 class ZAlignment(QGroupBox):

@@ -1,7 +1,9 @@
-from qtpy.QtWidgets import (QGridLayout, 
-                            QPushButton, 
-                            QCheckBox, 
-                            QGroupBox)
+from qtpy.QtWidgets import (
+    QGridLayout, 
+    QPushButton, 
+    QCheckBox, 
+    QGroupBox,
+    )
 
 
 class Affine2d(QGroupBox):

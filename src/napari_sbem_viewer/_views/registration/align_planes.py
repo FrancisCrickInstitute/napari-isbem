@@ -1,15 +1,14 @@
-import os
-
 from superqt import QLabeledDoubleSlider
-from qtpy.QtWidgets import (QPushButton, 
-                            QFormLayout, 
-                            QFileDialog, 
-                            QGridLayout, 
-                            QLabel, 
-                            QGroupBox,
-                            QLabel)
 from qtpy.QtCore import Qt
-
+from qtpy.QtWidgets import (
+    QPushButton, 
+    QFormLayout, 
+    QFileDialog, 
+    QGridLayout, 
+    QLabel, 
+    QGroupBox,
+    QLabel,
+    )
 
 
 class AlignPlanes(QGroupBox):

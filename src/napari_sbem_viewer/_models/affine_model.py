@@ -9,12 +9,14 @@ from skimage.transform import (
         SimilarityTransform,
         )
 
-from napari_sbem_viewer._utils.registration_utils import (flip_transform_matrix, 
-                                                          offset_transform_matrix_z,
-                                                          calculate_transform, 
-                                                          calculate_z_transform, 
-                                                          convert_affine_to_ndims,
-                                                          is_2d_affine_matrix)
+from napari_sbem_viewer._utils.registration_utils import (
+    flip_transform_matrix, 
+    offset_transform_matrix_z,
+    calculate_transform, 
+    calculate_z_transform, 
+    convert_affine_to_ndims,
+    is_2d_affine_matrix
+    )
 from napari_sbem_viewer._utils.general_utils import reset_view
 
 

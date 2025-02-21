@@ -1,6 +1,16 @@
-from qtpy.QtWidgets import QVBoxLayout, QWidget, QVBoxLayout, QMessageBox
+from qtpy.QtWidgets import (
+    QVBoxLayout, 
+    QWidget, 
+    QVBoxLayout,
+    QMessageBox,
+    )
 
-from napari_sbem_viewer._views.registration import SaveLoadTransforms, AlignPlanes, Affine2d, ZAlignment
+from napari_sbem_viewer._views.registration import (
+    SaveLoadTransforms, 
+    AlignPlanes, 
+    Affine2d, 
+    ZAlignment,
+    )
 
 
 class RegistrationView(QWidget):

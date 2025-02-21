@@ -3,7 +3,11 @@ from enum import Enum
 import numpy as np
 
 from napari_sbem_viewer._utils.image_utils import get_bounds_from_labels
-from napari_sbem_viewer._utils.registration_utils import transform_image_3d_sitk, find_bounds, add_scale_to_transform_matrix
+from napari_sbem_viewer._utils.registration_utils import (
+    transform_image_3d_sitk, 
+    find_bounds, 
+    add_scale_to_transform_matrix,
+    )
 
 
 class ROIState(Enum):

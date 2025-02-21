@@ -1,13 +1,15 @@
-from qtpy.QtWidgets import (QGridLayout, 
-                            QLabel, 
-                            QSpinBox, 
-                            QGroupBox, 
-                            QVBoxLayout, 
-                            QFileDialog,
-                            QHBoxLayout,
-                            QLineEdit,
-                            QPushButton,
-                            QCheckBox)
+from qtpy.QtWidgets import (
+    QGridLayout, 
+    QLabel, 
+    QSpinBox, 
+    QGroupBox, 
+    QVBoxLayout, 
+    QFileDialog,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QCheckBox
+    )
 
 
 DEFAULT_FINE_THICKNESS = 50

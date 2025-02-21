@@ -1,12 +1,14 @@
 from qtpy.QtGui import QStandardItemModel, QStandardItem, QColor
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (QTableView,
-                            QLabel, 
-                            QHeaderView,
-                            QGroupBox, 
-                            QVBoxLayout, 
-                            QHBoxLayout,
-                            QComboBox)
+from qtpy.QtWidgets import (
+    QTableView,
+    QLabel, 
+    QHeaderView,
+    QGroupBox, 
+    QVBoxLayout, 
+    QHBoxLayout,
+    QComboBox
+    )
 
 from napari_sbem_viewer._models import ROIState
 

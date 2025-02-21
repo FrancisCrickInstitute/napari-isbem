@@ -5,11 +5,13 @@ import numpy as np
 from napari.layers import Image, Labels
 from napari.qt import create_worker
 
-from napari_sbem_viewer._utils.registration_utils import (rotation_matrix_from_zy_zx_angles,
-                                                          rotation_matrix_from_zy_zx_angles,
-                                                          calculate_normal,
-                                                          transform_layer,
-                                                          is_rotation_matrix)
+from napari_sbem_viewer._utils.registration_utils import (
+    rotation_matrix_from_zy_zx_angles,
+    rotation_matrix_from_zy_zx_angles,
+    calculate_normal,
+    transform_layer,
+    is_rotation_matrix
+    )
 
 
 class AlignPlanesModel(QObject):

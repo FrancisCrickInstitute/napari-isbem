@@ -1,5 +1,10 @@
-import napari
-from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QMessageBox
+from qtpy.QtWidgets import (
+    QVBoxLayout, 
+    QHBoxLayout, 
+    QGroupBox, 
+    QPushButton, 
+    QMessageBox,
+    )
 
 
 class SaveLoadTransforms(QGroupBox):

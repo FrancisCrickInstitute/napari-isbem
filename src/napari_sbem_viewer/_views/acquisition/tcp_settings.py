@@ -1,5 +1,13 @@
-from qtpy.QtWidgets import QLabel, QLineEdit, QPushButton, QSpinBox, QGroupBox, QGridLayout, QHBoxLayout, QVBoxLayout
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (
+    QLabel, QLineEdit, 
+    QPushButton, 
+    QSpinBox, 
+    QGroupBox,
+    QGridLayout, 
+    QHBoxLayout, 
+    QVBoxLayout
+    )
 
 
 class TCPSettings(QGroupBox):
