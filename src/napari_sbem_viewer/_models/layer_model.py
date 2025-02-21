@@ -1,8 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 import tifffile
 from napari_ome_zarr import napari_get_reader
-from napari.layers import Layer, Labels
-import numpy as np
+from napari.layers import Layer
 
 
 class LayerModel(QObject):
@@ -47,23 +46,6 @@ class LayerModel(QObject):
         self._remove_layer(self.em_layer)
         self.em_layer = None
         self.em_layer_removed.emit()
-        
-    def add_new_labels_layer(self, downsample_factor):
-        labels_shape = [dim // downsample_factor for dim in self.targeting_layer.data.shape]
-        labels = np.zeros(labels_shape, dtype=np.uint8)
-        layer = Labels(
-            labels,
-            name="ROIs",
-            scale=[downsample_factor * s for s in self.targeting_layer.scale],
-            )
-        self.add_labels_layer(layer)
-        
-    def upload_existing_labels(self, file_path):
-        labels = tifffile.imread(file_path)
-        scale_factors = calculate_scale(labels.shape, self.targeting_layer.data.shape)
-        scale = [s * f for s, f in zip(self.targeting_layer.scale, scale_factors)]
-        layer = Labels(labels, name="ROIs", scale=scale)
-        self.add_labels_layer(layer)
     
     def add_labels_layer(self, layer):
         self.labels_layer = layer
@@ -86,7 +68,6 @@ class LayerModel(QObject):
         
     def _on_remove_layer(self, event):
         if event.value == self.targeting_layer:
-            self.remove_labels_layer()
             self.targeting_layer = None
             self.targeting_layer_removed.emit()
         elif event.value == self.em_layer:
@@ -95,7 +76,3 @@ class LayerModel(QObject):
         elif event.value == self.labels_layer:
             self.labels_layer = None
             self.labels_layer_removed.emit()
-        
-        
-def calculate_scale(source_shape, target_shape):
-    return [dim1 / dim2 for dim1, dim2 in zip(target_shape, source_shape)]

@@ -16,7 +16,7 @@ from napari_sbem_viewer._utils.image_utils import get_ome_pixel_size, get_ome_po
 class LiveViewer(QObject):
     initialized = Signal(object)
     cleared = Signal()
-    errored = Signal(Exception)
+    errored = Signal(str, str)
     def __init__(self, napari_viewer, layer_name):
         super().__init__()
         self.viewer = napari_viewer
@@ -119,7 +119,6 @@ class LiveViewer(QObject):
         self.dtype = None
         self.res_unit = None
         self.image_dir = None
-        self._remove_layer()
         self.cleared.emit()
         
     def _get_images_from_dir(self):
@@ -219,18 +218,10 @@ class LiveViewer(QObject):
         return (self.image_shapes[0][0] * self.pixel_size_y, self.image_shapes[0][1] * self.pixel_size_x)
     
     def _append_to_layer(self, image_pyramid):
-        layer = self.viewer.layers[self.layer_name]
-        layer.data = [da.concatenate([layer.data[i], image_pyramid[i][np.newaxis]], axis=0) 
+        self.layer.data = [da.concatenate([self.layer.data[i], image_pyramid[i][np.newaxis]], axis=0) 
                       for i in range(len(image_pyramid))]
         
     def _handle_error(self, e):
         self.reset()
-        self.errored.emit(e)
-    
-    def _remove_layer(self):
-        try:
-            self.viewer.layers.remove(self.layer)
-        except Exception:
-            pass
-        self.layer = None
+        self.errored.emit("Error adding images", str(e))
         

@@ -2,10 +2,9 @@ from napari.layers import Labels
 
 
 class AcquisitionController:
-    def __init__(self, view, acquisition_model, layer_model):
+    def __init__(self, view, acquisition_model):
         self.view = view
         self.acquisition_model = acquisition_model
-        self.layer_model = layer_model
         self.view.roi_settings.setEnabled(False)
         self._init_signals()
         self._populate_roi_combo_box()
@@ -20,7 +19,7 @@ class AcquisitionController:
         self.acquisition_model.errored.connect(self.view.show_error)
         self.acquisition_model.live_viewer.initialized.connect(self._on_add_overview)
         self.acquisition_model.live_viewer.cleared.connect(self._on_reset_overview)
-        self.acquisition_model.live_viewer.errored.connect(self._on_error_overview)
+        self.acquisition_model.live_viewer.errored.connect(self.view.show_error)
 
         # Init tcp settings
         self.view.tcp_settings.start_server_button.clicked.connect(self._on_click_start_server)
@@ -136,9 +135,6 @@ class AcquisitionController:
     def _on_roi_layer_changed(self):
         roi_layer = self._get_roi_layer()
         self.acquisition_model.set_roi_layer(roi_layer)
-        
-    def _on_error_overview(self, error):
-        self.view.show_error("Error adding images", str(error))
         
     def _get_roi_layer_names(self):
         return [x.name for x in self.acquisition_model.viewer.layers if isinstance(x, Labels)]

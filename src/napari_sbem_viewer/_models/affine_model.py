@@ -33,21 +33,21 @@ class AffineModel(QObject):
         self.fixed_image_layer = None
         self.is_doing_registration = False
         
-    def set_moving_image(self, layer):
+    def set_moving_layer(self, layer):
         self.moving_image_layer = layer
         if self.fixed_image_layer is not None:
             self.activated.emit()
             
-    def set_fixed_image(self, layer):
+    def set_fixed_layer(self, layer):
         self.fixed_image_layer = layer
         if self.moving_image_layer is not None:
             self.activated.emit()
             
-    def remove_moving_image(self):
+    def remove_moving_layer(self):
         self.moving_image_layer = None
         self.deactivated.emit()
     
-    def remove_fixed_image(self):
+    def remove_fixed_layer(self):
         self.fixed_image_layer = None
         self.deactivated.emit()
         

@@ -3,8 +3,8 @@ from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
 from napari.qt import create_worker
-from napari_ome_zarr import napari_get_reader
-from napari.layers import Layer
+from napari.layers import Labels
+import tifffile
 
 from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects
 from napari_sbem_viewer._utils.general_utils import round_up_to_odd
@@ -15,34 +15,51 @@ class DrawROIsModel(QObject):
     interpolation_started = Signal()
     interpolation_finished = Signal()
     editing_updated = Signal()
-    def __init__(self, viewer):
+    def __init__(self, viewer, layer_model):
         super().__init__()
         self.viewer = viewer
-        self.labels_layer = None
+        self.layer_model = layer_model
         self.annotated_labels = None
         self.autofill_labels = False
-        self.targeting_layer = None
         self.editing_enabled = True
+        self.layer_model.targeting_layer_removed.connect(self.layer_model.remove_labels_layer)
+        self.layer_model.labels_layer_removed.connect(self.reset_labels)
         
-    def add_labels_layer(self, layer):
-        self.labels_layer = layer
-        self.labels_layer.events.paint.connect(self._on_paint_labels)
+    def add_new_labels_layer(self, downsample_factor):
+        labels_shape = [dim // downsample_factor for dim in self.layer_model.targeting_layer.data.shape]
+        labels = np.zeros(labels_shape, dtype=np.uint8)
+        layer = Labels(
+            labels,
+            name="ROIs",
+            scale=[downsample_factor * s for s in self.layer_model.targeting_layer.scale],
+            )
+        layer.events.paint.connect(self._on_paint_labels)
         self.annotated_labels = layer.data.copy()
+        self.layer_model.add_labels_layer(layer)
+        
+    def upload_existing_labels(self, file_path):
+        labels = tifffile.imread(file_path)
+        scale_factors = calculate_scale(labels.shape, self.layer_model.targeting_layer.data.shape)
+        scale = [s * f for s, f in zip(self.layer_model.targeting_layer.scale, scale_factors)]
+        layer = Labels(labels, name="ROIs", scale=scale)
+        layer.events.paint.connect(self._on_paint_labels)
+        self.annotated_labels = layer.data.copy()
+        self.layer_model.add_labels_layer(layer)
         
     def add_targeting_layer(self, layer):
         self.targeting_layer = layer
         
     def connected_components(self):
-        if self.labels_layer is None:
+        if self.layer_model.labels_layer is None:
             raise ValueError("No labels layer found")
-        cc_mask = connected_components_sitk(self.labels_layer.data)
-        self.labels_layer.data = cc_mask
+        cc_mask = connected_components_sitk(self.layer_model.labels_layer.data)
+        self.layer_model.labels_layer.data = cc_mask
         self.annotated_labels = cc_mask.copy()
         
     def merge_nearby_labels(self, tolerance):
-        tolerance_px = round_up_to_odd(tolerance / self.labels_layer.scale[0])
+        tolerance_px = round_up_to_odd(tolerance / self.layer_model.labels_layer.scale[0])
         merged_labels = merge_nearby_objects(self.annotated_labels, tolerance_px)
-        self.labels_layer.data = merged_labels
+        self.layer_model.labels_layer.data = merged_labels
         self.annotated_labels = merged_labels.copy()
         
     def interpolate_labels(self):
@@ -59,14 +76,9 @@ class DrawROIsModel(QObject):
         
     def reset_interpolation(self):
         self.interpolation_progress_updated.emit(0)
-        self.labels_layer.data = self.annotated_labels
-        
-    def reset_targeting_layer(self):
-        self.targeting_layer = None
-        self.reset_labels()
+        self.layer_model.labels_layer.data = self.annotated_labels
         
     def reset_labels(self):
-        self.labels_layer = None
         self.annotated_labels = None
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
@@ -92,11 +104,15 @@ class DrawROIsModel(QObject):
         self.annotated_labels[z_coord] = layer.data[z_coord]
         
     def _add_interpolated_labels(self, interpolated_labels):
-        self.labels_layer.data = interpolated_labels
+        self.layer_model.labels_layer.data = interpolated_labels
         self._on_finish_interpolation()
         
     def _on_finish_interpolation(self):
         self.interpolation_finished.emit()
+        
+        
+def calculate_scale(source_shape, target_shape):
+    return [dim1 / dim2 for dim1, dim2 in zip(target_shape, source_shape)]
         
         
 def create_contour(x_coords, y_coords):

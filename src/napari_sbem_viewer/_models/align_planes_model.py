@@ -33,7 +33,7 @@ class AlignPlanesModel(QObject):
         self.intersection_points = None
         self.affine_matrix = None
         
-    def add_labels_layer(self, labels_layer):
+    def set_labels_layer(self, labels_layer):
         self.labels_layer_original = Labels(labels_layer.data, affine=labels_layer.affine, name=labels_layer.name, scale=labels_layer.scale)
         self.labels_layer_transform = labels_layer
         self.labels_layer_transform.events.data.connect(self._on_labels_data_changed)
@@ -96,6 +96,10 @@ class AlignPlanesModel(QObject):
         self.moving_layer_original = Image(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
         self.moving_layer_transform.events.affine.connect(self._on_affine_changed)
         
+    def remove_moving_layer(self):
+        self.moving_layer_transform = None
+        self.moving_
+        
     def show_align_planes_window(self):
         moving_layer = self.moving_layer_transform
         if not isinstance(moving_layer, Image):
@@ -124,6 +128,9 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.show()
         
     def reset(self):
+        self.moving_layer_transform = None
+        self.moving_layer_original = None
+        self.remove_labels()
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
         self.layer = None
@@ -132,6 +139,10 @@ class AlignPlanesModel(QObject):
         self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
+        
+    def remove_labels(self):
+        self.labels_layer_original = None
+        self.labels_layer_transform = None
         
     def reset_transform(self):
         self.affine_matrix = None

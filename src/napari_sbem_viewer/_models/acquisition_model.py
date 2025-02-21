@@ -10,9 +10,10 @@ class AcquisitionModel(QObject):
     errored = Signal(str, str)
     acquisition_info_updated = Signal(float, float, bool)
     rois_updated = Signal(ROIData)
-    def __init__(self, viewer):
+    def __init__(self, viewer, layer_model):
         super().__init__()
         self.viewer = viewer
+        self.layer_model = layer_model
         self.tcp_server = TCPServer('localhost', 8888)
         self.roi_data = ROIData()
         self.live_viewer = LiveViewer(self.viewer, 'EM overview')
@@ -23,6 +24,8 @@ class AcquisitionModel(QObject):
         self.pause_after_acquire_roi = False
         self.reset_rois = True
         self.tcp_server.request_received.connect(self.process_request)
+        self.live_viewer.initialized.connect(self.layer_model.add_em_layer)
+        self.live_viewer.cleared.connect(self.layer_model.remove_em_layer)
     
     def process_request(self, request):
         try:
