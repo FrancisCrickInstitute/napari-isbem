@@ -7,8 +7,6 @@ from napari_sbem_viewer._utils.registration_utils import is_2d_affine_matrix, de
 
 
 class RegistrationModel(QObject):
-    moving_layer_added = Signal(Layer)
-    moving_layer_removed = Signal()
     def __init__(self, viewer, stack_viewer):
         super().__init__()
         self.viewer = viewer
@@ -54,12 +52,10 @@ class RegistrationModel(QObject):
     def add_moving_image(self, layer):
         self.align_planes_model.set_moving_layer(layer)
         self.affine_model.set_moving_image(layer)
-        self.moving_layer_added.emit(self.align_planes_model.moving_layer_original)
         
     def remove_moving_image(self):
         self.align_planes_model.reset()
         self.affine_model.remove_moving_image()
-        self.moving_layer_removed.emit()
         
     def reset_transforms(self):
         self.align_planes_model.reset_transform()

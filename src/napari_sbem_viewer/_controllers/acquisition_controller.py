@@ -2,9 +2,10 @@ from napari.layers import Labels
 
 
 class AcquisitionController:
-    def __init__(self, view, acquisition_model):
+    def __init__(self, view, acquisition_model, layer_model):
         self.view = view
         self.acquisition_model = acquisition_model
+        self.layer_model = layer_model
         self.view.roi_settings.setEnabled(False)
         self._init_signals()
         self._populate_roi_combo_box()

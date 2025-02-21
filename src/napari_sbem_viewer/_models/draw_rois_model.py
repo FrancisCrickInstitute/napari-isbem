@@ -3,7 +3,6 @@ from qtpy.QtCore import QObject, Signal
 import cv2
 from scipy.ndimage import distance_transform_edt
 from napari.qt import create_worker
-import tifffile
 from napari_ome_zarr import napari_get_reader
 from napari.layers import Layer
 
@@ -15,10 +14,6 @@ class DrawROIsModel(QObject):
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
-    labels_added = Signal(object)
-    labels_removed = Signal()
-    targeting_layer_added = Signal(object)
-    targeting_layer_removed = Signal()
     editing_updated = Signal()
     def __init__(self, viewer):
         super().__init__()
@@ -29,55 +24,13 @@ class DrawROIsModel(QObject):
         self.targeting_layer = None
         self.editing_enabled = True
         
-    def import_targeting_image(self, file_path):
-        if not file_path.endswith('.ome.zarr'):
-            raise ValueError("Invalid file format. Must be an OME-Zarr file.")
-        reader = napari_get_reader(file_path)
-        layer = Layer.create(*reader(file_path)[0])
-        layer.contrast_limits = (0, 65535)
+    def add_labels_layer(self, layer):
+        self.labels_layer = layer
+        self.labels_layer.events.paint.connect(self._on_paint_labels)
+        self.annotated_labels = layer.data.copy()
+        
+    def add_targeting_layer(self, layer):
         self.targeting_layer = layer
-        self.targeting_layer_added.emit(layer)
-        self.viewer.add_layer(layer)
-    
-    def remove_targeting_layer(self):
-        self.targeting_layer = None
-        self.reset()
-        self.targeting_layer_removed.emit()
-        
-    def add_labels_layer(self, downsample_factor):
-        if self.labels_layer is not None:
-            raise ValueError("Labels layer already exists")
-        labels_shape = [dim // downsample_factor for dim in self.targeting_layer.data.shape]
-        labels = np.zeros(labels_shape, dtype=np.uint8)
-        self.labels_layer = self.viewer.add_labels(
-            labels,
-            name="ROIs",
-            scale=[downsample_factor * s for s in self.targeting_layer.scale],
-            )
-        self.annotated_labels = np.zeros_like(labels)
-        self.labels_layer.events.paint.connect(self._on_paint_labels)
-        self.labels_added.emit(self.labels_layer)
-        
-    def upload_labels(self, file_path):
-        if self.labels_layer is not None:
-            raise ValueError("Labels layer already exists")
-        
-        labels = tifffile.imread(file_path)
-        scale_factors = calculate_scale(labels.shape, self.targeting_layer.data.shape)
-        scale = [s * f for s, f in zip(self.targeting_layer.scale, scale_factors)]
-        self.annotated_labels = labels.copy()
-        self.labels_layer = self.viewer.add_labels(
-            labels,
-            name="ROIs",
-            scale=scale,
-            )
-        self.labels_layer.events.paint.connect(self._on_paint_labels)
-        self.labels_added.emit(self.labels_layer)
-        
-    def export_labels(self, file_path):
-        if self.labels_layer is None:
-            raise ValueError("No labels layer found")
-        tifffile.imsave(file_path, self.labels_layer.data)
         
     def connected_components(self):
         if self.labels_layer is None:
@@ -109,36 +62,18 @@ class DrawROIsModel(QObject):
         self.labels_layer.data = self.annotated_labels
         
     def reset_targeting_layer(self):
-        self._remove_layer(self.targeting_layer)
         self.targeting_layer = None
-        self.targeting_layer_removed.emit()
         self.reset_labels()
         
     def reset_labels(self):
-        self._remove_layer(self.labels_layer)
-        self._remove_layer(self.targeting_layer)
         self.labels_layer = None
         self.annotated_labels = None
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
-        self.labels_removed.emit()
-        self.targeting_layer_removed.emit()
 
     def enable_editing(self, enabled):
         self.editing_enabled = enabled == True
         self.editing_updated.emit()
-        
-    def _on_remove_layer(self, event):
-        if event.value == self.labels_layer:
-            self.reset_labels()
-        if event.value == self.targeting_layer:
-            self.reset_targeting_layer()
-        
-    def _remove_layer(self, layer):
-        try:
-            self.viewer.layers.remove(layer)
-        except:
-            pass
         
     def _on_paint_labels(self, event):
         if not self.editing_enabled:
@@ -162,16 +97,6 @@ class DrawROIsModel(QObject):
         
     def _on_finish_interpolation(self):
         self.interpolation_finished.emit()
-        
-    def _get_layer(self, layer_name):
-        try:
-            return self.viewer.layers[layer_name]
-        except KeyError:
-            raise ValueError(f"Layer '{layer_name}' not found.")
-        
-        
-def calculate_scale(source_shape, target_shape):
-    return [dim1 / dim2 for dim1, dim2 in zip(target_shape, source_shape)]
         
         
 def create_contour(x_coords, y_coords):

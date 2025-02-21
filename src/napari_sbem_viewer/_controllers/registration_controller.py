@@ -2,12 +2,13 @@ from napari_sbem_viewer._models.affine_model import AffineTransformChoices
 
 
 class RegistrationController:
-    def __init__(self, view, registration_model):
+    def __init__(self, view, registration_model, layer_model):
         self.view = view
         self.registration_model = registration_model
         self.align_planes_model = self.registration_model.align_planes_model
         self.affine_model = self.registration_model.affine_model
         self.affine_model.do_transform = self._on_affine_transform
+        self.layer_model = layer_model
         self._reset_align_planes_ui()
         self._reset_affine_transform_ui()
         self._on_remove_moving_image()
@@ -18,6 +19,13 @@ class RegistrationController:
         self.view.save_load_transforms.save_transform_button.clicked.connect(self._on_click_save_transform)
         self.view.save_load_transforms.reset_transform_button.clicked.connect(self._on_click_reset_transform)
         
+        self.layer_model.targeting_layer_added.connect(self._on_add_moving_image)
+        self.layer_model.targeting_layer_removed.connect(self._on_remove_moving_image)
+        self.layer_model.em_layer_added.connect(self.registration_model.add_fixed_image)
+        self.layer_model.em_layer_removed.connect(self.registration_model.remove_fixed_image)
+        self.layer_model.labels_layer_added.connect(self.align_planes_model.add_labels_layer)
+        self.layer_model.labels_layer_removed.connect(self.align_planes_model.remove_labels_layer)
+        
         self.view.align_planes.show_button.clicked.connect(self._on_click_show)
         self.view.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.view.align_planes.zx_degrees_slider.valueChanged.connect(self._on_update_angle)
@@ -26,8 +34,6 @@ class RegistrationController:
         self.align_planes_model.rotation_started.connect(self._deactivate_transform_buttons)
         self.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
         self.align_planes_model.rotation_errored.connect(self._on_error_rotate)
-        self.align_planes_model.activated.connect(lambda: self.view.align_planes.setEnabled(True))
-        self.align_planes_model.deactivated.connect(lambda: self.view.align_planes.setEnabled(False))
         
         self.view.z_alignment.reverse_checkbox.stateChanged.connect(self.affine_model._flip_z)
         self.view.z_alignment.move_down_button.clicked.connect(self._on_click_move_down)
@@ -39,9 +45,6 @@ class RegistrationController:
         self.affine_model.activated.connect(lambda: self.view.affine_2d.setEnabled(True))
         self.affine_model.deactivated.connect(lambda: self.view.affine_2d.setEnabled(False))
         self.affine_model.transform_loaded.connect(self._update_reverse_checkbox)
-        
-        self.registration_model.moving_layer_added.connect(self._on_add_moving_image)
-        self.registration_model.moving_layer_removed.connect(self._on_remove_moving_image)
         
     def _deactivate_transform_buttons(self):
         self.view.align_planes.apply_rotation_button.setEnabled(False)
@@ -55,13 +58,14 @@ class RegistrationController:
         self.view.save_load_transforms.save_transform_button.setEnabled(True)
         self.view.save_load_transforms.reset_transform_button.setEnabled(True)
         
-    def _on_add_moving_image(self):
+    def _on_add_moving_image(self, layer):
         self.view.save_load_transforms.upload_transform_button.setEnabled(True)
         self.view.save_load_transforms.save_transform_button.setEnabled(True)
         self.view.save_load_transforms.reset_transform_button.setEnabled(True)
         self.view.align_planes.setEnabled(True)
         self.view.z_alignment.setEnabled(True)
         self._update_reverse_checkbox()
+        self.registration_model.add_moving_image(layer)
         
     def _on_remove_moving_image(self):
         self.view.affine_2d.setEnabled(False)
@@ -158,7 +162,6 @@ class RegistrationController:
         self.affine_model._do_transform(
             flip_z=self.view.z_alignment.reverse_checkbox.isChecked(),
             transform_method=AffineTransformChoices.Affine.value,
-            # transform_method=AffineTransformChoices[self.view.affine_2d.model_combobox.currentText()].value,
             remove_outliers=self.view.affine_2d.remove_outliers_checkbox.isChecked()
         )
         

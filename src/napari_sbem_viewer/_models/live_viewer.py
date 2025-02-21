@@ -3,6 +3,7 @@ import time
 import math
 
 from napari.qt import create_worker
+from napari.layers import Image
 from qtpy.QtCore import QObject, Signal
 import dask.array as da
 from tifffile import TiffFile, xml2dict
@@ -206,7 +207,7 @@ class LiveViewer(QObject):
             scale = (self.pixel_size_z, self.pixel_size_y, self.pixel_size_x)
         else:
             scale = (self.pixel_size_z, 1, 1)
-        layer = self.viewer.add_image(
+        layer = Image(
             image, 
             rendering='attenuated_mip', 
             name=self.layer_name, 

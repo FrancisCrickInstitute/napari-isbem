@@ -18,8 +18,6 @@ class AlignPlanesModel(QObject):
     rotation_started = Signal()
     rotation_finished = Signal(object)
     rotation_errored = Signal(Exception)
-    activated = Signal()
-    deactivated = Signal()
     def __init__(self, viewer, stack_viewer):
         super().__init__()
         self.viewer = viewer
@@ -97,7 +95,6 @@ class AlignPlanesModel(QObject):
         self.moving_layer_transform = layer
         self.moving_layer_original = Image(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
         self.moving_layer_transform.events.affine.connect(self._on_affine_changed)
-        self.activated.emit()
         
     def show_align_planes_window(self):
         moving_layer = self.moving_layer_transform
@@ -135,7 +132,6 @@ class AlignPlanesModel(QObject):
         self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
-        self.deactivated.emit()
         
     def reset_transform(self):
         self.affine_matrix = None
