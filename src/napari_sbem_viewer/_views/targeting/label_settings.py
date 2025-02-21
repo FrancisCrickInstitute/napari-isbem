@@ -39,7 +39,7 @@ class LabelSettings(QGroupBox):
         self.layout().addWidget(self.merge_nearby_labels_button)
         self.layout().addWidget(self.reset_labels_button)
         self.layout().addWidget(self.interpolate_button)
-        self.layout().addWidget(self.progress_bar)
+        # self.layout().addWidget(self.progress_bar)
         
     def save_file_dialog(self):
         file_path, _ = QFileDialog.getSaveFileName(self, 
