@@ -2,8 +2,9 @@ from napari.layers import Image, Labels
 
 
 class DrawROIsController:
-    def __init__(self, draw_rois_model, add_labels, label_settings):
+    def __init__(self, draw_rois_model, add_targeting_image, add_labels, label_settings):
         self.model = draw_rois_model
+        self.add_targeting_image = add_targeting_image
         self.add_labels = add_labels
         self.label_settings = label_settings
         self._populate_image_layer_combo_box()
@@ -12,6 +13,7 @@ class DrawROIsController:
         self._update_autofill_checkbox()
         
     def _connect_signals(self):
+        self.add_targeting_image.import_targeting_image_button.clicked.connect(self._on_click_import_targeting_image)
         self.add_labels.add_labels_button.clicked.connect(self._on_click_add_labels)
         self.add_labels.upload_labels_button.clicked.connect(self._on_click_upload_labels)
         self.label_settings.autofill_checkbox.stateChanged.connect(self._update_autofill_checkbox)
@@ -20,15 +22,15 @@ class DrawROIsController:
         self.label_settings.merge_nearby_labels_button.clicked.connect(self._on_click_merge_nearby_labels)
         self.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
         self.label_settings.interpolate_button.clicked.connect(self._on_click_interpolate)
-        self.model.viewer.layers.events.removed.connect(self._on_remove_layer)
+        self.model.viewer.layers.events.removed.connect(self.model._on_remove_layer)
         self.model.interpolation_progress_updated.connect(self.label_settings.progress_bar.setValue)
         self.model.interpolation_started.connect(lambda: self.label_settings.interpolate_button.setEnabled(False))
         self.model.interpolation_finished.connect(lambda: self.label_settings.interpolate_button.setEnabled(True))
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()
         self.model.labels_added.connect(self._update_ui)
         self.model.labels_removed.connect(self._update_ui)
-        self.model.reference_layer_added.connect(self._update_ui)
-        self.model.reference_layer_removed.connect(self._update_ui)
+        self.model.targeting_layer_added.connect(self._update_ui)
+        self.model.targeting_layer_removed.connect(self._update_ui)
         self.model.editing_updated.connect(self._update_ui)
         
     def _update_ui(self):
@@ -37,7 +39,16 @@ class DrawROIsController:
             self.add_labels.setEnabled(False)
         else:
             self.label_settings.setEnabled(False)
-            self.add_labels.setEnabled(self.model.reference_layer is not None)
+            self.add_labels.setEnabled(self.model.targeting_layer is not None)
+            
+    def _on_click_import_targeting_image(self):
+        file_path = self.add_targeting_image.open_file_dialog()
+        if not file_path:
+            return
+        try:
+            self.model.import_targeting_image(file_path)
+        except Exception as e:
+            self.image_settings.show_error("Error", f"Failed to load image: {e}")
         
     def _on_click_merge_nearby_labels(self):
         self.model.merge_nearby_labels(self.label_settings.merge_tolerance_spinbox.value())
@@ -70,11 +81,6 @@ class DrawROIsController:
             self.model.export_labels(file_path)
         except Exception as e:
             self.label_settings.show_error("Error", f"Failed to export labels: {e}")
-            
-    def _on_remove_layer(self, event):
-        if isinstance(event.value, Labels):
-            if event.value == self.model.labels_layer:
-                self.model.reset()
                 
     def _update_autofill_checkbox(self):
         self.model.autofill_labels = self.label_settings.autofill_checkbox.isChecked()

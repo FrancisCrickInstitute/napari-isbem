@@ -1,30 +1,25 @@
 import napari
-from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QFileDialog, QMessageBox
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QMessageBox
 
 
-class ImageSettings(QGroupBox):
+class SaveLoadTransforms(QGroupBox):
     def __init__(self,
                  viewer: napari.Viewer,
                  parent=None
                  ):
-        super().__init__("Image settings", parent=parent)
+        super().__init__("Save / load transforms", parent=parent)
         self.viewer = viewer
         self.setLayout(QVBoxLayout())
         
-        self.import_targeting_image_button = QPushButton("Import targeting image")
         self.upload_transform_button = QPushButton("Upload transform")
         self.save_transform_button = QPushButton("Save transform")
         self.reset_transform_button = QPushButton("Reset transform")
         
-        self.layout().addWidget(self.import_targeting_image_button)
         lyt = QHBoxLayout()
         lyt.addWidget(self.upload_transform_button)
         lyt.addWidget(self.save_transform_button)
         self.layout().addLayout(lyt)
         self.layout().addWidget(self.reset_transform_button)
-
-    def open_file_dialog(self):
-        return QFileDialog.getExistingDirectory(self, "Select targeting OME-Zarr directory")
     
     def reset_confirmation_dialog(self):
         reply = QMessageBox.question(self, 'Confirmation',

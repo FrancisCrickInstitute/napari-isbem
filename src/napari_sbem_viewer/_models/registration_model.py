@@ -1,6 +1,5 @@
 from qtpy.QtCore import QObject, Signal
 from napari.layers import Layer
-from napari_ome_zarr import napari_get_reader
 import numpy as np
 
 from napari_sbem_viewer._models import AffineModel, AlignPlanesModel
@@ -15,15 +14,6 @@ class RegistrationModel(QObject):
         self.viewer = viewer
         self.align_planes_model = AlignPlanesModel(self.viewer, stack_viewer)
         self.affine_model = AffineModel(self.viewer)
-        
-    def import_targeting_image(self, file_path):
-        if not file_path.endswith('.ome.zarr'):
-            raise ValueError("Invalid file format. Must be an OME-Zarr file.")
-        reader = napari_get_reader(file_path)
-        layer = Layer.create(*reader(file_path)[0])
-        layer.contrast_limits = (0, 65535)
-        self.add_moving_image(layer)
-        self.viewer.add_layer(layer)
         
     def load_transform(self, file_path):
         transform_matrix = np.loadtxt(file_path, delimiter=',')
@@ -75,10 +65,3 @@ class RegistrationModel(QObject):
         self.align_planes_model.reset_transform()
         self.affine_model.reset_transform()
         
-    def _on_remove_layer(self, event):
-        if (event.value == self.affine_model.moving_image_layer or 
-            event.value == self.align_planes_model.moving_layer_original):
-            self.remove_moving_image()
-        if event.value == self.affine_model.fixed_image_layer:
-            self.remove_fixed_image()
-            

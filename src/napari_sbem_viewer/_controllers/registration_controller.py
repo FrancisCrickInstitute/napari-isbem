@@ -2,26 +2,24 @@ from napari_sbem_viewer._models.affine_model import AffineTransformChoices
 
 
 class RegistrationController:
-    def __init__(self, registration_model, align_planes, z_alignment, affine_2d, image_settings):
+    def __init__(self, registration_model, align_planes, z_alignment, affine_2d, save_load_transforms):
         self.model = registration_model
         self.align_planes_model = self.model.align_planes_model
         self.align_planes = align_planes
-        self.image_settings = image_settings
+        self.save_load_transforms = save_load_transforms
         self.z_alignment = z_alignment
         self.affine_2d = affine_2d
         self.affine_model = self.model.affine_model
         self.affine_model.do_transform = self._on_affine_transform
-        self.image_settings = image_settings
         self._reset_align_planes_ui()
         self._reset_affine_transform_ui()
         self._on_remove_moving_image()
         self._init_signals()
     
     def _init_signals(self):
-        self.image_settings.import_targeting_image_button.clicked.connect(self._on_click_import_targeting_image)
-        self.image_settings.upload_transform_button.clicked.connect(self._on_click_upload_transform)
-        self.image_settings.save_transform_button.clicked.connect(self._on_click_save_transform)
-        self.image_settings.reset_transform_button.clicked.connect(self._on_click_reset_transform)
+        self.save_load_transforms.upload_transform_button.clicked.connect(self._on_click_upload_transform)
+        self.save_load_transforms.save_transform_button.clicked.connect(self._on_click_save_transform)
+        self.save_load_transforms.reset_transform_button.clicked.connect(self._on_click_reset_transform)
         
         self.align_planes.show_button.clicked.connect(self._on_click_show)
         self.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
@@ -45,51 +43,39 @@ class RegistrationController:
         self.affine_model.deactivated.connect(lambda: self.affine_2d.setEnabled(False))
         self.affine_model.transform_loaded.connect(self._update_reverse_checkbox)
         
-        self.model.viewer.layers.events.removed.connect(self.model._on_remove_layer)
         self.model.moving_layer_added.connect(self._on_add_moving_image)
         self.model.moving_layer_removed.connect(self._on_remove_moving_image)
         
     def _deactivate_transform_buttons(self):
         self.align_planes.apply_rotation_button.setEnabled(False)
-        self.image_settings.upload_transform_button.setEnabled(False)
-        self.image_settings.save_transform_button.setEnabled(False)
-        self.image_settings.reset_transform_button.setEnabled(False)
+        self.save_load_transforms.upload_transform_button.setEnabled(False)
+        self.save_load_transforms.save_transform_button.setEnabled(False)
+        self.save_load_transforms.reset_transform_button.setEnabled(False)
         
     def _activate_transform_buttons(self):
         self.align_planes.apply_rotation_button.setEnabled(True)
-        self.image_settings.upload_transform_button.setEnabled(True)
-        self.image_settings.save_transform_button.setEnabled(True)
-        self.image_settings.reset_transform_button.setEnabled(True)
+        self.save_load_transforms.upload_transform_button.setEnabled(True)
+        self.save_load_transforms.save_transform_button.setEnabled(True)
+        self.save_load_transforms.reset_transform_button.setEnabled(True)
         
     def _on_add_moving_image(self):
-        self.image_settings.import_targeting_image_button.setEnabled(False)
-        self.image_settings.upload_transform_button.setEnabled(True)
-        self.image_settings.save_transform_button.setEnabled(True)
-        self.image_settings.reset_transform_button.setEnabled(True)
+        self.save_load_transforms.upload_transform_button.setEnabled(True)
+        self.save_load_transforms.save_transform_button.setEnabled(True)
+        self.save_load_transforms.reset_transform_button.setEnabled(True)
         self.align_planes.setEnabled(True)
         self.z_alignment.setEnabled(True)
         self._update_reverse_checkbox()
         
     def _on_remove_moving_image(self):
         self.affine_2d.setEnabled(False)
-        self.image_settings.import_targeting_image_button.setEnabled(True)
-        self.image_settings.upload_transform_button.setEnabled(False)
-        self.image_settings.save_transform_button.setEnabled(False)
-        self.image_settings.reset_transform_button.setEnabled(False)
+        self.save_load_transforms.upload_transform_button.setEnabled(False)
+        self.save_load_transforms.save_transform_button.setEnabled(False)
+        self.save_load_transforms.reset_transform_button.setEnabled(False)
         self.align_planes.setEnabled(False)
         self.z_alignment.setEnabled(False)
         self.z_alignment.reverse_checkbox.blockSignals(True)
         self.z_alignment.reverse_checkbox.setChecked(False)
         self.z_alignment.reverse_checkbox.blockSignals(True)
-        
-    def _on_click_import_targeting_image(self):
-        file_path = self.image_settings.open_file_dialog()
-        if not file_path:
-            return
-        try:
-            self.model.import_targeting_image(file_path)
-        except Exception as e:
-            self.image_settings.show_error("Error", f"Failed to load image: {e}")
             
     def _on_click_upload_transform(self):
         file_path = self.align_planes.open_transform_file_dialog()
@@ -98,7 +84,7 @@ class RegistrationController:
         try:
             self.model.load_transform(file_path)
         except Exception as e:
-            self.align_planes.show_error("Error", f"Failed to load transform: {e}")
+            self.save_load_transforms.show_error("Error", f"Failed to load transform: {e}")
         
     def _on_click_save_transform(self):
         file_path = self.align_planes.save_transform_file_dialog()
@@ -110,7 +96,7 @@ class RegistrationController:
             self.align_planes.show_error("Error", f"Failed to save transform: {e}")
             
     def _on_click_reset_transform(self):
-        if self.image_settings.reset_confirmation_dialog():
+        if self.save_load_transforms.reset_confirmation_dialog():
             self.model.reset_transforms()
             self._reset_align_planes_ui()
             self._reset_affine_transform_ui()

@@ -21,8 +21,8 @@ class SBEMViewerWidget(QTabWidget):
         
         self.acquisition.acquisition_model.live_viewer.initialized.connect(self.registration.registration_model.add_fixed_image)
         self.acquisition.acquisition_model.live_viewer.cleared.connect(self.registration.registration_model.remove_fixed_image)
-        self.registration.registration_model.moving_layer_added.connect(self.draw_rois.draw_rois_model.add_reference_layer)
-        self.registration.registration_model.moving_layer_removed.connect(self.draw_rois.draw_rois_model.remove_reference_layer)
+        self.draw_rois.draw_rois_model.targeting_layer_added.connect(self.registration.registration_model.add_moving_image)
+        self.draw_rois.draw_rois_model.targeting_layer_removed.connect(self.registration.registration_model.remove_moving_image)
         # connect add ROI event to add an ROI layer to the registration model
         self.draw_rois.draw_rois_model.labels_added.connect(self.registration.registration_model.align_planes_model.add_labels_layer)
         self.draw_rois.draw_rois_model.labels_removed.connect(self.registration.registration_model.align_planes_model.remove_labels_layer)
