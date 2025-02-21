@@ -7,8 +7,7 @@ from qtpy.QtWidgets import (QPushButton,
                             QGridLayout, 
                             QLabel, 
                             QGroupBox,
-                            QLabel, 
-                            QMessageBox)
+                            QLabel)
 from qtpy.QtCore import Qt
 
 
@@ -18,9 +17,6 @@ class AlignPlanes(QGroupBox):
         super().__init__(title='3D rotation', parent=parent)
         self.setMinimumWidth(180)
         self.setLayout(QGridLayout())
-        
-        self.save_ome_zarr_button = QPushButton("Save as OME-Zarr")
-        # self.layout().addWidget(self.save_ome_zarr_button, 1, 1)
         
         self.show_button = QPushButton("Show rotation")
         self.layout().addWidget(self.show_button, 0, 0, 1, 2)
@@ -44,12 +40,6 @@ class AlignPlanes(QGroupBox):
         self.apply_rotation_button = QPushButton("Apply rotation")
         self.layout().addWidget(self.apply_rotation_button, 2, 0, 1, 2)
         
-    def show_error(self, title, message):
-        QMessageBox.warning(self, title, message)
-        
-    def show_info(self, title, message):
-        QMessageBox.information(self, title, message)
-        
     def open_transform_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(self, 
                                                    "Open File", 
@@ -63,21 +53,4 @@ class AlignPlanes(QGroupBox):
                                                    "", 
                                                    "Text Files (*.txt);;All Files (*)")
         return file_path        
-            
-    def save_ome_zarr_file_dialog(self):
-        save_path = QFileDialog.getExistingDirectory(self, 
-                                                   "Select Save Location", 
-                                                   "")
-        if not save_path:
-            return None
-        elif not os.path.exists(save_path):
-            QMessageBox.warning(self, "Invalid save location", "Selected folder does not exist.")
-            return None
-        elif len(os.listdir(save_path)):
-            QMessageBox.warning(self, "Invalid save location", "Selected folder is not empty.")
-            return None
-        elif not save_path.endswith('.ome.zarr'):
-            QMessageBox.warning(self, "Invalid save location", "Selected folder must end with '.ome.zarr'.")
-            return None
-        return save_path
-        
+    

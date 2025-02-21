@@ -3,12 +3,8 @@ from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QGroupBox, QPushButton, QMe
 
 
 class SaveLoadTransforms(QGroupBox):
-    def __init__(self,
-                 viewer: napari.Viewer,
-                 parent=None
-                 ):
+    def __init__(self, parent=None):
         super().__init__("Save / load transforms", parent=parent)
-        self.viewer = viewer
         self.setLayout(QVBoxLayout())
         
         self.upload_transform_button = QPushButton("Upload transform")
@@ -26,7 +22,4 @@ class SaveLoadTransforms(QGroupBox):
                                      'Are you sure you want to reset the transformation?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         return reply == QMessageBox.Yes
-        
-    def show_error(self, title, message):
-        QMessageBox.warning(self, title, message)
-        
+    

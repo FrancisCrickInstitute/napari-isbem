@@ -3,8 +3,7 @@ from qtpy.QtWidgets import (QGridLayout,
                             QDoubleSpinBox,
                             QLabel, 
                             QCheckBox, 
-                            QGroupBox, 
-                            QMessageBox)
+                            QGroupBox)
 
 
 class ZAlignment(QGroupBox):
@@ -13,7 +12,6 @@ class ZAlignment(QGroupBox):
         
         self.setLayout(QGridLayout())
         
-        # ----------------- Z adjustment -----------------
         self.reverse_checkbox = QCheckBox("Reverse Z direction")
         self.layout().addWidget(self.reverse_checkbox, 0, 0, 1, 2)
         
@@ -29,7 +27,4 @@ class ZAlignment(QGroupBox):
         self.layout().addWidget(self.move_up_button, 2, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
-    
-    def show_error(self, e):
-        QMessageBox.critical(self, "Error", f"{e}")
         

@@ -3,7 +3,6 @@ from qtpy.QtWidgets import (QGridLayout,
                             QSpinBox, 
                             QGroupBox, 
                             QVBoxLayout, 
-                            QMessageBox,
                             QFileDialog,
                             QHBoxLayout,
                             QLineEdit,
@@ -43,7 +42,3 @@ class AcquisitionSettings(QGroupBox):
         
     def open_overview_dir_dialog(self):
         return QFileDialog.getExistingDirectory(self, "Select Directory")
-    
-    def show_error(self, title, text):
-        QMessageBox.warning(self, title, text)
-        

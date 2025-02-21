@@ -22,3 +22,4 @@ class TCPSettings(QGroupBox):
         self.stop_server_button = QPushButton("Stop server", enabled=False)
         tcp_control_layout.addWidget(self.stop_server_button)
         self.layout().addLayout(tcp_control_layout)
+        

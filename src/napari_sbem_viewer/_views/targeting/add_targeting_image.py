@@ -1,7 +1,6 @@
 from qtpy.QtWidgets import (QGroupBox, 
                             QVBoxLayout, 
                             QPushButton, 
-                            QMessageBox, 
                             QFileDialog)
 
 class AddTargetingImage(QGroupBox):
@@ -15,7 +14,4 @@ class AddTargetingImage(QGroupBox):
         
     def open_file_dialog(self):
         return QFileDialog.getExistingDirectory(self, "Select targeting OME-Zarr directory")
-        
-    def show_error(self, title, message):
-        QMessageBox.warning(self, title, message)
-        
+    

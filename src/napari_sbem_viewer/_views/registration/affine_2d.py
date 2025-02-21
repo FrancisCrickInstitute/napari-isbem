@@ -1,8 +1,7 @@
 from qtpy.QtWidgets import (QGridLayout, 
                             QPushButton, 
                             QCheckBox, 
-                            QGroupBox, 
-                            QMessageBox)
+                            QGroupBox)
 
 
 class Affine2d(QGroupBox):
@@ -21,7 +20,4 @@ class Affine2d(QGroupBox):
         self.layout().addWidget(self.stop_button, 1, 1)
         
         self.layout().setRowStretch(self.layout().rowCount(), 1)
-    
-    def show_error(self, e):
-        QMessageBox.critical(self, "Error", f"{e}")
         

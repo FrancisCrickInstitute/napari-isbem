@@ -6,8 +6,7 @@ from qtpy.QtWidgets import (QTableView,
                             QGroupBox, 
                             QVBoxLayout, 
                             QHBoxLayout,
-                            QComboBox, 
-                            QMessageBox)
+                            QComboBox)
 
 from napari_sbem_viewer._models import ROIState
 
@@ -55,7 +54,4 @@ class ROISettings(QGroupBox):
         self.model.clear()
         self.model.setHorizontalHeaderLabels(HEADERS)
         self.roi_combo_box.setCurrentIndex(0)
-    
-    def show_error(self, title, text):
-        QMessageBox.warning(self, title, text)
         

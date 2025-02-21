@@ -1,7 +1,7 @@
 import napari
 from qtpy.QtWidgets import QWidget, QVBoxLayout
 
-from napari_sbem_viewer._views.targeting import AddTargetingImage, AddLabels, LabelSettings
+from napari_sbem_viewer._views import TargetingView
 from napari_sbem_viewer._models import DrawROIsModel
 from napari_sbem_viewer._controllers import TargetingController
 
@@ -10,21 +10,11 @@ class TargetingWidget(QWidget):
     def __init__(self, napari_viewer: napari.Viewer):
         super().__init__()
         self.viewer = napari_viewer
-        
-        self.add_targeting_image = AddTargetingImage(parent=self)
-        self.add_labels = AddLabels(parent=self)
-        self.label_settings = LabelSettings(parent=self)
         self.draw_rois_model = DrawROIsModel(self.viewer)
-        self.targeting_controller = TargetingController(
-            self.draw_rois_model,
-            self.add_targeting_image,
-            self.add_labels,
-            self.label_settings
-        )
+        self.view = TargetingView()
+        self.controller = TargetingController(self.view, self.draw_rois_model)
 
         self.setLayout(QVBoxLayout())
-        self.layout().addWidget(self.add_targeting_image)
-        self.layout().addWidget(self.add_labels)
-        self.layout().addWidget(self.label_settings)
+        self.layout().addWidget(self.view)
         self.layout().addStretch(1)
         

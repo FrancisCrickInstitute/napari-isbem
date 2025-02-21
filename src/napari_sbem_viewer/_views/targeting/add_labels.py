@@ -4,7 +4,6 @@ from qtpy.QtWidgets import (QGroupBox,
                             QLabel, 
                             QComboBox, 
                             QPushButton, 
-                            QMessageBox, 
                             QFileDialog)
 
 class AddLabels(QGroupBox):
@@ -34,7 +33,4 @@ class AddLabels(QGroupBox):
                                                    "", 
                                                    "TIFF Files (*.tif *.tiff);;All Files (*)")
         return file_path
-        
-    def show_error(self, title, message):
-        QMessageBox.warning(self, title, message)
-        
+    

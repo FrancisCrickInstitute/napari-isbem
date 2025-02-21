@@ -4,7 +4,6 @@ from qtpy.QtWidgets import (QGroupBox,
                             QLabel,
                             QPushButton, 
                             QProgressBar, 
-                            QMessageBox, 
                             QCheckBox,
                             QFileDialog,
                             QSpinBox)
@@ -70,7 +69,4 @@ class LabelSettings(QGroupBox):
         self.reset_labels_button.setEnabled(True)
         self.interpolate_button.setEnabled(True)
         self.progress_bar.setEnabled(True)
-        
-    def show_error(self, title, message):
-        QMessageBox.warning(self, title, message)
         
