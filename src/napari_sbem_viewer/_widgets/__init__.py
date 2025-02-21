@@ -1,4 +1,1 @@
-from napari_sbem_viewer._widgets.acquisition import AcquisitionWidget
-from napari_sbem_viewer._widgets.registration import RegistrationWidget
-from napari_sbem_viewer._widgets.targeting import TargetingWidget
 from napari_sbem_viewer._widgets.sbem_viewer import SBEMViewerWidget

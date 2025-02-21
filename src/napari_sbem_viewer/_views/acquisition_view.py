@@ -17,7 +17,6 @@ class AcquisitionView(QWidget):
         self.layout().addWidget(self.roi_settings)
         self.layout().addWidget(self.acquisition_info)
         self.layout().addStretch(1)
-        self.layout().setContentsMargins(0, 0, 0, 0)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)

@@ -18,7 +18,6 @@ class RegistrationView(QWidget):
         self.layout().addWidget(self.z_alignment)
         self.layout().addWidget(self.affine_2d)
         self.layout().addStretch(1)
-        self.layout().setContentsMargins(0, 0, 0, 0)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)

@@ -15,7 +15,6 @@ class TargetingView(QWidget):
         self.layout().addWidget(self.add_labels)
         self.layout().addWidget(self.label_settings)
         self.layout().addStretch(1)
-        self.layout().setContentsMargins(0, 0, 0, 0)
         
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)
