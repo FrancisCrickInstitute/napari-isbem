@@ -8,25 +8,20 @@ class RegistrationController:
         self.model.affine_model.do_transform = self._on_affine_transform
         self._reset_align_planes_ui()
         self._reset_affine_transform_ui()
-        self._deactivate_ui_moving()
+        self._deactivate_ui()
         self._init_signals()
     
     def _init_signals(self):
+        # Link UI events
         self.view.save_load_transforms.upload_transform_button.clicked.connect(self._on_click_upload_transform)
         self.view.save_load_transforms.save_transform_button.clicked.connect(self._on_click_save_transform)
         self.view.save_load_transforms.reset_transform_button.clicked.connect(self._on_click_reset_transform)
         
-        self.model.layer_model.targeting_layer_added.connect(self._activate_ui_moving)
-        self.model.layer_model.targeting_layer_removed.connect(self._deactivate_ui_moving)
-
         self.view.align_planes.show_button.clicked.connect(self._on_click_show)
         self.view.align_planes.zy_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.view.align_planes.zx_degrees_slider.valueChanged.connect(self._on_update_angle)
         self.view.align_planes.position_slider.valueChanged.connect(self._on_update_position)
         self.view.align_planes.apply_rotation_button.clicked.connect(self._on_click_rotate)
-        self.model.align_planes_model.rotation_started.connect(self._deactivate_transform_buttons)
-        self.model.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
-        self.model.align_planes_model.rotation_errored.connect(self._on_error_rotate)
         
         self.view.z_alignment.reverse_checkbox.stateChanged.connect(self.model.affine_model._flip_z)
         self.view.z_alignment.move_down_button.clicked.connect(self._on_click_move_down)
@@ -35,35 +30,39 @@ class RegistrationController:
         self.view.affine_2d.start_button.clicked.connect(self._on_click_start)
         self.view.affine_2d.stop_button.clicked.connect(self._on_click_stop)
         self.view.affine_2d.remove_outliers_checkbox.stateChanged.connect(self.model.affine_model.do_transform)
+        
+        # Activate UI when moving layer is added
+        self.model.layer_model.targeting_layer_added.connect(self._activate_moving_only_ui)
+        self.model.layer_model.targeting_layer_removed.connect(self._deactivate_ui)
+        
+        # Activate UI when both moving and fixed layers are added
         self.model.affine_model.activated.connect(lambda: self.view.affine_2d.setEnabled(True))
         self.model.affine_model.deactivated.connect(lambda: self.view.affine_2d.setEnabled(False))
+        
+        # Update reverse checkbox when a transform is loaded
         self.model.affine_model.transform_loaded.connect(self._update_reverse_checkbox)
+        
+        self.model.align_planes_model.rotation_started.connect(self._deactivate_transform_buttons)
+        self.model.align_planes_model.rotation_finished.connect(self._on_finish_rotate)
+        self.model.align_planes_model.rotation_errored.connect(self._on_error_rotate)
         
     def _deactivate_transform_buttons(self):
         self.view.align_planes.apply_rotation_button.setEnabled(False)
-        self.view.save_load_transforms.upload_transform_button.setEnabled(False)
-        self.view.save_load_transforms.save_transform_button.setEnabled(False)
-        self.view.save_load_transforms.reset_transform_button.setEnabled(False)
+        self.view.save_load_transforms.setEnabled(False)
         
     def _activate_transform_buttons(self):
         self.view.align_planes.apply_rotation_button.setEnabled(True)
-        self.view.save_load_transforms.upload_transform_button.setEnabled(True)
-        self.view.save_load_transforms.save_transform_button.setEnabled(True)
-        self.view.save_load_transforms.reset_transform_button.setEnabled(True)
+        self.view.save_load_transforms.setEnabled(True)
         
-    def _activate_ui_moving(self):
-        self.view.save_load_transforms.upload_transform_button.setEnabled(True)
-        self.view.save_load_transforms.save_transform_button.setEnabled(True)
-        self.view.save_load_transforms.reset_transform_button.setEnabled(True)
+    def _activate_moving_only_ui(self):
+        self.view.save_load_transforms.setEnabled(True)
         self.view.align_planes.setEnabled(True)
         self.view.z_alignment.setEnabled(True)
         self._update_reverse_checkbox()
         
-    def _deactivate_ui_moving(self):
+    def _deactivate_ui(self):
+        self.view.save_load_transforms.setEnabled(False)
         self.view.affine_2d.setEnabled(False)
-        self.view.save_load_transforms.upload_transform_button.setEnabled(False)
-        self.view.save_load_transforms.save_transform_button.setEnabled(False)
-        self.view.save_load_transforms.reset_transform_button.setEnabled(False)
         self.view.align_planes.setEnabled(False)
         self.view.z_alignment.setEnabled(False)
         self.view.z_alignment.reverse_checkbox.blockSignals(True)
