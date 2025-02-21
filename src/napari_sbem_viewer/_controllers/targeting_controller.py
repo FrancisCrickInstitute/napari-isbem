@@ -1,7 +1,7 @@
-from napari.layers import Image, Labels
+from napari.layers import Image
 
 
-class DrawROIsController:
+class TargetingController:
     def __init__(self, draw_rois_model, add_targeting_image, add_labels, label_settings):
         self.model = draw_rois_model
         self.add_targeting_image = add_targeting_image
