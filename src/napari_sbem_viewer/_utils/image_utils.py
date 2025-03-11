@@ -152,8 +152,8 @@ def downsample_3d_image(image, downsample_factor):
 
 
 def merge_nearby_objects(mask, tolerance):
-    mask_dilated = dilate_with_sphere_sitk(mask, tolerance)
-    mask_dilated = connected_components_sitk(mask_dilated)
+    mask_dilated = dilate_with_sphere_sitk(mask > 0, round(tolerance / 2))
+    mask_dilated = connected_components_sitk(mask_dilated.astype(np.uint8))
     mask_dilated[mask == 0] = 0
     return mask_dilated
 
