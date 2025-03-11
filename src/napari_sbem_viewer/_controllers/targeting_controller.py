@@ -81,7 +81,7 @@ class TargetingController:
             file_path = self.view.label_settings.save_file_dialog()
             if not file_path:
                 return
-            self.model.export_labels_layer(file_path)
+            self.model.layer_model.export_labels_layer(file_path)
         except Exception as e:
             self.view.show_error("Error", f"Failed to export labels: {e}")
             

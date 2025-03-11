@@ -57,7 +57,7 @@ class LayerModel(QObject):
         self.labels_layer = None
         self.labels_layer_removed.emit()
         
-    def export_labels(self, file_path):
+    def export_labels_layer(self, file_path):
         if self.labels_layer is None:
             raise ValueError("No labels layer found")
         tifffile.imsave(file_path, self.labels_layer.data)
