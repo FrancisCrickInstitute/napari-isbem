@@ -228,11 +228,15 @@ def get_bounds_from_labels(labels):
     assert labels.dtype == np.uint8
     slices = ndi.find_objects(labels)
     bounds = []
-    for slice in slices:
+    label_ids = []
+    for i, slice in enumerate(slices):
+        if slice is None:
+            continue
         mins = np.asarray([s.start for s in slice])
         maxes = np.asarray([s.stop for s in slice])
         bounds.append([mins, maxes])
-    return bounds
+        label_ids.append(i+1)
+    return bounds, label_ids
 
 
 def create_image_pyramid(image, downsample_factor=2, pyramid_levels=3):

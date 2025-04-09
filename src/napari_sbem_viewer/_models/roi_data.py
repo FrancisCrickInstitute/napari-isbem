@@ -33,18 +33,19 @@ class ROIData:
         labels = labels_layer.data
         if combine_masks:
             labels[labels > 0] = 1
-        bounds = get_bounds_from_labels(labels.astype(np.uint8))
-        for mins, maxes in bounds:
+        bounds, label_ids = get_bounds_from_labels(labels.astype(np.uint8))
+        for (mins, maxes), label_id in zip(bounds, label_ids):
             # Obtain the mask for the current bounding box
             mask = labels[mins[0]:maxes[0], mins[1]:maxes[1], mins[2]:maxes[2]]
             # Transform the mask and bounds using the transform matrix and scale
             T = add_scale_to_transform_matrix(labels_layer.affine.affine_matrix, labels_layer.scale)
             mins_t, maxes_t = find_bounds(maxes - mins, T, mins)
             mask_t, _ = transform_image_3d_sitk(mask, T)
-            mask_t[mask_t > 0] = 1
+            mask_t[mask_t != label_id] = 0
+            mask_t[mask_t == label_id] = 1
             position = self.world_to_roi_coords(mins_t)
             size = maxes_t - mins_t
-            roi = MaskROI(position, size, mask_t, len(self.rois)+1)
+            roi = MaskROI(position, size, mask_t, label_id)
             self.rois.append(roi)
         
     def sort(self):
