@@ -24,48 +24,44 @@ class AffineModel(QObject):
     activated = Signal()
     deactivated = Signal()
     transform_loaded = Signal()
-    def __init__(self, viewer):
+    def __init__(self, viewer, layer_model):
         super().__init__()
         self.viewer = viewer
+        self.layer_model = layer_model
         self.delete_pts = True
         self.points_layers = [None, None]
-        self.moving_image_layer = None
-        self.fixed_image_layer = None
         self.is_doing_registration = False
+        self.layer_model.targeting_layer_added.connect(self._on_add_layer)
+        self.layer_model.targeting_layer_removed.connect(self._on_remove_layer)
+        self.layer_model.em_layer_added.connect(self._on_add_layer)
+        self.layer_model.em_layer_removed.connect(self._on_remove_layer)
         
-    def set_moving_layer(self, layer):
-        self.moving_image_layer = layer
-        if self.fixed_image_layer is not None:
+    def _on_add_layer(self, layer):
+        if self.layer_model.em_layer is not None and self.layer_model.targeting_layer is not None:
             self.activated.emit()
             
-    def set_fixed_layer(self, layer):
-        self.fixed_image_layer = layer
-        if self.moving_image_layer is not None:
+    def _on_remove_layer(self):
+        self.deactivated.emit()
+        
+    def on_set_targeting_layer(self, layer):
+        if self.layer_model.em_layer is not None:
             self.activated.emit()
-            
-    def remove_moving_layer(self):
-        self.moving_image_layer = None
-        self.deactivated.emit()
-    
-    def remove_fixed_layer(self):
-        self.fixed_image_layer = None
-        self.deactivated.emit()
         
     def reset(self):
         self.is_doing_registration = False
         self._remove_points_layers()
         
     def start_registration(self):
-        if not self.moving_image_layer or not self.fixed_image_layer:
+        if not self.layer_model.targeting_layer or not self.layer_model.em_layer:
             raise ValueError("No images selected")
         
-        if not isinstance(self.moving_image_layer, Image) or not isinstance(self.fixed_image_layer, Image):
+        if not isinstance(self.layer_model.targeting_layer, Image) or not isinstance(self.layer_model.em_layer, Image):
             raise ValueError("Both layers must be images")
         
-        if self.moving_image_layer == self.fixed_image_layer:
+        if self.layer_model.targeting_layer == self.layer_model.em_layer:
             raise ValueError("Images must be different")
         
-        self.moving_image_layer.events.affine.connect(self._affine_callback)
+        self.layer_model.targeting_layer.events.affine.connect(self._affine_callback)
         self._create_points_layers()
         
         pts_layer0 = self.points_layers[0]
@@ -74,7 +70,7 @@ class AffineModel(QObject):
         pts_layer1.events.data.connect(self._on_add_point)
 
         # get the layer order started
-        for layer in [self.fixed_image_layer, pts_layer0, self.moving_image_layer, pts_layer1]:
+        for layer in [self.layer_model.em_layer, pts_layer0, self.layer_model.targeting_layer, pts_layer1]:
             self.viewer.layers.move(self.viewer.layers.index(layer), -1)
 
         self._focus_fixed_layer()
@@ -83,47 +79,47 @@ class AffineModel(QObject):
     def stop_registration(self):
         if not self.is_doing_registration:
             return
-        self.moving_image_layer.mode = Mode.PAN_ZOOM
-        self.moving_image_layer.events.affine.disconnect(self._affine_callback)
+        self.layer_model.targeting_layer.mode = Mode.PAN_ZOOM
+        self.layer_model.targeting_layer.events.affine.disconnect(self._affine_callback)
         self._remove_points_layers()
         self.is_doing_registration = False
             
     def reset_transform(self):
         self.reset()
-        self.moving_image_layer.affine = None
+        self.layer_model.targeting_layer.affine = None
         self.transform_loaded.emit()
         
     def load_transform(self, affine_matrix):
         if not is_2d_affine_matrix(affine_matrix):
             print(affine_matrix)
             raise ValueError("Invalid transform matrix. Must be a 2D affine matrix.")
-        self.moving_image_layer.affine = convert_affine_to_ndims(
+        self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
             affine_matrix, 
-            self.moving_image_layer.ndim
+            self.layer_model.targeting_layer.ndim
             )
         self.transform_loaded.emit()
         
     def get_affine_matrix(self):
-        if self.moving_image_layer is None:
+        if self.layer_model.targeting_layer is None:
             raise ValueError("No moving image layer selected")
-        return self.moving_image_layer.affine.affine_matrix
+        return self.layer_model.targeting_layer.affine.affine_matrix
         
     def is_moving_image_flipped(self):
-        if not self.moving_image_layer:
+        if not self.layer_model.targeting_layer:
             return False
-        return self.moving_image_layer.affine.affine_matrix[0, 0] < 0
+        return self.layer_model.targeting_layer.affine.affine_matrix[0, 0] < 0
     
     def do_transform(self):
         raise NotImplementedError("do_transform must be implemented in ManualRegistrationController")
         
     def _offset_z(self, offset):
         moving_points_layer = self.points_layers[1]
-        if self.moving_image_layer is not None:
+        if self.layer_model.targeting_layer is not None:
             current_z = self.viewer.dims.point[0]
-            mat = convert_affine_to_ndims(self.moving_image_layer.affine.affine_matrix, 3)
+            mat = convert_affine_to_ndims(self.layer_model.targeting_layer.affine.affine_matrix, 3)
             offset_transform_matrix_z(mat, offset)
-            self.moving_image_layer.affine = convert_affine_to_ndims(
-                    mat, self.moving_image_layer.ndim
+            self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
+                    mat, self.layer_model.targeting_layer.ndim
                     )
             if moving_points_layer is not None:
                 moving_points_layer.affine = convert_affine_to_ndims(
@@ -133,11 +129,11 @@ class AffineModel(QObject):
             
     def _flip_z(self):
         moving_points_layer = self.points_layers[1]
-        if self.moving_image_layer is not None:
-            mat = convert_affine_to_ndims(self.moving_image_layer.affine.affine_matrix, 3) 
-            mat = flip_transform_matrix(mat, self.moving_image_layer.data.shape[-3] * self.moving_image_layer.scale[-3])
-            self.moving_image_layer.affine = convert_affine_to_ndims(
-                    mat, self.moving_image_layer.ndim
+        if self.layer_model.targeting_layer is not None:
+            mat = convert_affine_to_ndims(self.layer_model.targeting_layer.affine.affine_matrix, 3) 
+            mat = flip_transform_matrix(mat, self.layer_model.targeting_layer.data.shape[-3] * self.layer_model.targeting_layer.scale[-3])
+            self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
+                    mat, self.layer_model.targeting_layer.ndim
                     )           
             if moving_points_layer is not None:
                 moving_points_layer.affine = convert_affine_to_ndims(
@@ -147,11 +143,11 @@ class AffineModel(QObject):
     def _create_points_layers(self):
         # set points layer for each image
         # Use C0 and C1 from matplotlib color cycle
-        points_layers_to_add = [(self.fixed_image_layer, (0.122, 0.467, 0.706, 1.0)),
-                                (self.moving_image_layer, (1.0, 0.498, 0.055, 1.0))]
+        points_layers_to_add = [(self.layer_model.em_layer, (0.122, 0.467, 0.706, 1.0)),
+                                (self.layer_model.targeting_layer, (1.0, 0.498, 0.055, 1.0))]
 
         # make points layer if it was not specified
-        estimation_ndim = min(self.fixed_image_layer.ndim, self.moving_image_layer.ndim)
+        estimation_ndim = min(self.layer_model.em_layer.ndim, self.layer_model.targeting_layer.ndim)
         for i in range(len(self.points_layers)):
             if self.points_layers[i] not in self.viewer.layers:
                 layer, color = points_layers_to_add[i]
@@ -168,11 +164,11 @@ class AffineModel(QObject):
     def _focus_fixed_layer(self, reset_camera=True):
         fixed_points_layer = self.points_layers[0]
         self.viewer.layers.selection.active = fixed_points_layer
-        self.viewer.layers.move(self.viewer.layers.index(self.fixed_image_layer), -1)
+        self.viewer.layers.move(self.viewer.layers.index(self.layer_model.em_layer), -1)
         self.viewer.layers.move(self.viewer.layers.index(fixed_points_layer), -1)
         fixed_points_layer.mode = 'add'
         if reset_camera:
-            reset_view(self.viewer, self.fixed_image_layer)
+            reset_view(self.viewer, self.layer_model.em_layer)
         if len(fixed_points_layer.data):
             z_height = fixed_points_layer.data[-1][0]
             self.viewer.dims._increment_dims_right(0)  # TODO: instead of incrementing, find a way to refresh the viewer without changing the dims
@@ -181,11 +177,11 @@ class AffineModel(QObject):
     def _focus_moving_layer(self, reset_camera=True):
         moving_points_layer = self.points_layers[1]
         self.viewer.layers.selection.active = moving_points_layer
-        self.viewer.layers.move(self.viewer.layers.index(self.moving_image_layer), -1)
+        self.viewer.layers.move(self.viewer.layers.index(self.layer_model.targeting_layer), -1)
         self.viewer.layers.move(self.viewer.layers.index(moving_points_layer), -1)
         moving_points_layer.mode = 'add'
         if reset_camera:
-            reset_view(self.viewer, self.moving_image_layer)
+            reset_view(self.viewer, self.layer_model.targeting_layer)
             
     def _remove_points_layers(self):
         for layer in self.points_layers:
@@ -196,12 +192,12 @@ class AffineModel(QObject):
     def _affine_callback(self):
         moving_points_layer = self.points_layers[1]
         moving_points_layer.affine = convert_affine_to_ndims(
-            self.moving_image_layer.affine.affine_matrix, moving_points_layer.ndim
+            self.layer_model.targeting_layer.affine.affine_matrix, moving_points_layer.ndim
             )
             
     def _do_transform(self, flip_z, transform_method, remove_outliers):
         fixed_points_layer, moving_points_layer = self.points_layers
-        if self.fixed_image_layer is None or self.moving_image_layer is None:
+        if self.layer_model.em_layer is None or self.layer_model.targeting_layer is None:
             return
         if fixed_points_layer is None or moving_points_layer is None:
             return
@@ -222,15 +218,15 @@ class AffineModel(QObject):
         if ndim_raw > 2:
             z_mat = calculate_z_transform(fixed_points_layer, moving_points_layer, flip_z)
             mat = z_mat @ convert_affine_to_ndims(mat, ndim_raw)
-        ref_mat = self.fixed_image_layer.affine.affine_matrix
+        ref_mat = self.layer_model.em_layer.affine.affine_matrix
         # must shrink ndims of affine matrix if dims of image layer is bigger than moving layer
-        if self.fixed_image_layer.ndim > self.moving_image_layer.ndim:
+        if self.layer_model.em_layer.ndim > self.layer_model.targeting_layer.ndim:
             ref_mat = convert_affine_to_ndims(
-                    ref_mat, self.moving_image_layer.ndim
+                    ref_mat, self.layer_model.targeting_layer.ndim
                     )
         # must pad affine matrix with identity matrix if dims of moving layer smaller
-        self.moving_image_layer.affine = convert_affine_to_ndims(
-                (ref_mat @ mat), self.moving_image_layer.ndim
+        self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
+                (ref_mat @ mat), self.layer_model.targeting_layer.ndim
                 )
         moving_points_layer.affine = convert_affine_to_ndims(
                 (ref_mat @ mat), moving_points_layer.ndim

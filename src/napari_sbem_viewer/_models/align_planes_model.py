@@ -2,7 +2,7 @@ from copy import copy
 
 from qtpy.QtCore import QObject, Signal
 import numpy as np
-from napari.layers import Image, Labels
+from napari.layers import Image
 from napari.qt import create_worker
 
 from napari_sbem_viewer._utils.registration_utils import (
@@ -23,26 +23,15 @@ class AlignPlanesModel(QObject):
         self.viewer = viewer
         self.align_planes_window = stack_viewer
         self.layer_model = layer_model
+        self.layer_model.targeting_layer_added.connect(self._on_add_targeting_layer)
+        self.layer_model.targeting_layer_removed.connect(self._on_remove_targeting_layer)
+        self.layer_model.labels_layer_added.connect(self._on_add_labels_layer)
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
         self.shape = None
         self.t = None
         self.intersection_points = None
         self.affine_matrix = None
-        
-    def set_labels_layer(self, labels_layer):
-        self.layer_model.labels_layer.events.data.connect(self._on_labels_data_changed)
-        if self.affine_matrix is not None:
-            new_layer = transform_layer(self.layer_model.labels_layer_original, self.affine_matrix)
-            self.layer_model.labels_layer.data = new_layer.data
-            self.layer_model.labels_layer.scale = new_layer.scale
-        if self.layer_model.targeting_layer is not None:
-            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer.affine
-            self.layer_model.labels_layer.translate = self.layer_model.targeting_layer.translate
-            
-    def remove_labels_layer(self):
-        self.layer_model.labels_layer_original = None
-        self.layer_model.labels_layer = None
     
     def apply_rotation(self, zy_degrees, zx_degrees):
         transform_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
@@ -85,13 +74,22 @@ class AlignPlanesModel(QObject):
     def get_rotation_matrix(self):
         return self.affine_matrix
         
-    def set_moving_layer(self, layer):
+    def _on_add_targeting_layer(self, layer):
         self.reset()
         self.layer_model.targeting_layer.events.affine.connect(self._on_affine_changed)
         
-    def remove_moving_layer(self):
-        self.layer_model.targeting_layer = None
-        self.moving_
+    def _on_remove_targeting_layer(self):
+        self.reset()
+
+    def _on_add_labels_layer(self, labels_layer):
+        self.layer_model.labels_layer.events.data.connect(self._on_labels_data_changed)
+        if self.affine_matrix is not None:
+            new_layer = transform_layer(self.layer_model.labels_layer_original, self.affine_matrix)
+            self.layer_model.labels_layer.data = new_layer.data
+            self.layer_model.labels_layer.scale = new_layer.scale
+        if self.layer_model.targeting_layer is not None:
+            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer.affine
+            self.layer_model.labels_layer.translate = self.layer_model.targeting_layer.translate
         
     def show_align_planes_window(self):
         moving_layer = self.layer_model.targeting_layer
