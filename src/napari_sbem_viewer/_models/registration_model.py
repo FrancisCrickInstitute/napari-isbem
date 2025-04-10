@@ -11,7 +11,7 @@ class RegistrationModel(QObject):
         super().__init__()
         self.viewer = viewer
         self.layer_model = layer_model
-        self.align_planes_model = AlignPlanesModel(self.viewer, stack_viewer)
+        self.align_planes_model = AlignPlanesModel(self.viewer, stack_viewer, layer_model)
         self.affine_model = AffineModel(self.viewer)
         self.layer_model.targeting_layer_added.connect(self.set_moving_layer)
         self.layer_model.targeting_layer_removed.connect(self.remove_fixed_layer)

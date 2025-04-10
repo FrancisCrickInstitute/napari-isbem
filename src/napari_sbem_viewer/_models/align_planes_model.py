@@ -18,14 +18,11 @@ class AlignPlanesModel(QObject):
     rotation_started = Signal()
     rotation_finished = Signal(object)
     rotation_errored = Signal(Exception)
-    def __init__(self, viewer, stack_viewer):
+    def __init__(self, viewer, stack_viewer, layer_model):
         super().__init__()
         self.viewer = viewer
         self.align_planes_window = stack_viewer
-        self.moving_layer_transform = None
-        self.moving_layer_original = None
-        self.labels_layer_transform = None
-        self.labels_layer_original = None
+        self.layer_model = layer_model
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
         self.shape = None
@@ -34,20 +31,18 @@ class AlignPlanesModel(QObject):
         self.affine_matrix = None
         
     def set_labels_layer(self, labels_layer):
-        self.labels_layer_original = Labels(labels_layer.data, affine=labels_layer.affine, name=labels_layer.name, scale=labels_layer.scale)
-        self.labels_layer_transform = labels_layer
-        self.labels_layer_transform.events.data.connect(self._on_labels_data_changed)
+        self.layer_model.labels_layer.events.data.connect(self._on_labels_data_changed)
         if self.affine_matrix is not None:
-            new_layer = transform_layer(self.labels_layer_original, self.affine_matrix)
-            self.labels_layer_transform.data = new_layer.data
-            self.labels_layer_transform.scale = new_layer.scale
-        if self.moving_layer_transform is not None:
-            self.labels_layer_transform.affine = self.moving_layer_transform.affine
-            self.labels_layer_transform.translate = self.moving_layer_transform.translate
+            new_layer = transform_layer(self.layer_model.labels_layer_original, self.affine_matrix)
+            self.layer_model.labels_layer.data = new_layer.data
+            self.layer_model.labels_layer.scale = new_layer.scale
+        if self.layer_model.targeting_layer is not None:
+            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer.affine
+            self.layer_model.labels_layer.translate = self.layer_model.targeting_layer.translate
             
     def remove_labels_layer(self):
-        self.labels_layer_original = None
-        self.labels_layer_transform = None
+        self.layer_model.labels_layer_original = None
+        self.layer_model.labels_layer = None
     
     def apply_rotation(self, zy_degrees, zx_degrees):
         transform_matrix = rotation_matrix_from_zy_zx_angles(zy_degrees, zx_degrees)
@@ -62,23 +57,23 @@ class AlignPlanesModel(QObject):
         self.affine_matrix = transform_matrix
         
     def _rotate_images(self, transform_matrix):
-        image = transform_layer(self.moving_layer_original, transform_matrix)
+        image = transform_layer(self.layer_model.targeting_layer_original, transform_matrix)
         labels = None
-        if (self.labels_layer_transform is not None and 
-            self.labels_layer_original is not None):
-            labels = transform_layer(self.labels_layer_original, transform_matrix)
+        if (self.layer_model.labels_layer is not None and 
+            self.layer_model.labels_layer_original is not None):
+            labels = transform_layer(self.layer_model.labels_layer_original, transform_matrix)
         return image, labels
     
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
-        self.moving_layer_transform.data = image_layer.data
-        self.moving_layer_transform.translate = image_layer.translate
-        self.moving_layer_transform.scale = image_layer.scale
-        if (self.labels_layer_transform is not None and 
+        self.layer_model.targeting_layer.data = image_layer.data
+        self.layer_model.targeting_layer.translate = image_layer.translate
+        self.layer_model.targeting_layer.scale = image_layer.scale
+        if (self.layer_model.labels_layer is not None and 
             labels_layer is not None):
-            self.labels_layer_transform.data = labels_layer.data
-            self.labels_layer_transform.scale = labels_layer.scale
-            self.labels_layer_transform.affine = self.moving_layer_transform.affine
-            self.labels_layer_transform.translate = self.moving_layer_transform.translate
+            self.layer_model.labels_layer.data = labels_layer.data
+            self.layer_model.labels_layer.scale = labels_layer.scale
+            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer.affine
+            self.layer_model.labels_layer.translate = self.layer_model.targeting_layer.translate
         self.rotation_finished.emit(self.affine_matrix)
             
     def load_transform(self, affine_matrix):
@@ -92,33 +87,31 @@ class AlignPlanesModel(QObject):
         
     def set_moving_layer(self, layer):
         self.reset()
-        self.moving_layer_transform = layer
-        self.moving_layer_original = Image(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
-        self.moving_layer_transform.events.affine.connect(self._on_affine_changed)
+        self.layer_model.targeting_layer.events.affine.connect(self._on_affine_changed)
         
     def remove_moving_layer(self):
-        self.moving_layer_transform = None
+        self.layer_model.targeting_layer = None
         self.moving_
         
     def show_align_planes_window(self):
-        moving_layer = self.moving_layer_transform
+        moving_layer = self.layer_model.targeting_layer
         if not isinstance(moving_layer, Image):
             raise ValueError("Can only show image layers.")
         
-        self.moving_layer_original.contrast_limits = self.moving_layer_transform.contrast_limits
+        self.layer_model.targeting_layer_original.contrast_limits = self.layer_model.targeting_layer.contrast_limits
         self.align_planes_window.viewer.layers.clear()
-        self.align_planes_window.image_layer = copy(self.moving_layer_original)
+        self.align_planes_window.image_layer = copy(self.layer_model.targeting_layer_original)
         self.align_planes_window.image_layer.affine = None
         self.align_planes_window.image_layer.name = 'image'
         self.align_planes_window.image_layer.blending = 'translucent'
         
-        self.align_planes_window.plane_layer = copy(self.moving_layer_original)
+        self.align_planes_window.plane_layer = copy(self.layer_model.targeting_layer_original)
         self.align_planes_window.plane_layer.affine = None
         self.align_planes_window.plane_layer.blending = 'translucent_no_depth'
         self.align_planes_window.plane_layer.name = 'plane'
         self.align_planes_window.plane_layer.depiction = 'plane'
         self.align_planes_window.plane_layer.colormap = 'cyan'
-        data = self.moving_layer_original.data
+        data = self.layer_model.targeting_layer_original.data
         self.shape = data if isinstance(data, np.ndarray) else data.shapes[-1]
         self.align_planes_window.plane_layer.plane.position = np.array(self.shape) / 2
         self._calculate_intersection_points()
@@ -128,9 +121,6 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.show()
         
     def reset(self):
-        self.moving_layer_transform = None
-        self.moving_layer_original = None
-        self.remove_labels()
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
         self.layer = None
@@ -140,19 +130,17 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
         
-    def remove_labels(self):
-        self.labels_layer_original = None
-        self.labels_layer_transform = None
-        
     def reset_transform(self):
         self.affine_matrix = None
-        self.moving_layer_transform.data = self.moving_layer_original.data
-        self.moving_layer_transform.affine = self.moving_layer_original.affine
-        self.moving_layer_transform.translate = self.moving_layer_original.translate
-        if self.labels_layer_transform is not None:
-            self.labels_layer_transform.data = self.labels_layer_original.data
-            self.labels_layer_transform.affine = self.moving_layer_original.affine
-            self.labels_layer_transform.translate = self.moving_layer_original.translate
+        self.layer_model.targeting_layer.data = self.layer_model.targeting_layer_original.data
+        self.layer_model.targeting_layer.affine = self.layer_model.targeting_layer_original.affine
+        self.layer_model.targeting_layer.translate = self.layer_model.targeting_layer_original.translate
+        self.layer_model.targeting_layer.scale = self.layer_model.targeting_layer_original.scale
+        if self.layer_model.labels_layer is not None:
+            self.layer_model.labels_layer.data = self.layer_model.labels_layer_original.data
+            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer_original.affine
+            self.layer_model.labels_layer.translate = self.layer_model.targeting_layer_original.translate
+            self.layer_model.labels_layer.scale = self.layer_model.targeting_layer_original.scale
         self.rotation_finished.emit(self.affine_matrix)
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
@@ -207,12 +195,12 @@ class AlignPlanesModel(QObject):
         self.t = t
         
     def _on_labels_data_changed(self):
-        if self.labels_layer_transform and self.affine_matrix is None:
-            self.labels_layer_original.data = self.labels_layer_transform.data
+        if self.layer_model.labels_layer and self.affine_matrix is None:
+            self.layer_model.labels_layer_original.data = self.layer_model.labels_layer.data
         
     def _on_affine_changed(self):
-        if self.labels_layer_transform:
-            self.labels_layer_transform.affine = self.moving_layer_transform.affine
+        if self.layer_model.labels_layer:
+            self.layer_model.labels_layer.affine = self.layer_model.targeting_layer.affine
             
             
 def find_min_max_corners(normal, p, points):

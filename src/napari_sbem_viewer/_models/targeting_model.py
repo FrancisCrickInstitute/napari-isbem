@@ -26,12 +26,12 @@ class TargetingModel(QObject):
         self.layer_model.labels_layer_removed.connect(self.reset_labels)
         
     def add_new_labels_layer(self, downsample_factor):
-        labels_shape = [dim // downsample_factor for dim in self.layer_model.targeting_layer.data.shape]
+        labels_shape = [dim // downsample_factor for dim in self.layer_model.targeting_layer_original.data.shape]
         labels = np.zeros(labels_shape, dtype=np.uint8)
         layer = Labels(
             labels,
             name="ROIs",
-            scale=[downsample_factor * s for s in self.layer_model.targeting_layer.scale],
+            scale=[downsample_factor * s for s in self.layer_model.targeting_layer_original.scale],
             )
         layer.events.paint.connect(self._on_paint_labels)
         self.annotated_labels = layer.data.copy()
@@ -39,15 +39,12 @@ class TargetingModel(QObject):
         
     def upload_existing_labels(self, file_path):
         labels = tifffile.imread(file_path)
-        scale_factors = calculate_scale(labels.shape, self.layer_model.targeting_layer.data.shape)
-        scale = [s * f for s, f in zip(self.layer_model.targeting_layer.scale, scale_factors)]
+        scale_factors = calculate_scale(labels.shape, self.layer_model.targeting_layer_original.data.shape)
+        scale = [s * f for s, f in zip(self.layer_model.targeting_layer_original.scale, scale_factors)]
         layer = Labels(labels, name="ROIs", scale=scale)
         layer.events.paint.connect(self._on_paint_labels)
         self.annotated_labels = layer.data.copy()
         self.layer_model.add_labels_layer(layer)
-        
-    def add_targeting_layer(self, layer):
-        self.targeting_layer = layer
         
     def connected_components(self):
         if self.layer_model.labels_layer is None:

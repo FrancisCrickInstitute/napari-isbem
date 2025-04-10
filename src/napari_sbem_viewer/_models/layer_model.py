@@ -1,7 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 import tifffile
 from napari_ome_zarr import napari_get_reader
-from napari.layers import Layer
+from napari.layers import Layer, Image, Labels
 
 
 class LayerModel(QObject):
@@ -15,8 +15,10 @@ class LayerModel(QObject):
         super().__init__()
         self.viewer = viewer
         self.targeting_layer = None
+        self.targeting_layer_original = None
         self.em_layer = None
         self.labels_layer = None
+        self.labels_layer_original = None
         self.viewer.layers.events.removed.connect(self._on_remove_layer)
         
     def import_targeting_image(self, file_path):
@@ -29,12 +31,14 @@ class LayerModel(QObject):
         
     def add_targeting_layer(self, layer):
         self.targeting_layer = layer
+        self.targeting_layer_original = Image(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
         self.viewer.add_layer(layer)
         self.targeting_layer_added.emit(layer)
         
     def remove_targeting_layer(self):
         self._remove_layer(self.targeting_layer)
         self.targeting_layer = None
+        self.targeting_layer_original = None
         self.targeting_layer_removed.emit()
         
     def add_em_layer(self, layer):
@@ -49,12 +53,14 @@ class LayerModel(QObject):
     
     def add_labels_layer(self, layer):
         self.labels_layer = layer
+        self.labels_layer_original = Labels(layer.data, affine=layer.affine, name=layer.name, scale=layer.scale)
         self.viewer.add_layer(layer)
         self.labels_layer_added.emit(layer)
         
     def remove_labels_layer(self):
         self._remove_layer(self.labels_layer)
         self.labels_layer = None
+        self.labels_layer_original = None
         self.labels_layer_removed.emit()
         
     def export_labels_layer(self, file_path):
@@ -69,10 +75,12 @@ class LayerModel(QObject):
     def _on_remove_layer(self, event):
         if event.value == self.targeting_layer:
             self.targeting_layer = None
+            self.targeting_layer_original = None
             self.targeting_layer_removed.emit()
         elif event.value == self.em_layer:
             self.em_layer = None
             self.em_layer_removed.emit()
         elif event.value == self.labels_layer:
             self.labels_layer = None
+            self.labels_layer_original = None
             self.labels_layer_removed.emit()
