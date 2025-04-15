@@ -13,16 +13,16 @@ class SBEMViewerWidget(QTabWidget):
         self.setLayout(QVBoxLayout())
         
         self.layer_model = LayerModel(napari_viewer)
-
-        self.acquisition_model = AcquisitionModel(napari_viewer, self.layer_model)
-        self.acquisition_view = AcquisitionView()
-        self.acquisition_controller = AcquisitionController(self.acquisition_view, self.acquisition_model)
-        self.insertTab(0, self.acquisition_view, "Acquisition")
         
         self.targeting_model = TargetingModel(napari_viewer, self.layer_model)
         self.targeting_view = TargetingView()
         self.targeting_controller = TargetingController(self.targeting_view, self.targeting_model)
-        self.insertTab(1, self.targeting_view, "Targeting")
+        self.insertTab(0, self.targeting_view, "Targeting")
+
+        self.acquisition_model = AcquisitionModel(napari_viewer, self.layer_model)
+        self.acquisition_view = AcquisitionView()
+        self.acquisition_controller = AcquisitionController(self.acquisition_view, self.acquisition_model)
+        self.insertTab(1, self.acquisition_view, "Acquisition")
 
         stack_viewer = StackViewer(napari.Viewer(show=False), parent=self)
         self.registration_model = RegistrationModel(napari_viewer, stack_viewer, self.layer_model)
