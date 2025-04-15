@@ -6,7 +6,7 @@ from napari.qt import create_worker
 from napari.layers import Labels
 import tifffile
 
-from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects
+from napari_sbem_viewer._utils.image_utils import connected_components_sitk, merge_nearby_objects, dilate_with_sphere_sitk
 from napari_sbem_viewer._utils.general_utils import round_up_to_odd
 
 
@@ -54,10 +54,21 @@ class TargetingModel(QObject):
         self.annotated_labels = cc_mask.copy()
         
     def merge_nearby_labels(self, tolerance):
-        tolerance_px = round_up_to_odd(tolerance / self.layer_model.labels_layer.scale[0])
-        merged_labels = merge_nearby_objects(self.annotated_labels, tolerance_px)
+        tolerance_px = round(tolerance / self.layer_model.labels_layer.scale[0])  # TODO: assumes isotropic scale
+        merged_labels = merge_nearby_objects(self.layer_model.labels_layer.data > 0, tolerance_px)
         self.layer_model.labels_layer.data = merged_labels
         self.annotated_labels = merged_labels.copy()
+        
+    def dilate_labels(self, size):
+        size_px = round(size / self.layer_model.labels_layer.scale[0])  # TODO: assumes isotropic scale
+        for label in np.unique(self.layer_model.labels_layer.data):
+            if label == 0:
+                continue
+            mask = self.layer_model.labels_layer.data == label
+            dilated_mask = dilate_with_sphere_sitk(mask, size_px)
+            self.layer_model.labels_layer.data[dilated_mask] = label
+        self.layer_model.labels_layer.data = self.layer_model.labels_layer.data
+        self.annotated_labels = self.layer_model.labels_layer.data.copy()
         
     def interpolate_labels(self):
         if self.annotated_labels is None:

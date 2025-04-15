@@ -19,6 +19,7 @@ class TargetingController:
         self.view.label_settings.export_labels_button.clicked.connect(self._on_click_export_labels)
         self.view.label_settings.connected_components_button.clicked.connect(self.model.connected_components)
         self.view.label_settings.merge_nearby_labels_button.clicked.connect(self._on_click_merge_nearby_labels)
+        self.view.label_settings.dilate_labels_button.clicked.connect(self._on_click_dilate_labels)
         self.view.label_settings.reset_labels_button.clicked.connect(self.model.reset_interpolation)
         self.view.label_settings.interpolate_button.clicked.connect(self._on_click_interpolate)
         
@@ -87,6 +88,9 @@ class TargetingController:
             
     def _on_click_merge_nearby_labels(self):
         self.model.merge_nearby_labels(self.view.label_settings.merge_tolerance_spinbox.value())
+        
+    def _on_click_dilate_labels(self):
+        self.model.dilate_labels(self.view.label_settings.dilate_amount_spinbox.value())
                 
     def _update_autofill_checkbox(self):
         self.model.autofill_labels = self.view.label_settings.autofill_checkbox.isChecked()
