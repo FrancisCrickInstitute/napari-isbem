@@ -105,6 +105,14 @@ def add_scale_to_transform_matrix(matrix, scale):
     return matrix @ np.diag([*[s for s in scale], 1])
 
 
+def add_translation_to_transform_matrix(matrix, translation):
+    assert len(translation) == 3
+    assert matrix.shape == (4, 4)
+    translation_matrix = np.eye(4)
+    translation_matrix[:3, 3] = translation
+    return matrix @ translation_matrix
+
+
 def permute_matrix(matrix):
     # Permute a transformation matrix from ZYX to XYZ order or vice versa
     return matrix[np.ix_([2, 1, 0, 3], [2, 1, 0, 3])]

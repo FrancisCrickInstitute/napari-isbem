@@ -7,6 +7,7 @@ from napari_sbem_viewer._utils.registration_utils import (
     transform_image_3d_sitk, 
     find_bounds, 
     add_scale_to_transform_matrix,
+    add_translation_to_transform_matrix,
     )
 
 
@@ -35,14 +36,27 @@ class ROIData:
             labels[labels > 0] = 1
         bounds, label_ids = get_bounds_from_labels(labels.astype(np.uint8))
         for (mins, maxes), label_id in zip(bounds, label_ids):
-            # Obtain the mask for the current bounding box
-            mask = labels[mins[0]:maxes[0], mins[1]:maxes[1], mins[2]:maxes[2]]
-            # Transform the mask and bounds using the transform matrix and scale
+            
+            # Add the scale and translation to the affine transform matrix
             T = add_scale_to_transform_matrix(labels_layer.affine.affine_matrix, labels_layer.scale)
-            mins_t, maxes_t = find_bounds(maxes - mins, T, mins)
-            mask_t, _ = transform_image_3d_sitk(mask, T)
-            mask_t[mask_t != label_id] = 0
-            mask_t[mask_t == label_id] = 1
+            T = add_translation_to_transform_matrix(T, labels_layer.translate)
+            
+            # Find the boundaries of the transformed ROI
+            size = (maxes - mins).astype(np.float32)
+            offset = mins.astype(np.float32) - 0.5
+            mins_t, maxes_t = find_bounds(size, T, offset)
+            
+            # Obtain the mask for the transformed bounding box
+            maxes_inc = maxes + 1
+            mask = np.copy(labels[mins[0]:maxes_inc[0], mins[1]:maxes_inc[1], mins[2]:maxes_inc[2]])
+            mask[mask != label_id] = 0
+            mask[mask > 0] = 1
+            mask_t, _ = transform_image_3d_sitk(mask.astype(np.float32), T, interpolator='linear')
+            mask_t[mask_t > 0] = 1
+            mask_t[mask_t < 0] = 0
+            mask_t = mask_t.astype(np.uint8)
+            mask_t = crop_mask(mask_t)
+            
             position = self.world_to_roi_coords(mins_t)
             size = maxes_t - mins_t
             roi = MaskROI(position, size, mask_t, label_id)
@@ -111,7 +125,7 @@ class MaskROI:
         mask_z_cur = z_depth - self.z1
         perc = mask_z_cur / mask_z_total
         
-        # Get the slice index between 0 and self.mask.shape[0]
+        # Get the slice index between 0 and self.mask.shape[0] - 1
         idx = round(perc * (self.mask.shape[0] - 1))
 
         return self.mask[idx]
@@ -134,3 +148,13 @@ class BoundingBoxROI:
         self.center = np.array([(self.z1 + self.z2) / 2, (self.y1 + self.y2) / 2, (self.x1 + self.x2) / 2])
         self.size = size
     
+    
+def crop_mask(mask):
+    # Crop the mask array so that the array is the smallest possible
+    coords = np.argwhere(mask)
+    min_coords = coords.min(axis=0)
+    max_coords = coords.max(axis=0) + 1  # add 1 because slicing is exclusive at the top
+    mask_cropped = mask[min_coords[0]:max_coords[0],
+                        min_coords[1]:max_coords[1],
+                        min_coords[2]:max_coords[2]]
+    return mask_cropped
