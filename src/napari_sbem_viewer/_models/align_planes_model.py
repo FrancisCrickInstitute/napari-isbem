@@ -24,7 +24,7 @@ class AlignPlanesModel(QObject):
         self.align_planes_window = stack_viewer
         self.layer_model = layer_model
         self.layer_model.targeting_layer_added.connect(self._on_add_targeting_layer)
-        self.layer_model.targeting_layer_removed.connect(self._on_remove_targeting_layer)
+        self.layer_model.targeting_layer_removed.connect(self.reset)
         self.layer_model.labels_layer_added.connect(self._on_add_labels_layer)
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
@@ -77,9 +77,6 @@ class AlignPlanesModel(QObject):
     def _on_add_targeting_layer(self, layer):
         self.reset()
         self.layer_model.targeting_layer.events.affine.connect(self._on_affine_changed)
-        
-    def _on_remove_targeting_layer(self):
-        self.reset()
 
     def _on_add_labels_layer(self, labels_layer):
         self.layer_model.labels_layer.events.data.connect(self._on_labels_data_changed)
@@ -124,6 +121,7 @@ class AlignPlanesModel(QObject):
         self.layer = None
         self.shape = None
         self.t = None
+        self.affine_matrix = None
         self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
