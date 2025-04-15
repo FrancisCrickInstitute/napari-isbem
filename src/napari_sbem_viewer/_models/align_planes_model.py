@@ -125,6 +125,7 @@ class AlignPlanesModel(QObject):
         self.intersection_points = None
         self.align_planes_window.close()
         self.align_planes_window.viewer.layers.clear()
+        self.rotation_finished.emit(self.affine_matrix)
         
     def reset_transform(self):
         self.affine_matrix = None
