@@ -27,7 +27,7 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "SimpleITK",
-    "ome-zarr",
+    "napari-ome-zarr",
     "opencv-python",
     "scikit-image",
     "scikit-learn",
