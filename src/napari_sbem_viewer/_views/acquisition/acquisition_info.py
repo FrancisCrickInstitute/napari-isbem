@@ -1,9 +1,9 @@
-from qtpy.QtWidgets import QGroupBox, QGridLayout, QLabel, QPushButton
+from qtpy.QtWidgets import QGridLayout, QGroupBox, QLabel, QPushButton
 
 
 class AcquisitionInfo(QGroupBox):
     def __init__(self):
-        super().__init__("Acquisition info")
+        super().__init__('Acquisition info')
         self.setLayout(QGridLayout())
         self.layout().addWidget(QLabel('Viewer Z-depth:'), 0, 0)
         self.viewer_z_depth = QLabel('')
@@ -19,7 +19,7 @@ class AcquisitionInfo(QGroupBox):
         self.layout().addWidget(self.pause_status, 3, 1)
         self.reset_view_button = QPushButton('Reset view')
         self.layout().addWidget(self.reset_view_button, 4, 0, 1, 2)
-        
+
     def reset(self):
         self.model.clear()
         self.model.setHorizontalHeaderLabels(['ROI ID', 'z1 (µm)', 'z2 (µm)'])
@@ -27,9 +27,8 @@ class AcquisitionInfo(QGroupBox):
         self.viewer_z_depth.setText('')
         self.slice_thickenss.setText('')
         self.pause_status.setText('')
-    
+
     def update_acquisition_info(self, z_depth, slice_thickness, pause_status):
         self.sbemimage_z_depth.setText(f'{z_depth:.2f}µm')
         self.slice_thickenss.setText(f'{slice_thickness:.2f}nm')
         self.pause_status.setText('Paused' if pause_status else 'Running')
-        

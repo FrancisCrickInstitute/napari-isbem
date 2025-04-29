@@ -1,22 +1,22 @@
+import math
 import os
 import warnings
 
-import numpy as np
-from qtpy.QtWidgets import QErrorMessage
-import math
-import psutil
 import napari
+import numpy as np
+import psutil
+from qtpy.QtWidgets import QErrorMessage
 
 
 def display_qt_error(parent, error):
-        """Handle when an error occurs
+    """Handle when an error occurs
 
-        Show the error in an error message window.
-        """
-        em = QErrorMessage(parent)
-        em.showMessage(str(error))
-        
-        
+    Show the error in an error message window.
+    """
+    em = QErrorMessage(parent)
+    em.showMessage(str(error))
+
+
 def is_multiple(a, b):
     """
     Returns True if b is a multiple of a, False otherwise.
@@ -27,14 +27,14 @@ def is_multiple(a, b):
 
 def log_memory_usage():
     process = psutil.Process(os.getpid())
-    print(f"Memory usage: {process.memory_info().rss / 1024 ** 2} MB")
+    print(f'Memory usage: {process.memory_info().rss / 1024**2} MB')
 
 
 def log_memory_usage():
     process = psutil.Process(os.getpid())
-    print(f"Memory usage: {process.memory_info().rss / 1024 ** 2} MB")
-    
-    
+    print(f'Memory usage: {process.memory_info().rss / 1024**2} MB')
+
+
 def reset_view(viewer: napari.Viewer, layer: napari.layers.Layer):
     if viewer.dims.ndisplay != 2:
         return
@@ -43,7 +43,7 @@ def reset_view(viewer: napari.Viewer, layer: napari.layers.Layer):
     else:
         extent = layer.extent.world[:, viewer.dims.displayed]
     size = extent[1] - extent[0]
-    center = extent[0] + size/2
+    center = extent[0] + size / 2
     viewer.camera.center = center
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')

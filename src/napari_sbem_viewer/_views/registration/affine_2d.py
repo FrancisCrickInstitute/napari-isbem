@@ -1,25 +1,24 @@
 from qtpy.QtWidgets import (
-    QGridLayout, 
-    QPushButton, 
-    QCheckBox, 
+    QCheckBox,
+    QGridLayout,
     QGroupBox,
-    )
+    QPushButton,
+)
 
 
 class Affine2d(QGroupBox):
     def __init__(self, parent=None):
         super().__init__(title='2D affine', parent=parent)
-        
+
         self.setLayout(QGridLayout())
-        
-        self.remove_outliers_checkbox = QCheckBox("Remove outliers")
+
+        self.remove_outliers_checkbox = QCheckBox('Remove outliers')
         self.layout().addWidget(self.remove_outliers_checkbox, 0, 0, 1, 2)
-        
-        self.start_button = QPushButton("Start")
+
+        self.start_button = QPushButton('Start')
         self.layout().addWidget(self.start_button, 1, 0)
-    
-        self.stop_button = QPushButton("Stop")
+
+        self.stop_button = QPushButton('Stop')
         self.layout().addWidget(self.stop_button, 1, 1)
-        
+
         self.layout().setRowStretch(self.layout().rowCount(), 1)
-        

@@ -1,39 +1,41 @@
-from qtpy.QtWidgets import (QGroupBox, 
-                            QVBoxLayout, 
-                            QHBoxLayout,
-                            QLabel,
-                            QPushButton, 
-                            QProgressBar, 
-                            QCheckBox,
-                            QFileDialog,
-                            QSpinBox)
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
 
 
 class LabelSettings(QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setTitle("Label settings")
+        self.setTitle('Label settings')
         self.setLayout(QVBoxLayout())
-        self.autofill_checkbox = QCheckBox("Autofill")
+        self.autofill_checkbox = QCheckBox('Autofill')
         self.autofill_checkbox.setChecked(True)
-        self.export_labels_button = QPushButton("Export labels")
-        self.connected_components_button = QPushButton("Connected components")
-        self.merge_tolerance_label = QLabel("Merge tolerance (µm)")
+        self.export_labels_button = QPushButton('Export labels')
+        self.connected_components_button = QPushButton('Connected components')
+        self.merge_tolerance_label = QLabel('Merge tolerance (µm)')
         self.merge_tolerance_spinbox = QSpinBox()
         self.merge_tolerance_spinbox.setMaximum(999)
         self.merge_tolerance_spinbox.setMinimum(1)
         self.merge_tolerance_spinbox.setValue(10)
-        self.merge_nearby_labels_button = QPushButton("Merge nearby labels")
-        self.dilate_labels_label = QLabel("Dilate size (µm)")
+        self.merge_nearby_labels_button = QPushButton('Merge nearby labels')
+        self.dilate_labels_label = QLabel('Dilate size (µm)')
         self.dilate_amount_spinbox = QSpinBox()
         self.dilate_amount_spinbox.setMaximum(999)
         self.dilate_amount_spinbox.setMinimum(1)
-        self.dilate_labels_button = QPushButton("Dilate labels")
-        self.reset_labels_button = QPushButton("Reset interpolation")
-        self.interpolate_button = QPushButton("Interpolate labels")
+        self.dilate_labels_button = QPushButton('Dilate labels')
+        self.reset_labels_button = QPushButton('Reset interpolation')
+        self.interpolate_button = QPushButton('Interpolate labels')
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
-        
+
         self.layout().addWidget(self.autofill_checkbox)
         self.layout().addWidget(self.export_labels_button)
         self.layout().addWidget(self.connected_components_button)
@@ -50,12 +52,11 @@ class LabelSettings(QGroupBox):
         self.layout().addWidget(self.reset_labels_button)
         self.layout().addWidget(self.interpolate_button)
         # self.layout().addWidget(self.progress_bar)
-        
+
     def save_file_dialog(self):
-        file_path, _ = QFileDialog.getSaveFileName(self, 
-                                                   "Save File", 
-                                                   "", 
-                                                   "TIFF Files (*.tif *.tiff);;All Files (*)")
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, 'Save File', '', 'TIFF Files (*.tif *.tiff);;All Files (*)'
+        )
         return file_path
 
     def disable_ui(self):
@@ -68,7 +69,7 @@ class LabelSettings(QGroupBox):
         self.reset_labels_button.setEnabled(False)
         self.interpolate_button.setEnabled(False)
         self.progress_bar.setEnabled(False)
-        
+
     def enable_ui(self):
         self.autofill_checkbox.setEnabled(True)
         self.export_labels_button.setEnabled(True)
@@ -79,4 +80,3 @@ class LabelSettings(QGroupBox):
         self.reset_labels_button.setEnabled(True)
         self.interpolate_button.setEnabled(True)
         self.progress_bar.setEnabled(True)
-        

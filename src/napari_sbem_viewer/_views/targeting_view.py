@@ -1,6 +1,10 @@
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QMessageBox
+from qtpy.QtWidgets import QMessageBox, QVBoxLayout, QWidget
 
-from napari_sbem_viewer._views.targeting import AddTargetingImage, AddLabels, LabelSettings
+from napari_sbem_viewer._views.targeting import (
+    AddLabels,
+    AddTargetingImage,
+    LabelSettings,
+)
 
 
 class TargetingView(QWidget):
@@ -15,7 +19,6 @@ class TargetingView(QWidget):
         self.layout().addWidget(self.add_labels)
         self.layout().addWidget(self.label_settings)
         self.layout().addStretch(1)
-        
+
     def show_error(self, title, message):
         QMessageBox.warning(self, title, message)
-        

@@ -15,4 +15,3 @@ class StackViewer(QtViewer):
     def closeEvent(self, event):
         event.ignore()
         self.hide()
-        
