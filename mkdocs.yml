@@ -1,0 +1,12 @@
+site_name: napari-sbem-viewer
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Usage:
+    - Targeting: targeting.md
+    - Acquisition: acquisition.md
+    - Registration: registration.md
+theme:
+  name: material
+plugins:
+  - search
