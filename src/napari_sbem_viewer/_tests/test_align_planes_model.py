@@ -186,6 +186,7 @@ def test_reset(align_planes_model):
     assert align_planes_model.intersection_points is None
     
     
+@pytest.mark.skip(reason="Error closing mock napari viewer")
 def test_update_plane_angle(align_planes_model_with_stack_viewer):
     align_planes_model_with_stack_viewer.show_align_planes_window()
     align_planes_model_with_stack_viewer.update_plane_angle(10, 10)
@@ -205,6 +206,7 @@ def test_update_plane_angle_without_viewer(align_planes_model):
     assert align_planes_model.t is None
     
     
+@pytest.mark.skip(reason="Error closing mock napari viewer")
 def test_update_plane_position(align_planes_model_with_stack_viewer):
     align_planes_model_with_stack_viewer.show_align_planes_window()
     align_planes_model_with_stack_viewer.update_plane_position(0.8)
