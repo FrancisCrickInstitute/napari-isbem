@@ -69,8 +69,9 @@ def test_start_stop_registration(affine_model):
 
 @pytest.mark.parametrize("flip_z", [True, False])
 def test_do_transform(affine_model, flip_z):
-    affine_model.do_transform = lambda: affine_model._do_transform(flip_z=flip_z, transform_method=AffineTransform, remove_outliers=False)
     # Test the do_transform method
+    if flip_z:
+        affine_model.flip_z()
     affine_model.start_registration()
     
     # Add mock points to the points layers

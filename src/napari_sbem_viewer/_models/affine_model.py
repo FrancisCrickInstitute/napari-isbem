@@ -32,6 +32,9 @@ class AffineModel(QObject):
         self.delete_pts = True
         self.points_layers = [None, None]
         self.is_doing_registration = False
+        # self.transform_method = AffineTransformChoices.Affine
+        self.transform_method = AffineTransform
+        self.remove_outliers = False
         self.layer_model.targeting_layer_added.connect(self._on_add_layer)
         self.layer_model.targeting_layer_removed.connect(self._on_remove_layer)
         self.layer_model.em_layer_added.connect(self._on_add_layer)
@@ -119,34 +122,59 @@ class AffineModel(QObject):
             raise ValueError('No moving image layer selected')
         return self.layer_model.targeting_layer.affine.affine_matrix
 
-    def is_moving_image_flipped(self):
+    def is_z_flipped(self):
         if not self.layer_model.targeting_layer:
             return False
         return self.layer_model.targeting_layer.affine.affine_matrix[0, 0] < 0
 
     def do_transform(self):
-        raise NotImplementedError(
-            'do_transform must be implemented in ManualRegistrationController'
+        fixed_points_layer, moving_points_layer = self.points_layers
+        if (
+            self.layer_model.em_layer is None
+            or self.layer_model.targeting_layer is None
+        ):
+            return
+        if fixed_points_layer is None or moving_points_layer is None:
+            return
+        pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
+        ndim_raw = pts0.shape[1]  # shape of raw points
+        pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
+        ndim = pts0.shape[
+            1
+        ]  # shape of points after potentially changing to 2D
+        if len(pts0) != len(pts1) or len(pts0) <= ndim:
+            return
+        mat = calculate_transform(
+            pts0,
+            pts1,
+            ndim,
+            model_class=self.transform_method,
+            remove_outliers=self.remove_outliers,
+        )
+        # if image is 3D, add z-shift to 2D transform
+        if ndim_raw > 2:
+            z_mat = calculate_z_transform(
+                fixed_points_layer, moving_points_layer, self.is_z_flipped()
+            )
+            mat = z_mat @ convert_affine_to_ndims(mat, ndim_raw)
+        ref_mat = self.layer_model.em_layer.affine.affine_matrix
+        # must shrink ndims of affine matrix if dims of image layer is bigger than moving layer
+        if (
+            self.layer_model.em_layer.ndim
+            > self.layer_model.targeting_layer.ndim
+        ):
+            ref_mat = convert_affine_to_ndims(
+                ref_mat, self.layer_model.targeting_layer.ndim
+            )
+        # must pad affine matrix with identity matrix if dims of moving layer smaller
+        self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
+            (ref_mat @ mat), self.layer_model.targeting_layer.ndim
+        )
+        moving_points_layer.affine = convert_affine_to_ndims(
+            (ref_mat @ mat), moving_points_layer.ndim
         )
 
-    def _offset_z(self, offset):
-        moving_points_layer = self.points_layers[1]
-        if self.layer_model.targeting_layer is not None:
-            current_z = self.viewer.dims.point[0]
-            mat = convert_affine_to_ndims(
-                self.layer_model.targeting_layer.affine.affine_matrix, 3
-            )
-            offset_transform_matrix_z(mat, offset)
-            self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
-                mat, self.layer_model.targeting_layer.ndim
-            )
-            if moving_points_layer is not None:
-                moving_points_layer.affine = convert_affine_to_ndims(
-                    mat, moving_points_layer.ndim
-                )
-            self.viewer.dims.set_point(0, current_z)
-
-    def _flip_z(self):
+    def flip_z(self):
         moving_points_layer = self.points_layers[1]
         if self.layer_model.targeting_layer is not None:
             mat = convert_affine_to_ndims(
@@ -164,6 +192,23 @@ class AffineModel(QObject):
                 moving_points_layer.affine = convert_affine_to_ndims(
                     mat, moving_points_layer.ndim
                 )
+
+    def _offset_z(self, offset):
+        moving_points_layer = self.points_layers[1]
+        if self.layer_model.targeting_layer is not None:
+            current_z = self.viewer.dims.point[0]
+            mat = convert_affine_to_ndims(
+                self.layer_model.targeting_layer.affine.affine_matrix, 3
+            )
+            offset_transform_matrix_z(mat, offset)
+            self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
+                mat, self.layer_model.targeting_layer.ndim
+            )
+            if moving_points_layer is not None:
+                moving_points_layer.affine = convert_affine_to_ndims(
+                    mat, moving_points_layer.ndim
+                )
+            self.viewer.dims.set_point(0, current_z)
 
     def _create_points_layers(self):
         # set points layer for each image
@@ -234,53 +279,6 @@ class AffineModel(QObject):
         moving_points_layer.affine = convert_affine_to_ndims(
             self.layer_model.targeting_layer.affine.affine_matrix,
             moving_points_layer.ndim,
-        )
-
-    def _do_transform(self, flip_z, transform_method, remove_outliers):
-        fixed_points_layer, moving_points_layer = self.points_layers
-        if (
-            self.layer_model.em_layer is None
-            or self.layer_model.targeting_layer is None
-        ):
-            return
-        if fixed_points_layer is None or moving_points_layer is None:
-            return
-        pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
-        ndim_raw = pts0.shape[1]  # shape of raw points
-        pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
-        ndim = pts0.shape[
-            1
-        ]  # shape of points after potentially changing to 2D
-        if len(pts0) != len(pts1) or len(pts0) <= ndim:
-            return
-        mat = calculate_transform(
-            pts0,
-            pts1,
-            ndim,
-            model_class=transform_method,
-            remove_outliers=remove_outliers,
-        )
-        # if image is 3D, add z-shift to 2D transform
-        if ndim_raw > 2:
-            z_mat = calculate_z_transform(
-                fixed_points_layer, moving_points_layer, flip_z
-            )
-            mat = z_mat @ convert_affine_to_ndims(mat, ndim_raw)
-        ref_mat = self.layer_model.em_layer.affine.affine_matrix
-        # must shrink ndims of affine matrix if dims of image layer is bigger than moving layer
-        if (
-            self.layer_model.em_layer.ndim
-            > self.layer_model.targeting_layer.ndim
-        ):
-            ref_mat = convert_affine_to_ndims(
-                ref_mat, self.layer_model.targeting_layer.ndim
-            )
-        # must pad affine matrix with identity matrix if dims of moving layer smaller
-        self.layer_model.targeting_layer.affine = convert_affine_to_ndims(
-            (ref_mat @ mat), self.layer_model.targeting_layer.ndim
-        )
-        moving_points_layer.affine = convert_affine_to_ndims(
-            (ref_mat @ mat), moving_points_layer.ndim
         )
 
     def _on_add_point(self, event):

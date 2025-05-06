@@ -5,7 +5,6 @@ class RegistrationController:
     def __init__(self, view, registration_model):
         self.view = view
         self.model = registration_model
-        self.model.affine_model.do_transform = self._on_affine_transform
         self._reset_align_planes_ui()
         self._reset_affine_transform_ui()
         self._deactivate_ui()
@@ -38,7 +37,7 @@ class RegistrationController:
         )
 
         self.view.z_alignment.reverse_checkbox.stateChanged.connect(
-            self.model.affine_model._flip_z
+            self.model.affine_model.flip_z
         )
         self.view.z_alignment.move_down_button.clicked.connect(
             self._on_click_move_down
@@ -47,11 +46,11 @@ class RegistrationController:
             self._on_click_move_up
         )
 
+        self.view.affine_2d.remove_outliers_checkbox.stateChanged.connect(
+            self._set_remove_outliers
+        )
         self.view.affine_2d.start_button.clicked.connect(self._on_click_start)
         self.view.affine_2d.stop_button.clicked.connect(self._on_click_stop)
-        self.view.affine_2d.remove_outliers_checkbox.stateChanged.connect(
-            self.model.affine_model.do_transform
-        )
 
         # Activate UI when moving layer is added
         self.model.layer_model.targeting_layer_added.connect(
@@ -193,17 +192,14 @@ class RegistrationController:
         except Exception as e:
             self.view.show_error('Error', f'Failed to start registration: {e}')
             self._reset_affine_transform_ui()
-
-    def _on_affine_transform(self):
-        self.model.affine_model._do_transform(
-            flip_z=self.view.z_alignment.reverse_checkbox.isChecked(),
-            transform_method=AffineTransformChoices.Affine.value,
-            remove_outliers=self.view.affine_2d.remove_outliers_checkbox.isChecked(),
-        )
+        
+    def _set_remove_outliers(self):
+        self.model.affine_model.remove_outliers = self.view.affine_2d.remove_outliers_checkbox.isChecked()
+        self.model.affine_model.do_transform()
 
     def _update_reverse_checkbox(self):
         self.view.z_alignment.reverse_checkbox.blockSignals(True)
-        if self.model.affine_model.is_moving_image_flipped():
+        if self.model.affine_model.is_z_flipped():
             self.view.z_alignment.reverse_checkbox.setChecked(True)
         else:
             self.view.z_alignment.reverse_checkbox.setChecked(False)
