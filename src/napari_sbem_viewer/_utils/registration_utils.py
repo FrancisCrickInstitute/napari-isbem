@@ -1,8 +1,21 @@
+from enum import Enum
+
 import numpy as np
 import SimpleITK as sitk
 from napari.layers import Image, Layer
 from scipy.spatial.transform import Rotation as R
 from sklearn.linear_model import RANSACRegressor
+from skimage.transform import (
+    AffineTransform, 
+    SimilarityTransform, 
+    EuclideanTransform,
+)
+
+
+class AffineTransformChoices(Enum):
+    Affine = 1
+    Similarity = 2
+    Euclidean = 3
 
 
 def rotation_matrix_from_zy_zx_angles(zy_angle, zx_angle):
@@ -198,16 +211,22 @@ def remove_outliers_ransac(src, dst):
     return src_filtered, dst_filtered
 
 
-def calculate_transform(src, dst, ndim, model_class, remove_outliers=False):
+def calculate_transform(src, dst, ndim, transform_method, remove_outliers=False):
     """
-    Use the specified model to calculata a transform between two sets of points.
+    Use the specified method to calculata a transform between two sets of points.
     """
     if remove_outliers:
         src, dst = remove_outliers_ransac(src, dst)
-    model = model_class(dimensionality=ndim)
+    if transform_method == AffineTransformChoices.Affine:
+        model = AffineTransform(dimensionality=ndim)
+    elif transform_method == AffineTransformChoices.Similarity:
+        model = SimilarityTransform(dimensionality=ndim)
+    elif transform_method == AffineTransformChoices.Euclidean:
+        model = EuclideanTransform(dimensionality=ndim)
+    else:
+        raise ValueError(f"Unknown transform method: {transform_method}.")
     model.estimate(dst, src)
     return model
-
 
 def calculate_z_transform(
     reference_points_layer, moving_points_layer, reverse_stack

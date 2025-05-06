@@ -1,13 +1,6 @@
-from enum import Enum
-
 from napari.layers import Image
 from napari.layers.base._base_constants import ActionType, Mode
 from qtpy.QtCore import QObject, Signal
-from skimage.transform import (
-    AffineTransform,
-    EuclideanTransform,
-    SimilarityTransform,
-)
 
 from napari_sbem_viewer._utils.general_utils import reset_view
 from napari_sbem_viewer._utils.registration_utils import (
@@ -17,6 +10,7 @@ from napari_sbem_viewer._utils.registration_utils import (
     flip_transform_matrix,
     is_2d_affine_matrix,
     offset_transform_matrix_z,
+    AffineTransformChoices,
 )
 
 
@@ -32,8 +26,7 @@ class AffineModel(QObject):
         self.delete_pts = True
         self.points_layers = [None, None]
         self.is_doing_registration = False
-        # self.transform_method = AffineTransformChoices.Affine
-        self.transform_method = AffineTransform
+        self.transform_method = AffineTransformChoices.Affine
         self.remove_outliers = False
         self.layer_model.targeting_layer_added.connect(self._on_add_layer)
         self.layer_model.targeting_layer_removed.connect(self._on_remove_layer)
@@ -126,6 +119,12 @@ class AffineModel(QObject):
         if not self.layer_model.targeting_layer:
             return False
         return self.layer_model.targeting_layer.affine.affine_matrix[0, 0] < 0
+    
+    def set_transform_method(self, method):
+        try:
+            self.transform_method = AffineTransformChoices[method]
+        except KeyError:
+            raise ValueError(f'Invalid transform method: {method}')
 
     def do_transform(self):
         fixed_points_layer, moving_points_layer = self.points_layers
@@ -139,16 +138,14 @@ class AffineModel(QObject):
         pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
         ndim_raw = pts0.shape[1]  # shape of raw points
         pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
-        ndim = pts0.shape[
-            1
-        ]  # shape of points after potentially changing to 2D
+        ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
         if len(pts0) != len(pts1) or len(pts0) <= ndim:
             return
         mat = calculate_transform(
             pts0,
             pts1,
             ndim,
-            model_class=self.transform_method,
+            transform_method=self.transform_method,
             remove_outliers=self.remove_outliers,
         )
         # if image is 3D, add z-shift to 2D transform
@@ -293,9 +290,3 @@ class AffineModel(QObject):
         elif moving_points_layer in self.viewer.layers.selection:
             self.do_transform()
             self._focus_fixed_layer(reset_camera=reset_camera)
-
-
-class AffineTransformChoices(Enum):
-    Affine = AffineTransform
-    Euclidean = EuclideanTransform
-    Similarity = SimilarityTransform

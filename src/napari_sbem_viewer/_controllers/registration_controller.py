@@ -8,6 +8,7 @@ class RegistrationController:
         self._reset_align_planes_ui()
         self._reset_affine_transform_ui()
         self._deactivate_ui()
+        self._populate_transform_methods()
         self._init_signals()
 
     def _init_signals(self):
@@ -46,6 +47,9 @@ class RegistrationController:
             self._on_click_move_up
         )
 
+        self.view.affine_2d.method_combo_box.currentTextChanged.connect(
+            self._on_change_transform_method
+        )
         self.view.affine_2d.remove_outliers_checkbox.stateChanged.connect(
             self._set_remove_outliers
         )
@@ -196,6 +200,18 @@ class RegistrationController:
     def _set_remove_outliers(self):
         self.model.affine_model.remove_outliers = self.view.affine_2d.remove_outliers_checkbox.isChecked()
         self.model.affine_model.do_transform()
+        
+    def _on_change_transform_method(self):
+        self.model.affine_model.set_transform_method(self.view.affine_2d.method_combo_box.currentText())
+        self.model.affine_model.do_transform()
+        
+    def _populate_transform_methods(self):
+        self.view.affine_2d.method_combo_box.addItems(
+            [method.name for method in AffineTransformChoices]
+        )
+        self.view.affine_2d.method_combo_box.setCurrentText(
+            self.model.affine_model.transform_method.name
+        )
 
     def _update_reverse_checkbox(self):
         self.view.z_alignment.reverse_checkbox.blockSignals(True)
