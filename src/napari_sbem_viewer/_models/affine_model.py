@@ -43,10 +43,6 @@ class AffineModel(QObject):
     def _on_remove_layer(self):
         self.deactivated.emit()
 
-    def reset(self):
-        self.is_doing_registration = False
-        self._remove_points_layers()
-
     def start_registration(self):
         if (
             not self.layer_model.targeting_layer
@@ -95,8 +91,7 @@ class AffineModel(QObject):
         self.is_doing_registration = False
 
     def reset_transform(self):
-        self.reset()
-        self.layer_model.targeting_layer.affine = None
+        self.stop_registration()
         self.transform_loaded.emit()
 
     def load_transform(self, affine_matrix):
