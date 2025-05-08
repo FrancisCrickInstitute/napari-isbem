@@ -1,5 +1,6 @@
 from enum import Enum
 
+import cv2
 import numpy as np
 import SimpleITK as sitk
 from napari.layers import Image, Layer
@@ -12,11 +13,11 @@ from skimage.transform import (
 )
 
 
-class AffineTransformChoices(Enum):
-    Affine = 1
+class Align2DMethods(Enum):
+    Euclidean = 1
     Similarity = 2
-    Euclidean = 3
-
+    Affine = 3
+    
 
 def rotation_matrix_from_zy_zx_angles(zy_angle, zx_angle):
     mat = np.eye(4)
@@ -211,22 +212,49 @@ def remove_outliers_ransac(src, dst):
     return src_filtered, dst_filtered
 
 
-def calculate_transform(src, dst, ndim, transform_method, remove_outliers=False):
+def find_best_transform_after_flipping(src, dst, model):
+    """
+    If transform model doesn't allow flipping, find the transform after manually flipping 
+    source points and choose to use the one with the least error.
+    """
+    flips = [np.diag([1, 1]), np.diag([1, -1]), np.diag([-1, 1]), np.diag([-1, -1])]
+    transforms = []
+    errors = []
+    for flip in flips:
+        flipped_src = np.dot(flip, src.T).T
+        model.estimate(dst, flipped_src)
+        transformed_dst = model(dst)
+        error = np.sum((transformed_dst - flipped_src) ** 2)
+        transforms.append(model.params)
+        errors.append(error)
+    min_i = np.argmin(errors) 
+    flip_3x3 = np.eye(3)
+    flip_3x3[:2, :2] = flips[min_i]
+    return flip_3x3 @ transforms[min_i]
+
+
+def calculate_transform(src, dst, transform_method, remove_outliers=False):
     """
     Use the specified method to calculata a transform between two sets of points.
     """
+    assert src.shape[0] == dst.shape[0], f"Number of src and dst points aren't equal {src.shape[0]} != {dst.shape[0]}"
+    assert src.shape[1] == 2, f"src points must be 2D, got {src.shape[1]}"
+    assert dst.shape[1] == 2, f"dst points must be 2D, got {dst.shape[1]}"
     if remove_outliers:
         src, dst = remove_outliers_ransac(src, dst)
-    if transform_method == AffineTransformChoices.Affine:
-        model = AffineTransform(dimensionality=ndim)
-    elif transform_method == AffineTransformChoices.Similarity:
-        model = SimilarityTransform(dimensionality=ndim)
-    elif transform_method == AffineTransformChoices.Euclidean:
-        model = EuclideanTransform(dimensionality=ndim)
+    if transform_method == Align2DMethods.Affine:
+        model = AffineTransform(dimensionality=2)
+        model.estimate(dst, src)
+        return model.params
+    elif transform_method == Align2DMethods.Similarity:
+        model = SimilarityTransform(dimensionality=2)
+        return find_best_transform_after_flipping(src, dst, model)
+    elif transform_method == Align2DMethods.Euclidean:
+        model = EuclideanTransform(dimensionality=2)
+        return find_best_transform_after_flipping(src, dst, model)
     else:
         raise ValueError(f"Unknown transform method: {transform_method}.")
-    model.estimate(dst, src)
-    return model
+
 
 def calculate_z_transform(
     reference_points_layer, moving_points_layer, reverse_stack

@@ -10,7 +10,7 @@ from napari_sbem_viewer._utils.registration_utils import (
     flip_transform_matrix,
     is_2d_affine_matrix,
     offset_transform_matrix_z,
-    AffineTransformChoices,
+    Align2DMethods,
 )
 
 
@@ -26,7 +26,7 @@ class AffineModel(QObject):
         self.delete_pts = True
         self.points_layers = [None, None]
         self.is_doing_registration = False
-        self.transform_method = AffineTransformChoices.Affine
+        self.transform_method = Align2DMethods.Euclidean
         self.remove_outliers = False
         self.layer_model.targeting_layer_added.connect(self._on_add_layer)
         self.layer_model.targeting_layer_removed.connect(self._on_remove_layer)
@@ -117,7 +117,7 @@ class AffineModel(QObject):
     
     def set_transform_method(self, method):
         try:
-            self.transform_method = AffineTransformChoices[method]
+            self.transform_method = Align2DMethods[method]
         except KeyError:
             raise ValueError(f'Invalid transform method: {method}')
 
@@ -139,7 +139,6 @@ class AffineModel(QObject):
         mat = calculate_transform(
             pts0,
             pts1,
-            ndim,
             transform_method=self.transform_method,
             remove_outliers=self.remove_outliers,
         )

@@ -1,4 +1,4 @@
-from napari_sbem_viewer._models.affine_model import AffineTransformChoices
+from napari_sbem_viewer._models.affine_model import Align2DMethods
 
 
 class RegistrationController:
@@ -207,7 +207,7 @@ class RegistrationController:
         
     def _populate_transform_methods(self):
         self.view.affine_2d.method_combo_box.addItems(
-            [method.name for method in AffineTransformChoices]
+            [method.name for method in Align2DMethods]
         )
         self.view.affine_2d.method_combo_box.setCurrentText(
             self.model.affine_model.transform_method.name

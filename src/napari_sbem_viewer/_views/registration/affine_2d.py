@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
 
 class Affine2d(QGroupBox):
     def __init__(self, parent=None):
-        super().__init__(title='2D affine', parent=parent)
+        super().__init__(title='2D alignment', parent=parent)
 
         self.setLayout(QGridLayout())
         
