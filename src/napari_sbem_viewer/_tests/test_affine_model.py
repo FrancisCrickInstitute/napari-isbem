@@ -2,9 +2,9 @@ import pytest
 import numpy as np
 import numpy.testing as npt
 from napari.layers import Points, Image
-from skimage.transform import AffineTransform
 
 from napari_sbem_viewer._models import AffineModel, LayerModel
+from napari_sbem_viewer._models.affine_model import Align2DMethods
 
 
 @pytest.fixture
@@ -69,8 +69,10 @@ def test_start_stop_registration(affine_model):
 
 @pytest.mark.parametrize("flip_z", [True, False])
 def test_do_transform(affine_model, flip_z):
-    affine_model.do_transform = lambda: affine_model._do_transform(flip_z=flip_z, transform_method=AffineTransform, remove_outliers=False)
     # Test the do_transform method
+    affine_model.transform_method = Align2DMethods.Affine
+    if flip_z:
+        affine_model.flip_z()
     affine_model.start_registration()
     
     # Add mock points to the points layers
