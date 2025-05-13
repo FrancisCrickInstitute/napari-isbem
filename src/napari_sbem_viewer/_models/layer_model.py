@@ -1,6 +1,7 @@
 import tifffile
 from napari.layers import Image, Labels, Layer
-from napari_ome_zarr import napari_get_reader
+from napari_ome_zarr import napari_get_reader as zarr_get_reader
+from napari_tiff import napari_get_reader as tiff_get_reader
 from qtpy.QtCore import QObject, Signal
 
 
@@ -23,11 +24,18 @@ class LayerModel(QObject):
         self.viewer.layers.events.removed.connect(self._on_remove_layer)
 
     def import_targeting_image(self, file_path):
-        if not file_path.endswith('.ome.zarr'):
-            raise ValueError('Invalid file format. Must be an OME-Zarr file.')
-        reader = napari_get_reader(file_path)
-        layer = Layer.create(*reader(file_path)[0])
-        layer.contrast_limits = (0, 65535)
+        if file_path.endswith('.zarr'):
+            reader = zarr_get_reader(file_path)
+            layer = Layer.create(*reader(file_path)[0])
+        elif file_path.endswith('.tif') or file_path.endswith('.tiff'):
+            reader = tiff_get_reader(file_path)
+            data = reader(file_path)[0]
+            del data[1]['colormap']
+            del data[1]['channel_axis']
+            del data[1]['blending']
+            layer = Layer.create(*data)
+        else:
+            raise ValueError('Invalid file format. Must be an OME-Zarr or TIFF file.')
         self.add_targeting_layer(layer)
 
     def add_targeting_layer(self, layer):
