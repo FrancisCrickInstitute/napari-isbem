@@ -27,9 +27,7 @@ class TCPServer(QThread):
             {'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}}
         )
 
-    def add_grid(
-        self, roi_id, roi_center, roi_size, ov_position, ov_angle=None
-    ):
+    def add_grid(self, roi_id, roi_center, roi_size, ov_position):
         self.response_commands.append(
             {
                 'msg': 'ADD ARRAY GRID',
@@ -39,7 +37,6 @@ class TCPServer(QThread):
                     roi_center,
                     roi_size,
                     ov_position,
-                    ov_angle,
                 ],
                 'kwargs': {},
             }
