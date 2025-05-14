@@ -22,10 +22,10 @@ def test_delete_all_grids(tcp_server):
 
 
 def test_add_grid(tcp_server):
-    tcp_server.add_grid(roi_id=1, roi_center=(0, 0), roi_size=(10, 10), ov_position=(5, 5), ov_angle=45)
+    tcp_server.add_grid(roi_id=1, roi_center=(0, 0), roi_size=(10, 10), ov_position=(5, 5))
     assert tcp_server.response_commands == [{
         'msg': 'ADD ARRAY GRID',
-        'args': [None, 1, (0, 0), (10, 10), (5, 5), 45],
+        'args': [None, 1, (0, 0), (10, 10), (5, 5)],
         'kwargs': {}
     }]
 
