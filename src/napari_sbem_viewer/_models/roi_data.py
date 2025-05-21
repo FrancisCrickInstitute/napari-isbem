@@ -42,12 +42,15 @@ class ROIData:
             mins_t, maxes_t = find_bounds(size, T, offset)
 
             # Obtain the mask for the transformed bounding box
-            maxes_inc = maxes + 1
+            # pad the mins and maxes to ensure the entire mask is included after transforming
+            maxes_inc = maxes + 1  
+            mins_inc = mins - 1
+            mins_inc[mins_inc < 0] = 0
             mask = np.copy(
                 labels[
-                    mins[0] : maxes_inc[0],
-                    mins[1] : maxes_inc[1],
-                    mins[2] : maxes_inc[2],
+                    mins_inc[0] : maxes_inc[0],
+                    mins_inc[1] : maxes_inc[1],
+                    mins_inc[2] : maxes_inc[2],
                 ]
             )
             mask[mask != label_id] = 0
@@ -58,7 +61,6 @@ class ROIData:
             mask_t[mask_t > 0] = 1
             mask_t[mask_t < 0] = 0
             mask_t = mask_t.astype(np.uint8)
-            mask_t = crop_mask(mask_t)
 
             position = self.world_to_roi_coords(mins_t)
             size = maxes_t - mins_t
