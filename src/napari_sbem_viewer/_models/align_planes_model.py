@@ -1,5 +1,3 @@
-from copy import copy
-
 import numpy as np
 from napari.layers import Image
 from napari.qt import create_worker
@@ -131,7 +129,10 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.viewer.layers.clear()
         
         im_data = self.layer_model.targeting_layer_original.data
-        im_data_downsample = get_downsampled_data(im_data)
+        im_data_downsample = get_downsampled_data(
+            im_data, 
+            multiscale=self.layer_model.targeting_layer_original.multiscale,
+            )
         self.align_planes_window.image_layer = Image(
             data=im_data_downsample,
             name='image',
@@ -287,7 +288,16 @@ def find_min_max_corners(normal, p, points):
     return distances.min(), distances.max()
 
 
-def get_downsampled_data(data):
-    if isinstance(data, np.ndarray):
-        return data
-    return data[1].compute()
+def get_downsampled_data(data, multiscale=False):
+    if multiscale:
+        # TODO: choose layer based on image shapes
+        if len(data) > 1:
+            # return the second pyramid level if it exists
+            return data[1].compute()
+        else:
+            # return the first pyramid level
+            return data[0].compute()
+        
+    else:
+        return data  # TODO: downsample and cache if image is too large
+    
