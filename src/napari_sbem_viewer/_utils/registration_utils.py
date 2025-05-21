@@ -98,14 +98,15 @@ def find_bounds(image_shape, affine_matrix, offset=None):
     bounds = np.asarray(
         [
             [0, 0, 0, 1],
-            [0, image_shape[1], 0, 1],
             [image_shape[0], 0, 0, 1],
+            [0, image_shape[1], 0, 1],
             [0, 0, image_shape[2], 1],
             [image_shape[0], image_shape[1], 0, 1],
             [image_shape[0], 0, image_shape[2], 1],
             [0, image_shape[1], image_shape[2], 1],
             [image_shape[0], image_shape[1], image_shape[2], 1],
-        ]
+        ], 
+        dtype=np.float32
     )
     if offset is not None:
         offset = np.asarray(offset)
@@ -141,7 +142,11 @@ def transform_image_3d_sitk(
     image, transformation_matrix, interpolator='linear'
 ):
     # Find the image bounds after transformation
-    min_coords, max_coords = find_bounds(image.shape, transformation_matrix)
+    min_coords, max_coords = find_bounds(
+        image.shape, 
+        transformation_matrix, 
+        offset=[-0.5, -0.5, -0.5]
+        )
     # Calculate the inverse transform and perform the transformation for use with sitk
     transformation_matrix = np.linalg.inv(transformation_matrix)
     transformation_matrix_xyz = permute_matrix(transformation_matrix)
