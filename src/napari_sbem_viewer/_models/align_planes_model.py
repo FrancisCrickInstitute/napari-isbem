@@ -1,5 +1,3 @@
-from copy import copy
-
 import numpy as np
 from napari.layers import Image
 from napari.qt import create_worker
@@ -129,25 +127,31 @@ class AlignPlanesModel(QObject):
             self.layer_model.targeting_layer.contrast_limits
         )
         self.align_planes_window.viewer.layers.clear()
-        self.align_planes_window.image_layer = copy(
-            self.layer_model.targeting_layer_original
+        
+        im_data = self.layer_model.targeting_layer_original.data
+        im_data_downsample = get_downsampled_data(
+            im_data, 
+            multiscale=self.layer_model.targeting_layer_original.multiscale,
+            )
+        self.align_planes_window.image_layer = Image(
+            data=im_data_downsample,
+            name='image',
+            scale=self.layer_model.targeting_layer_original.scale,
+            contrast_limits=self.layer_model.targeting_layer.contrast_limits,
+            blending='translucent',
+            colormap='gray',
         )
-        self.align_planes_window.image_layer.affine = None
-        self.align_planes_window.image_layer.name = 'image'
-        self.align_planes_window.image_layer.blending = 'translucent'
-
-        self.align_planes_window.plane_layer = copy(
-            self.layer_model.targeting_layer_original
+        self.align_planes_window.plane_layer = Image(
+            data=im_data_downsample,
+            name='plane',
+            scale=self.layer_model.targeting_layer_original.scale,
+            contrast_limits=self.layer_model.targeting_layer.contrast_limits,
+            blending='translucent_no_depth',
+            colormap='cyan',
+            depiction='plane',
         )
-        self.align_planes_window.plane_layer.affine = None
-        self.align_planes_window.plane_layer.blending = 'translucent_no_depth'
-        self.align_planes_window.plane_layer.name = 'plane'
-        self.align_planes_window.plane_layer.depiction = 'plane'
-        self.align_planes_window.plane_layer.colormap = 'cyan'
-        data = self.layer_model.targeting_layer_original.data
-        self.shape = (
-            data.shape if isinstance(data, np.ndarray) else data.shapes[-1]
-        )
+        
+        self.shape = im_data_downsample.shape
         self.align_planes_window.plane_layer.plane.position = (
             np.array(self.shape) / 2
         )
@@ -282,3 +286,18 @@ class AlignPlanesModel(QObject):
 def find_min_max_corners(normal, p, points):
     distances = np.dot(points - p, normal)
     return distances.min(), distances.max()
+
+
+def get_downsampled_data(data, multiscale=False):
+    if multiscale:
+        # TODO: choose layer based on image shapes
+        if len(data) > 1:
+            # return the second pyramid level if it exists
+            return data[1].compute()
+        else:
+            # return the first pyramid level
+            return data[0].compute()
+        
+    else:
+        return data  # TODO: downsample and cache if image is too large
+    

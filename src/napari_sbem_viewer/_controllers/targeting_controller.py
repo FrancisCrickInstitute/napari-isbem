@@ -12,8 +12,11 @@ class TargetingController:
 
     def _connect_signals(self):
         # UI events
-        self.view.add_targeting_image.import_targeting_image_button.clicked.connect(
-            self._on_click_import_targeting_image
+        self.view.add_targeting_image.import_zarr_button.clicked.connect(
+            self._on_click_import_zarr
+        )
+        self.view.add_targeting_image.import_tiff_button.clicked.connect(
+            self._on_click_import_tiff
         )
         self.view.add_labels.add_labels_button.clicked.connect(
             self._on_click_add_labels
@@ -80,8 +83,17 @@ class TargetingController:
             self.view.add_labels.setEnabled(False)
             self.view.label_settings.setEnabled(self.model.editing_enabled)
 
-    def _on_click_import_targeting_image(self):
-        file_path = self.view.add_targeting_image.open_file_dialog()
+    def _on_click_import_zarr(self):
+        file_path = self.view.add_targeting_image.open_zarr_file_dialog()
+        if not file_path:
+            return
+        try:
+            self.model.layer_model.import_targeting_image(file_path)
+        except Exception as e:
+            self.view.show_error('Error', f'Failed to load image: {e}')
+            
+    def _on_click_import_tiff(self):
+        file_path = self.view.add_targeting_image.open_tiff_file_dialog()
         if not file_path:
             return
         try:
