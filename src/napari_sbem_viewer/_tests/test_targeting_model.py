@@ -1,9 +1,10 @@
-import pytest
 import numpy as np
 import numpy.testing as npt
+import pytest
 from napari.layers import Image
-from napari_sbem_viewer._models.targeting_model import TargetingModel
 from tifffile import imwrite
+
+from napari_sbem_viewer._models.targeting_model import TargetingModel
 
 
 @pytest.fixture
@@ -24,30 +25,28 @@ def test_targeting_model_init(targeting_model):
 
 def test_add_new_labels_layer(targeting_model):
     targeting_model.layer_model.targeting_layer_original = Image(
-        name="test", 
-        data=np.zeros((5, 7, 12), dtype=np.uint8),
-        scale=(1, 2, 3))
+        name='test', data=np.zeros((5, 7, 12), dtype=np.uint8), scale=(1, 2, 3)
+    )
     targeting_model.add_new_labels_layer(2)
     assert targeting_model.annotated_labels.shape == (2, 3, 6)
     targeting_model.layer_model.add_labels_layer.assert_called_once()
     labels_layer = targeting_model.layer_model.add_labels_layer.call_args[0][0]
     assert labels_layer.data.shape == (2, 3, 6)
     npt.assert_array_almost_equal(labels_layer.scale, (2, 4, 6))
-    
+
 
 def test_upload_existing_labels(tmp_path, targeting_model):
     targeting_model.layer_model.targeting_layer_original = Image(
-        name="test", 
-        data=np.zeros((5, 7, 12), dtype=np.uint8),
-        scale=(1, 2, 3))
+        name='test', data=np.zeros((5, 7, 12), dtype=np.uint8), scale=(1, 2, 3)
+    )
 
     # Write dummy tiff file
-    dummy_tiff_path = str(tmp_path / "dummy_path.tif")
+    dummy_tiff_path = str(tmp_path / 'dummy_path.tif')
     imwrite(
         dummy_tiff_path,
         np.ones((10, 10, 10), dtype=np.uint8),
     )
-    
+
     # Load dummy tiff file and check if it is uploaded correctly
     targeting_model.upload_existing_labels(dummy_tiff_path)
     assert targeting_model.annotated_labels.shape == (10, 10, 10)
@@ -64,5 +63,4 @@ def test_enable_disable_editing(targeting_model, mocker):
     targeting_model.editing_updated.emit.assert_called_once()
     targeting_model.enable_editing(False)
     assert targeting_model.editing_enabled is False
-    targeting_model.editing_updated.emit.call_count == 2
-    
+    assert targeting_model.editing_updated.emit.call_count == 2

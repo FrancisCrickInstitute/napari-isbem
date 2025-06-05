@@ -4,17 +4,17 @@ from qtpy.QtCore import QObject, Signal
 
 from napari_sbem_viewer._utils.general_utils import reset_view
 from napari_sbem_viewer._utils.registration_utils import (
+    Align2DMethods,
     calculate_transform,
     calculate_z_transform,
     convert_affine_to_ndims,
     flip_transform_matrix,
     is_2d_affine_matrix,
     offset_transform_matrix_z,
-    Align2DMethods,
 )
 
 
-class AffineModel(QObject):    
+class AffineModel(QObject):
     """Model for managing affine registration between two image layers in napari.
 
     This class handles the logic for interactive affine registration, including
@@ -34,6 +34,7 @@ class AffineModel(QObject):
         transform_method (Align2DMethods): The transformation method used for registration.
         remove_outliers (bool): Whether to remove outliers during transformation.
     """
+
     activated = Signal()
     deactivated = Signal()
     transform_loaded = Signal()
@@ -151,7 +152,7 @@ class AffineModel(QObject):
         if not self.layer_model.targeting_layer:
             return False
         return self.layer_model.targeting_layer.affine.affine_matrix[0, 0] < 0
-    
+
     def set_transform_method(self, method):
         """Sets the transformation method for registration.
 
@@ -163,8 +164,8 @@ class AffineModel(QObject):
         """
         try:
             self.transform_method = Align2DMethods[method]
-        except KeyError:
-            raise ValueError(f'Invalid transform method: {method}')
+        except KeyError as err:
+            raise ValueError(f'Invalid transform method: {method}') from err
 
     def do_transform(self):
         """Calculates and applies the affine transform based on point correspondences."""
@@ -179,7 +180,9 @@ class AffineModel(QObject):
         pts0, pts1 = fixed_points_layer.data, moving_points_layer.data
         ndim_raw = pts0.shape[1]  # shape of raw points
         pts0, pts1 = pts0[:, -2:], pts1[:, -2:]
-        ndim = pts0.shape[1]  # shape of points after potentially changing to 2D
+        ndim = pts0.shape[
+            1
+        ]  # shape of points after potentially changing to 2D
         if len(pts0) != len(pts1) or len(pts0) <= ndim:
             return
         mat = calculate_transform(
@@ -252,7 +255,7 @@ class AffineModel(QObject):
                     mat, moving_points_layer.ndim
                 )
             self.viewer.dims.set_point(0, current_z)
-            
+
     def _on_add_layer(self, layer):
         if (
             self.layer_model.em_layer is not None
@@ -335,7 +338,7 @@ class AffineModel(QObject):
         )
 
     def _on_add_point(self, event):
-        if not event.action == ActionType.ADDED:
+        if event.action != ActionType.ADDED:
             return
         fixed_points_layer, moving_points_layer = self.points_layers
         reset_camera = (

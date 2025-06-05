@@ -20,6 +20,7 @@ class RegistrationModel(QObject):
         align_planes_model: The model handling plane alignment and rotation transforms.
         affine_model: The model handling 2D affine transforms and Z translations.
     """
+
     def __init__(self, viewer, stack_viewer, layer_model):
         """Initializes the RegistrationModel.
 

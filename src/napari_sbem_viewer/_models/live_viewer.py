@@ -17,13 +17,21 @@ from napari_sbem_viewer._utils.image_utils import (
 )
 
 
+class LiveViewerNotInitializedError(Exception):
+    """Exception raised when the LiveViewer is not initialized.
+
+    This error is raised when an attempt is made to process an acquisition request
+    without the LiveViewer being properly initialized.
+    """
+
+
 class LiveViewer(QObject):
     """Live image stack manager for viewing 3D stacks during acquisition.
-    
+
     The LiveViewer class manages the loading of 2D image stacks into a 3D image layer
     in a napari viewer. It supports watching a directory for new images, appending
     new images to the layer. It also handles metadata parsing from OME-TIFF files.
-    
+
     Attributes:
         initialized (Signal): Emitted when the image layer is initialized.
         cleared (Signal): Emitted when the viewer is reset.
@@ -37,6 +45,7 @@ class LiveViewer(QObject):
         dtype: Data type of the image.
         watching (bool): Whether the viewer is actively watching for new images.
     """
+
     initialized = Signal(object)
     cleared = Signal()
     errored = Signal(str, str)
@@ -87,7 +96,7 @@ class LiveViewer(QObject):
         """
         if not os.path.exists(image_dir):
             self.reset()
-            raise ValueError('Image directory does not exist.')
+            raise FileNotFoundError('Image directory does not exist.')
         self.image_dir = image_dir
         dask_arrays = []
         for tiff in self._get_images_from_dir():
@@ -132,7 +141,7 @@ class LiveViewer(QObject):
         while self.watching:
             # yield every tiff file after checking the metadata is correct
             for tiff in self._get_images_from_dir():
-                yield tiff
+                yield from tiff
 
     def append(self, tiff):
         """Appends a new TIFF image to the current image layer.

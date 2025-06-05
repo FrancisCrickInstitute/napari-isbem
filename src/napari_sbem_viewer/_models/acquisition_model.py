@@ -2,7 +2,12 @@ import numpy as np
 from napari.layers import Labels
 from qtpy.QtCore import QObject, Signal
 
-from napari_sbem_viewer._models import LiveViewer, ROIData, ROIState, TCPServer
+from napari_sbem_viewer._models.live_viewer import (
+    LiveViewer,
+    LiveViewerNotInitializedError,
+)
+from napari_sbem_viewer._models.roi_data import ROIData, ROIState
+from napari_sbem_viewer._models.tcp_server import TCPServer
 from napari_sbem_viewer._utils.general_utils import is_multiple
 
 
@@ -13,7 +18,7 @@ class AcquisitionModel(QObject):
     TCP server communication, and live image acquisition. It handles requests from
     the TCP server, updates ROI states, manages acquisition parameters, and emits
     signals to update the GUI and other components.
-    
+
     Attributes:
         errored (Signal): Emitted when an error occurs, with a title and message.
         acquisition_info_updated (Signal): Emitted when acquisition info is updated (z_depth, slice_thickness, paused).
@@ -30,6 +35,7 @@ class AcquisitionModel(QObject):
         pause_after_acquire_roi (bool): Whether to pause after acquiring a ROI.
         reset_rois (bool): Whether to reset ROIs in SBEMimage.
     """
+
     errored = Signal(str, str)
     acquisition_info_updated = Signal(float, float, bool)
     rois_updated = Signal(ROIData)
@@ -61,9 +67,9 @@ class AcquisitionModel(QObject):
         """Processes an acquisition request from the TCP server.
 
         This method is called when a request is received from SBEMimage.
-        It processes the request and adds the necessary commands to the 
+        It processes the request and adds the necessary commands to the
         TCP server using the current z-depth and ROI information.
-        
+
         Args:
             request (dict): Dictionary containing 'slice_thickness', 'z_depth', and 'paused' keys.
 
@@ -84,7 +90,9 @@ class AcquisitionModel(QObject):
             self.last_z_depth = z_depth
 
             if not self.live_viewer.is_initialized():
-                raise ValueError('Select overview directory before using TCP')
+                raise LiveViewerNotInitializedError(
+                    'Select overview directory before using TCP'
+                )
 
             # check if fine thickness is a multiple of coarse thickness
             self._check_fine_thickness()
@@ -96,9 +104,13 @@ class AcquisitionModel(QObject):
             # emit signal with updated ROI information
             self.rois_updated.emit(self.roi_data)
 
+        except LiveViewerNotInitializedError as e:
+            self.errored.emit('LiveViewer error', str(e))
+            self.tcp_server.pause_acquisition()
         except Exception as e:
             self.errored.emit('Acquisition error', str(e))
             self.tcp_server.pause_acquisition()
+            raise
 
         finally:
             self.tcp_server.send_response()

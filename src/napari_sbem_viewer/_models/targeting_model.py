@@ -20,7 +20,7 @@ class TargetingModel(QObject):
     label layers (ROIs). It supports running connected components, merging
     nearby labels, dilation of labels, and interpolation of labels between
     annotated slices.
-    
+
     The `editing_enabled` attribute controls whether the user can edit the labels.
     To ensure that only the original (unrotated) labels are edited, editing is only
     enabled when there has not been a rotation applied to the targeting or labels layers.
@@ -41,6 +41,7 @@ class TargetingModel(QObject):
         interpolation_finished (Signal): Emitted when interpolation finishes.
         editing_updated (Signal): Emitted when editing state changes.
     """
+
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
@@ -194,7 +195,7 @@ class TargetingModel(QObject):
         Args:
             enabled (bool): Whether editing should be enabled.
         """
-        self.editing_enabled = enabled == True
+        self.editing_enabled = enabled
         self.editing_updated.emit()
 
     def _on_paint_labels(self, event):

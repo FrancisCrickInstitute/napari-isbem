@@ -30,6 +30,7 @@ class ROIData:
         remaining_rois (set): Set of ROIs remaining to be acquired.
         _offset (np.ndarray): Offset for coordinate transformations.
     """
+
     def __init__(self):
         """Initializes the ROIData object."""
         self.rois = []
@@ -62,7 +63,7 @@ class ROIData:
 
             # Obtain the mask for the transformed bounding box
             # pad the mins and maxes to ensure the entire mask is included after transforming
-            maxes_inc = maxes + 1  
+            maxes_inc = maxes + 1
             mins_inc = mins - 1
             mins_inc[mins_inc < 0] = 0
             mask = np.copy(
@@ -179,9 +180,10 @@ class MaskROI:
         center (np.ndarray): Center of the ROI.
         size (np.ndarray): Size of the ROI.
     """
+
     def __init__(self, position, size, mask, id_):
         """Initializes a MaskROI object.
-        
+
         Args:
             position (np.ndarray): The starting position (z, y, x) of the ROI.
             size (np.ndarray): The size (z, y, x) of the ROI.

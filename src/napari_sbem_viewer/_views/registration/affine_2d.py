@@ -1,9 +1,9 @@
 from qtpy.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QGridLayout,
     QGroupBox,
     QPushButton,
-    QComboBox,
 )
 
 
@@ -12,10 +12,10 @@ class Affine2d(QGroupBox):
         super().__init__(title='2D alignment', parent=parent)
 
         self.setLayout(QGridLayout())
-        
+
         self.method_combo_box = QComboBox()
         self.layout().addWidget(self.method_combo_box, 0, 0, 1, 2)
-        
+
         self.remove_outliers_checkbox = QCheckBox('Remove outliers')
         self.layout().addWidget(self.remove_outliers_checkbox, 1, 0, 1, 2)
 

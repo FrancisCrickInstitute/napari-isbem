@@ -116,7 +116,7 @@ class RegistrationController:
             return
         try:
             self.model.load_transform(file_path)
-        except Exception as e:
+        except (ValueError, FileNotFoundError) as e:
             self.view.show_error('Error', f'Failed to load transform: {e}')
 
     def _on_click_save_transform(self):
@@ -125,7 +125,7 @@ class RegistrationController:
             return
         try:
             self.model.save_transform(file_path)
-        except Exception as e:
+        except (FileNotFoundError, FileExistsError) as e:
             self.view.show_error('Error', f'Failed to save transform: {e}')
 
     def _on_click_reset_transform(self):
@@ -139,7 +139,7 @@ class RegistrationController:
             self.model.align_planes_model.show_align_planes_window()
             self._on_update_position()
             self._on_update_angle()
-        except Exception as e:
+        except ValueError as e:
             self.view.show_error('Error', f'Failed to display window: {e}')
 
     def _on_update_angle(self):
@@ -158,14 +158,9 @@ class RegistrationController:
         )
 
     def _on_click_rotate(self):
-        try:
-            zy_degrees = self.view.align_planes.zy_degrees_slider.value()
-            zx_degrees = self.view.align_planes.zx_degrees_slider.value()
-            self.model.align_planes_model.apply_rotation(
-                -zy_degrees, -zx_degrees
-            )
-        except Exception as e:
-            self._on_error_rotate(e)
+        zy_degrees = self.view.align_planes.zy_degrees_slider.value()
+        zx_degrees = self.view.align_planes.zx_degrees_slider.value()
+        self.model.align_planes_model.apply_rotation(-zy_degrees, -zx_degrees)
 
     def _on_finish_rotate(self, affine_matrix):
         self._activate_transform_buttons()
@@ -193,18 +188,22 @@ class RegistrationController:
         try:
             self.model.affine_model.start_registration()
             self._start_affine_transform_ui()
-        except Exception as e:
+        except ValueError as e:
             self.view.show_error('Error', f'Failed to start registration: {e}')
             self._reset_affine_transform_ui()
-        
+
     def _set_remove_outliers(self):
-        self.model.affine_model.remove_outliers = self.view.affine_2d.remove_outliers_checkbox.isChecked()
+        self.model.affine_model.remove_outliers = (
+            self.view.affine_2d.remove_outliers_checkbox.isChecked()
+        )
         self.model.affine_model.do_transform()
-        
+
     def _on_change_transform_method(self):
-        self.model.affine_model.set_transform_method(self.view.affine_2d.method_combo_box.currentText())
+        self.model.affine_model.set_transform_method(
+            self.view.affine_2d.method_combo_box.currentText()
+        )
         self.model.affine_model.do_transform()
-        
+
     def _populate_transform_methods(self):
         self.view.affine_2d.method_combo_box.addItems(
             [method.name for method in Align2DMethods]

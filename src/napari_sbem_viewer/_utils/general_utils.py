@@ -30,11 +30,6 @@ def log_memory_usage():
     print(f'Memory usage: {process.memory_info().rss / 1024**2} MB')
 
 
-def log_memory_usage():
-    process = psutil.Process(os.getpid())
-    print(f'Memory usage: {process.memory_info().rss / 1024**2} MB')
-
-
 def reset_view(viewer: napari.Viewer, layer: napari.layers.Layer):
     if viewer.dims.ndisplay != 2:
         return

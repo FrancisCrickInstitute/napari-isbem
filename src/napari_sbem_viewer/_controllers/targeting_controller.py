@@ -43,7 +43,7 @@ class TargetingController:
             self.model.reset_interpolation
         )
         self.view.label_settings.interpolate_button.clicked.connect(
-            self._on_click_interpolate
+            self.model.interpolate_labels
         )
 
         # Model events
@@ -89,16 +89,16 @@ class TargetingController:
             return
         try:
             self.model.layer_model.import_targeting_image(file_path)
-        except Exception as e:
+        except ValueError as e:
             self.view.show_error('Error', f'Failed to load image: {e}')
-            
+
     def _on_click_import_tiff(self):
         file_path = self.view.add_targeting_image.open_tiff_file_dialog()
         if not file_path:
             return
         try:
             self.model.layer_model.import_targeting_image(file_path)
-        except Exception as e:
+        except ValueError as e:
             self.view.show_error('Error', f'Failed to load image: {e}')
 
     def _on_click_add_labels(self):
@@ -111,7 +111,7 @@ class TargetingController:
             else:
                 downsample_factor = int(downsample_factor)
             self.model.add_new_labels_layer(downsample_factor)
-        except Exception as e:
+        except ValueError as e:
             self.view.show_error('Error', f'Failed to add labels layer: {e}')
 
     def _on_click_upload_labels(self):
@@ -120,16 +120,16 @@ class TargetingController:
             if not file_path:
                 return
             self.model.upload_existing_labels(file_path)
-        except Exception as e:
+        except FileNotFoundError as e:
             self.view.show_error('Error', f'Failed to upload labels: {e}')
 
     def _on_click_export_labels(self):
+        file_path = self.view.label_settings.save_file_dialog()
+        if not file_path:
+            return
         try:
-            file_path = self.view.label_settings.save_file_dialog()
-            if not file_path:
-                return
             self.model.layer_model.export_labels_layer(file_path)
-        except Exception as e:
+        except (FileNotFoundError, ValueError, FileExistsError) as e:
             self.view.show_error('Error', f'Failed to export labels: {e}')
 
     def _on_click_merge_nearby_labels(self):
@@ -151,9 +151,3 @@ class TargetingController:
         for layer in self.model.viewer.layers:
             if isinstance(layer, Image):
                 self.view.add_labels.image_layer_combo_box.addItem(layer.name)
-
-    def _on_click_interpolate(self):
-        try:
-            self.model.interpolate_labels()
-        except Exception as e:
-            self.view.show_error('Error', f'Failed to interpolate labels: {e}')

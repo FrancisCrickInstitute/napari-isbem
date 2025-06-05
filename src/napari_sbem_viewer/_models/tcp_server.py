@@ -7,13 +7,13 @@ from qtpy.QtCore import QThread, Signal
 
 class TCPServer(QThread):
     """Class for managing a TCP server that listens for requests from SBEMimage.
-    
+
     The server listens for JSON requests with the current SBEMimage state,
     and responds with commands to control the acquisition process. The TCP server
     is designed to run in a separate thread, and blocks until a response is added
     to the response queue. Responses are processed in the main thread using the
     `request_received` signal, which emits the request data to be processed.
-    
+
     Attributes:
         request_received (Signal): Emitted when a request is received from SBEMimage.
         host (str): The hostname or IP address to bind the server.
@@ -22,6 +22,7 @@ class TCPServer(QThread):
         is_running (bool): Indicates if the server is running.
         response_commands (list): List of commands to send as a response.
     """
+
     request_received = Signal(dict)
 
     def __init__(self, host, port, parent=None):
@@ -151,7 +152,7 @@ class TCPServer(QThread):
         )
 
     def send_response(self):
-        """Puts the current response commands into the response queue 
+        """Puts the current response commands into the response queue
         and clears the list. This unblocks the TCP server thread which
         sends the response commands back to the client."""
         self.response_queue.put({'commands': self.response_commands})

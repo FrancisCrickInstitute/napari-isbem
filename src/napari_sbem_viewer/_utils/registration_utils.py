@@ -1,23 +1,22 @@
 from enum import Enum
 
-import cv2
 import numpy as np
 import SimpleITK as sitk
 from napari.layers import Image, Layer
 from scipy.spatial.transform import Rotation as R
-from sklearn.linear_model import RANSACRegressor
 from skimage.transform import (
-    AffineTransform, 
-    SimilarityTransform, 
+    AffineTransform,
     EuclideanTransform,
+    SimilarityTransform,
 )
+from sklearn.linear_model import RANSACRegressor
 
 
 class Align2DMethods(Enum):
     Euclidean = 1
     Similarity = 2
     Affine = 3
-    
+
 
 def rotation_matrix_from_zy_zx_angles(zy_angle, zx_angle):
     mat = np.eye(4)
@@ -56,10 +55,7 @@ def is_rotation_matrix(matrix):
     if not np.allclose(matrix[3, :], [0, 0, 0, 1]):
         return False
 
-    if not np.allclose(matrix[:, 3], [0, 0, 0, 1]):
-        return False
-
-    return True
+    return np.allclose(matrix[:, 3], [0, 0, 0, 1])
 
 
 def is_2d_affine_matrix(matrix):
@@ -73,10 +69,7 @@ def is_2d_affine_matrix(matrix):
     if not np.allclose(matrix[1:, 0], [0, 0, 0]):
         return False
 
-    if not np.allclose(matrix[3, :], [0, 0, 0, 1]):
-        return False
-
-    return True
+    return np.allclose(matrix[3, :], [0, 0, 0, 1])
 
 
 def rotate_image_3d_sitk(image, quaternion, interpolator='linear'):
@@ -105,8 +98,8 @@ def find_bounds(image_shape, affine_matrix, offset=None):
             [image_shape[0], 0, image_shape[2], 1],
             [0, image_shape[1], image_shape[2], 1],
             [image_shape[0], image_shape[1], image_shape[2], 1],
-        ], 
-        dtype=np.float32
+        ],
+        dtype=np.float32,
     )
     if offset is not None:
         offset = np.asarray(offset)
@@ -122,7 +115,7 @@ def find_bounds(image_shape, affine_matrix, offset=None):
 def add_scale_to_transform_matrix(matrix, scale):
     assert len(scale) == 3
     assert matrix.shape == (4, 4)
-    return matrix @ np.diag([*[s for s in scale], 1])
+    return matrix @ np.diag([*list(scale), 1])
 
 
 def add_translation_to_transform_matrix(matrix, translation):
@@ -143,10 +136,8 @@ def transform_image_3d_sitk(
 ):
     # Find the image bounds after transformation
     min_coords, max_coords = find_bounds(
-        image.shape, 
-        transformation_matrix, 
-        offset=[-0.5, -0.5, -0.5]
-        )
+        image.shape, transformation_matrix, offset=[-0.5, -0.5, -0.5]
+    )
     # Calculate the inverse transform and perform the transformation for use with sitk
     transformation_matrix = np.linalg.inv(transformation_matrix)
     transformation_matrix_xyz = permute_matrix(transformation_matrix)
@@ -219,10 +210,15 @@ def remove_outliers_ransac(src, dst):
 
 def find_best_transform_after_flipping(src, dst, model):
     """
-    If transform model doesn't allow flipping, find the transform after manually flipping 
+    If transform model doesn't allow flipping, find the transform after manually flipping
     source points and choose to use the one with the least error.
     """
-    flips = [np.diag([1, 1]), np.diag([1, -1]), np.diag([-1, 1]), np.diag([-1, -1])]
+    flips = [
+        np.diag([1, 1]),
+        np.diag([1, -1]),
+        np.diag([-1, 1]),
+        np.diag([-1, -1]),
+    ]
     transforms = []
     errors = []
     for flip in flips:
@@ -232,7 +228,7 @@ def find_best_transform_after_flipping(src, dst, model):
         error = np.sum((transformed_dst - flipped_src) ** 2)
         transforms.append(model.params)
         errors.append(error)
-    min_i = np.argmin(errors) 
+    min_i = np.argmin(errors)
     flip_3x3 = np.eye(3)
     flip_3x3[:2, :2] = flips[min_i]
     return flip_3x3 @ transforms[min_i]
@@ -242,9 +238,11 @@ def calculate_transform(src, dst, transform_method, remove_outliers=False):
     """
     Use the specified method to calculata a transform between two sets of points.
     """
-    assert src.shape[0] == dst.shape[0], f"Number of src and dst points aren't equal {src.shape[0]} != {dst.shape[0]}"
-    assert src.shape[1] == 2, f"src points must be 2D, got {src.shape[1]}"
-    assert dst.shape[1] == 2, f"dst points must be 2D, got {dst.shape[1]}"
+    assert src.shape[0] == dst.shape[0], (
+        f"Number of src and dst points aren't equal {src.shape[0]} != {dst.shape[0]}"
+    )
+    assert src.shape[1] == 2, f'src points must be 2D, got {src.shape[1]}'
+    assert dst.shape[1] == 2, f'dst points must be 2D, got {dst.shape[1]}'
     if remove_outliers:
         src, dst = remove_outliers_ransac(src, dst)
     if transform_method == Align2DMethods.Affine:
@@ -258,7 +256,7 @@ def calculate_transform(src, dst, transform_method, remove_outliers=False):
         model = EuclideanTransform(dimensionality=2)
         return find_best_transform_after_flipping(src, dst, model)
     else:
-        raise ValueError(f"Unknown transform method: {transform_method}.")
+        raise ValueError(f'Unknown transform method: {transform_method}.')
 
 
 def calculate_z_transform(

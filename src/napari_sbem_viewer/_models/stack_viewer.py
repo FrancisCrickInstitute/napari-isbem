@@ -9,6 +9,7 @@ class StackViewer(QtViewer):
     It initializes the viewer with a 3D display mode and custom window flags.
     The viewer can be closed without removing it from the napari application, allowing it to be hidden instead.
     """
+
     def __init__(self, viewer: napari.Viewer, parent=None):
         super().__init__(viewer)
         if parent is not None:

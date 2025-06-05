@@ -246,7 +246,7 @@ def save_ome_zarr(save_path, image_pyramid, chunksize, scales, name):
         pyramid=image_pyramid,
         group=root,
         axes='zyx',
-        storage_options=dict(chunks=chunksize),
+        storage_options={'chunks': chunksize},
     )
     metadata = create_ome_metadata(scales, name)
     root.attrs['multiscales'] = metadata
@@ -258,21 +258,14 @@ def get_bounds_from_labels(labels):
     slices = ndi.find_objects(labels)
     bounds = []
     label_ids = []
-    for i, slice in enumerate(slices):
-        if slice is None:
+    for i, slice_ in enumerate(slices):
+        if slice_ is None:
             continue
-        mins = np.asarray([s.start for s in slice])
-        maxes = np.asarray([s.stop for s in slice])
+        mins = np.asarray([s.start for s in slice_])
+        maxes = np.asarray([s.stop for s in slice_])
         bounds.append([mins, maxes])
         label_ids.append(i + 1)
     return bounds, label_ids
-
-
-def create_image_pyramid(image, downsample_factor=2, pyramid_levels=3):
-    pyramid = [image]
-    for i in range(pyramid_levels):
-        pyramid.append(downsample_3d_image(pyramid[i], downsample_factor))
-    return pyramid
 
 
 def get_pyramid_scales(scale, shapes):

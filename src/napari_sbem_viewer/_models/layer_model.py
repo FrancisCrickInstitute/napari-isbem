@@ -26,6 +26,7 @@ class LayerModel(QObject):
         labels_layer (Layer): The current labels layer.
         labels_layer_original (Labels): Original unrotated labels layer.
     """
+
     targeting_layer_added = Signal(object)
     targeting_layer_removed = Signal()
     em_layer_added = Signal(object)
@@ -60,7 +61,7 @@ class LayerModel(QObject):
         if file_path.endswith('.zarr'):
             reader = zarr_get_reader(file_path)
             layer = Layer.create(*reader(file_path)[0])
-        elif file_path.endswith('.tif') or file_path.endswith('.tiff'):
+        elif file_path.endswith(('.tif', '.tiff')):
             reader = tiff_get_reader(file_path)
             data = reader(file_path)[0]
             del data[1]['colormap']
@@ -68,7 +69,9 @@ class LayerModel(QObject):
             del data[1]['blending']
             layer = Layer.create(*data)
         else:
-            raise ValueError('Invalid file format. Must be an OME-Zarr or TIFF file.')
+            raise ValueError(
+                'Invalid file format. Must be an OME-Zarr or TIFF file.'
+            )
         self.add_targeting_layer(layer)
 
     def add_targeting_layer(self, layer):

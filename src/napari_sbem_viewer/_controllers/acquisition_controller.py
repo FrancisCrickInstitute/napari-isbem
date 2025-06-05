@@ -178,7 +178,7 @@ class AcquisitionController:
             return
         try:
             self.acquisition_model.live_viewer.start_watching(ov_dir)
-        except Exception as e:
+        except (ValueError, FileNotFoundError) as e:
             self._on_error_overview(e)
             return
 

@@ -1,8 +1,8 @@
 try:
     from ._version import version as __version__
 except ImportError:
-    __version__ = "unknown"
+    __version__ = 'unknown'
 
-from ._widgets import SBEMViewerWidget
+from ._widgets import SBEMViewerWidget as SBEMViewerWidget
 
-__all__ = 'SBEMViewerWidget'
+__all__ = ['SBEMViewerWidget']

@@ -30,6 +30,7 @@ class AlignPlanesModel(QObject):
         intersection_points: List of two points defining the plane intersection range.
         affine_matrix: The current affine (rotation) matrix applied.
     """
+
     rotation_started = Signal()
     rotation_finished = Signal(object)
     rotation_errored = Signal(Exception)
@@ -121,12 +122,12 @@ class AlignPlanesModel(QObject):
             self.layer_model.targeting_layer.contrast_limits
         )
         self.align_planes_window.viewer.layers.clear()
-        
+
         im_data = self.layer_model.targeting_layer_original.data
         im_data_downsample = get_downsampled_data(
-            im_data, 
+            im_data,
             multiscale=self.layer_model.targeting_layer_original.multiscale,
-            )
+        )
         self.align_planes_window.image_layer = Image(
             data=im_data_downsample,
             name='image',
@@ -144,7 +145,7 @@ class AlignPlanesModel(QObject):
             colormap='cyan',
             depiction='plane',
         )
-        
+
         self.shape = im_data_downsample.shape
         self.align_planes_window.plane_layer.plane.position = (
             np.array(self.shape) / 2
@@ -216,7 +217,7 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.plane_layer.plane.normal = normal
         self._calculate_intersection_points()
         self._calculate_current_position()
-        
+
     def _rotate_images(self, transform_matrix):
         """Rotates the targeting layer and the labels layer if it exists using the given matrix.
 
@@ -238,7 +239,7 @@ class AlignPlanesModel(QObject):
                 self.layer_model.labels_layer_original, transform_matrix
             )
         return image, labels
-        
+
     def _on_finish_apply_rotation(self, image_layer, labels_layer):
         """Updates the viewer and layers after rotation is finished.
 
@@ -262,13 +263,13 @@ class AlignPlanesModel(QObject):
                 self.layer_model.targeting_layer.translate
             )
         self.rotation_finished.emit(self.affine_matrix)
-        
+
     def _on_add_targeting_layer(self, layer):
         self.reset()
         self.layer_model.targeting_layer.events.affine.connect(
             self._on_affine_changed
         )
-        
+
     def _on_add_labels_layer(self, labels_layer):
         self.layer_model.labels_layer.events.data.connect(
             self._on_labels_data_changed
@@ -374,7 +375,6 @@ def get_downsampled_data(data, multiscale=False):
         else:
             # return the first pyramid level
             return data[0].compute()
-        
+
     else:
         return data  # TODO: downsample and cache if image is too large
-    
