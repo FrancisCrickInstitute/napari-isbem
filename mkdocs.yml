@@ -1,4 +1,6 @@
 site_name: napari-sbem-viewer
+site_url: https://napari-sbem-viewer.github.io/napari-sbem-viewer
+site_description: A napari plugin to allow targeted acquisition for SBF-SEM imaging.
 nav:
   - Overview: index.md
   - Installation: installation.md
@@ -6,6 +8,12 @@ nav:
     - Targeting: targeting.md
     - Acquisition: acquisition.md
     - Registration: registration.md
+  - Developer guide:
+    - File structure: file_structure.md
+    - Storing layers: storing_layers.md
+    - SBEMimage integration: sbemimage_integration.md
+    - ROI coordinates: roi_coordinates.md
+    - Registration limitations: registration_limitations.md
 theme:
   name: material
 plugins:

@@ -1,6 +1,6 @@
 # Acquisition
 
-![](images/acquisition.png)
+![Screenshot of the acquisition tab in the plugin.](images/acquisition.png)
 
 The acquisition tab handles the integration with SBEMimage.
 

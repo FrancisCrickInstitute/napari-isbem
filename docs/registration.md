@@ -1,6 +1,6 @@
 # Registration
 
-![](images/registration.png)
+![Screenshot of the registration tab of the plugin.](images/registration.png)
 
 The registration tab handles registering the targeting stack with the overview slices. Once the images are aligned, ROI coordinates can be calculated with respect to the SEM stage. When applying transforms, both the targeting layer and the current labels layer are transformed.
 

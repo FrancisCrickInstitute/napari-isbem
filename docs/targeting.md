@@ -1,6 +1,6 @@
 # Targeting
 
-![](images/targeting.png)
+![Screenshot of the targeting tab of the plugin.](images/targeting.png)
 
 The targeting tab handles the selection of regions of interest within a targeting image.
 
