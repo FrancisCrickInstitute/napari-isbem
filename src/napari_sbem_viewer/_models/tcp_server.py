@@ -6,9 +6,32 @@ from qtpy.QtCore import QThread, Signal
 
 
 class TCPServer(QThread):
+    """Class for managing a TCP server that listens for requests from SBEMimage.
+    
+    The server listens for JSON requests with the current SBEMimage state,
+    and responds with commands to control the acquisition process. The TCP server
+    is designed to run in a separate thread, and blocks until a response is added
+    to the response queue. Responses are processed in the main thread using the
+    `request_received` signal, which emits the request data to be processed.
+    
+    Attributes:
+        request_received (Signal): Emitted when a request is received from SBEMimage.
+        host (str): The hostname or IP address to bind the server.
+        port (int): The port number to bind the server.
+        response_queue (Queue): Queue for storing response commands.
+        is_running (bool): Indicates if the server is running.
+        response_commands (list): List of commands to send as a response.
+    """
     request_received = Signal(dict)
 
     def __init__(self, host, port, parent=None):
+        """Initializes the TCPServer.
+
+        Args:
+            host (str): Hostname or IP address to bind the server.
+            port (int): Port number to bind the server.
+            parent (QObject, optional): Parent QObject. Defaults to None.
+        """
         super().__init__(parent)
         self.host = host
         self.port = port
@@ -18,16 +41,26 @@ class TCPServer(QThread):
         self.response_commands = []
 
     def pause_acquisition(self):
+        """Appends a PAUSE command to the response commands."""
         self.response_commands.append(
             {'msg': 'PAUSE', 'args': [1], 'kwargs': {}}
         )
 
     def delete_all_grids(self):
+        """Appends a DELETE ALL ARRAY GRIDS command to the response commands."""
         self.response_commands.append(
             {'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}}
         )
 
     def add_grid(self, roi_id, roi_center, roi_size, ov_position):
+        """Appends an ADD ARRAY GRID command to the response commands.
+
+        Args:
+            roi_id (int): The ROI identifier.
+            roi_center (Any): The center coordinates (in microns) of the ROI relative to the centre of the overview image.
+            roi_size (Any): The size of the ROI (in microns).
+            ov_position (Any): The overview position relative to the SBEMimage stage, in microns.
+        """
         self.response_commands.append(
             {
                 'msg': 'ADD ARRAY GRID',
@@ -43,6 +76,12 @@ class TCPServer(QThread):
         )
 
     def update_grid_tiles_with_mask(self, roi_id, mask):
+        """Appends an UPDATE GRID TILES WITH MASK command to the response commands.
+
+        Args:
+            roi_id (int): The ROI identifier.
+            mask (Any): The 2D binary mask to update grid tiles with.
+        """
         self.response_commands.append(
             {
                 'msg': 'UPDATE GRID TILES WITH MASK',
@@ -52,11 +91,21 @@ class TCPServer(QThread):
         )
 
     def activate_grid(self, roi_id):
+        """Appends an ACTIVATE ARRAY GRID command to the response commands.
+
+        Args:
+            roi_id (int): The ROI identifier.
+        """
         self.response_commands.append(
             {'msg': 'ACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}}
         )
 
     def deactivate_grid(self, roi_id):
+        """Appends a DEACTIVATE ARRAY GRID command to the response commands.
+
+        Args:
+            roi_id (int): The ROI identifier.
+        """
         self.response_commands.append(
             {'msg': 'DEACTIVATE ARRAY GRID', 'args': [roi_id], 'kwargs': {}}
         )
@@ -67,16 +116,32 @@ class TCPServer(QThread):
         )
 
     def deactivate_overview(self, ov_id):
+        """Appends a DEACTIVATE OV command to the response commands.
+
+        Args:
+            ov_id (int): The overview identifier.
+        """
         self.response_commands.append(
             {'msg': 'DEACTIVATE OV', 'args': [ov_id], 'kwargs': {}}
         )
 
     def set_slice_thickness(self, thickness):
+        """Appends a SET SLICE THICKNESS command to the response commands.
+
+        Args:
+            thickness (float): The slice thickness value.
+        """
         self.response_commands.append(
             {'msg': 'SET SLICE THICKNESS', 'args': [thickness], 'kwargs': {}}
         )
 
     def set_overview_interval(self, ov_idx, interval):
+        """Appends a SET OV INTERVAL command to the response commands.
+
+        Args:
+            ov_idx (int): The overview index.
+            interval (float): The interval value.
+        """
         self.response_commands.append(
             {
                 'msg': 'SET OV INTERVAL',
@@ -86,10 +151,16 @@ class TCPServer(QThread):
         )
 
     def send_response(self):
+        """Puts the current response commands into the response queue 
+        and clears the list. This unblocks the TCP server thread which
+        sends the response commands back to the client."""
         self.response_queue.put({'commands': self.response_commands})
         self.response_commands = []
 
     def run(self):
+        """Runs the TCP server, listening for incoming requests.
+        This can be run in a separate thread with the `start()` method
+        inherited from `QThread`."""
         self.is_running = True
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
@@ -143,4 +214,5 @@ class TCPServer(QThread):
                         break
 
     def close(self):
+        """Stops the TCP server."""
         self.is_running = False

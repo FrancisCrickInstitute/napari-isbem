@@ -18,11 +18,36 @@ from napari_sbem_viewer._utils.image_utils import (
 
 
 class LiveViewer(QObject):
+    """Live image stack manager for viewing 3D stacks during acquisition.
+    
+    The LiveViewer class manages the loading of 2D image stacks into a 3D image layer
+    in a napari viewer. It supports watching a directory for new images, appending
+    new images to the layer. It also handles metadata parsing from OME-TIFF files.
+    
+    Attributes:
+        initialized (Signal): Emitted when the image layer is initialized.
+        cleared (Signal): Emitted when the viewer is reset.
+        errored (Signal): Emitted when an error occurs, with a title and message.
+        viewer: The napari viewer instance.
+        layer_name (str): Name for the image layer.
+        layer: The napari Image layer managed by this viewer.
+        pixel_size_x, pixel_size_y, pixel_size_z: Physical pixel sizes.
+        position_x, position_y, position_z: Physical position of the stack origin.
+        size_x, size_y: Physical size of the image in x and y.
+        dtype: Data type of the image.
+        watching (bool): Whether the viewer is actively watching for new images.
+    """
     initialized = Signal(object)
     cleared = Signal()
     errored = Signal(str, str)
 
     def __init__(self, napari_viewer, layer_name):
+        """Initializes the LiveViewer.
+
+        Args:
+            napari_viewer: The napari viewer instance.
+            layer_name (str): The name for the image layer.
+        """
         super().__init__()
         self.viewer = napari_viewer
         self.watching = False
@@ -44,11 +69,21 @@ class LiveViewer(QObject):
         self.layer = None
 
     def is_initialized(self):
+        """Checks if the LiveViewer has been initialized.
+
+        Returns:
+            bool: True if images have been added to the viewer, False otherwise.
+        """
         return len(self.added_files) > 1
 
     def init_images(self, image_dir):
-        """
-        Initializes the images in image_dir and creates an image layer in the napari viewer.
+        """Initializes the images in the specified directory and creates an image layer in the napari viewer.
+
+        Args:
+            image_dir (str): Path to the directory containing image files.
+
+        Raises:
+            ValueError: If the directory does not exist or contains fewer than 2 images.
         """
         if not os.path.exists(image_dir):
             self.reset()
@@ -69,6 +104,11 @@ class LiveViewer(QObject):
         self.initialized.emit(self.layer)
 
     def start_watching(self, ov_dir):
+        """Starts watching the specified directory for new images and initializes the viewer.
+
+        Args:
+            ov_dir (str): Path to the directory to watch.
+        """
         self.reset()
         self.init_images(ov_dir)
         create_worker(
@@ -77,8 +117,13 @@ class LiveViewer(QObject):
         )
 
     def watch(self):
-        """
-        Repeatedly watches image_dir and yields tiffs that should be added to the viewer.
+        """Watches the image directory for new TIFF files and yields them for processing.
+
+        Yields:
+            TiffFile: TIFF files to be added to the viewer.
+
+        Raises:
+            ValueError: If image_dir is not initialized.
         """
         if self.image_dir is None:
             raise ValueError('Initialize image_dir before watching.')
@@ -90,6 +135,14 @@ class LiveViewer(QObject):
                 yield tiff
 
     def append(self, tiff):
+        """Appends a new TIFF image to the current image layer.
+
+        Args:
+            tiff (TiffFile): The TIFF file to append.
+
+        Raises:
+            ValueError: If the image layer is not initialized.
+        """
         if self.layer is None:
             raise ValueError('Image layer not initialized.')
 
@@ -98,6 +151,7 @@ class LiveViewer(QObject):
         self.reset_z_view()
 
     def reset_z_view(self):
+        """Resets the viewer to show the latest z-slice."""
         if self.layer is None:
             return
         latest_z_value_um = self.layer.data_to_world(
@@ -106,11 +160,17 @@ class LiveViewer(QObject):
         self.viewer.dims.set_point(0, latest_z_value_um)
 
     def get_current_z_depth(self):
+        """Gets the current z-depth in world coordinates.
+
+        Returns:
+            float or None: The current z-depth, or None if the layer is not initialized.
+        """
         if self.layer is None:
             return None
         return self.layer.data_to_world((self.layer.data.shape[0], 0, 0))[0]
 
     def reset(self):
+        """Resets the LiveViewer state and emits the cleared signal."""
         self.watching = False
         # Wait until the worker thread has finished processing the current loop
         time.sleep(

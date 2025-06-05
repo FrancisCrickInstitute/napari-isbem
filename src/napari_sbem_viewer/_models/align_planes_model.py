@@ -12,11 +12,36 @@ from napari_sbem_viewer._utils.registration_utils import (
 
 
 class AlignPlanesModel(QObject):
+    """Model for aligning planes in 3D image data using rotation and affine transforms.
+
+    This class manages the logic for interactively rotating a 3D image layer in a separate
+    napari viewer window. It provides methods for applying rotations to the image and label
+    layers. It also handles saving and loading rotation transform matrices.
+
+    Attributes:
+        rotation_started: Signal emitted when rotation starts in an alternate thread.
+        rotation_finished: Signal emitted when rotation finishes successfully.
+        rotation_errored: Signal emitted when an error occurs during rotation.
+        viewer: The main napari viewer instance.
+        align_planes_window: The window or viewer used for plane alignment.
+        layer_model: The model managing image and label layers.
+        shape: Shape of the downsampled image data.
+        t: Current interpolation parameter for plane position.
+        intersection_points: List of two points defining the plane intersection range.
+        affine_matrix: The current affine (rotation) matrix applied.
+    """
     rotation_started = Signal()
     rotation_finished = Signal(object)
     rotation_errored = Signal(Exception)
 
     def __init__(self, viewer, stack_viewer, layer_model):
+        """Initializes the AlignPlanesModel.
+
+        Args:
+            viewer: The main napari viewer instance.
+            stack_viewer: The StackViewer instance for viewing plane alignment.
+            layer_model: The LayerModel instance for managing image and label layers.
+        """
         super().__init__()
         self.viewer = viewer
         self.align_planes_window = stack_viewer
@@ -34,12 +59,23 @@ class AlignPlanesModel(QObject):
         self.affine_matrix = None
 
     def apply_rotation(self, zy_degrees, zx_degrees):
+        """Applies a rotation to the targeting layer using the given angles.
+
+        Args:
+            zy_degrees (float): Rotation angle around the ZY axis in degrees.
+            zx_degrees (float): Rotation angle around the ZX axis in degrees.
+        """
         transform_matrix = rotation_matrix_from_zy_zx_angles(
             zy_degrees, zx_degrees
         )
         self.apply_transform(transform_matrix)
 
     def apply_transform(self, transform_matrix):
+        """Applies a given transformation matrix to the targeting and label layers.
+
+        Args:
+            transform_matrix (np.ndarray): The affine transformation matrix to apply.
+        """
         self.rotation_started.emit()
         create_worker(
             self._rotate_images,
@@ -51,39 +87,15 @@ class AlignPlanesModel(QObject):
         )
         self.affine_matrix = transform_matrix
 
-    def _rotate_images(self, transform_matrix):
-        image = transform_layer(
-            self.layer_model.targeting_layer_original, transform_matrix
-        )
-        labels = None
-        if (
-            self.layer_model.labels_layer is not None
-            and self.layer_model.labels_layer_original is not None
-        ):
-            labels = transform_layer(
-                self.layer_model.labels_layer_original, transform_matrix
-            )
-        return image, labels
-
-    def _on_finish_apply_rotation(self, image_layer, labels_layer):
-        self.layer_model.targeting_layer.data = image_layer.data
-        self.layer_model.targeting_layer.translate = image_layer.translate
-        self.layer_model.targeting_layer.scale = image_layer.scale
-        if (
-            self.layer_model.labels_layer is not None
-            and labels_layer is not None
-        ):
-            self.layer_model.labels_layer.data = labels_layer.data
-            self.layer_model.labels_layer.scale = labels_layer.scale
-            self.layer_model.labels_layer.affine = (
-                self.layer_model.targeting_layer.affine
-            )
-            self.layer_model.labels_layer.translate = (
-                self.layer_model.targeting_layer.translate
-            )
-        self.rotation_finished.emit(self.affine_matrix)
-
     def load_transform(self, affine_matrix):
+        """Loads and applies a rotation matrix to the targeting layer and image layer if it exists.
+
+        Args:
+            affine_matrix (np.ndarray): The rotation matrix to apply.
+
+        Raises:
+            ValueError: If the matrix is not a valid rotation matrix.
+        """
         if not is_rotation_matrix(affine_matrix):
             print(affine_matrix)
             raise ValueError(
@@ -92,33 +104,15 @@ class AlignPlanesModel(QObject):
         self.apply_transform(affine_matrix)
 
     def get_rotation_matrix(self):
+        """Returns the current affine (rotation) matrix.
+
+        Returns:
+            np.ndarray: The current affine matrix.
+        """
         return self.affine_matrix
 
-    def _on_add_targeting_layer(self, layer):
-        self.reset()
-        self.layer_model.targeting_layer.events.affine.connect(
-            self._on_affine_changed
-        )
-
-    def _on_add_labels_layer(self, labels_layer):
-        self.layer_model.labels_layer.events.data.connect(
-            self._on_labels_data_changed
-        )
-        if self.affine_matrix is not None:
-            new_layer = transform_layer(
-                self.layer_model.labels_layer_original, self.affine_matrix
-            )
-            self.layer_model.labels_layer.data = new_layer.data
-            self.layer_model.labels_layer.scale = new_layer.scale
-        if self.layer_model.targeting_layer is not None:
-            self.layer_model.labels_layer.affine = (
-                self.layer_model.targeting_layer.affine
-            )
-            self.layer_model.labels_layer.translate = (
-                self.layer_model.targeting_layer.translate
-            )
-
     def show_align_planes_window(self):
+        """Displays the align planes window with the current targeting image."""
         moving_layer = self.layer_model.targeting_layer
         if not isinstance(moving_layer, Image):
             raise ValueError('Can only show image layers.')
@@ -166,6 +160,7 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.show()
 
     def reset(self):
+        """Resets the alignment state and closes the align planes window."""
         self.align_planes_window.image_layer = None
         self.align_planes_window.plane_layer = None
         self.layer = None
@@ -178,6 +173,7 @@ class AlignPlanesModel(QObject):
         self.rotation_finished.emit(self.affine_matrix)
 
     def reset_transform(self):
+        """Resets the targeting and label layers to their original unrotated state."""
         self.affine_matrix = None
         self.layer_model.targeting_layer.data = (
             self.layer_model.targeting_layer_original.data
@@ -207,6 +203,12 @@ class AlignPlanesModel(QObject):
         self.rotation_finished.emit(self.affine_matrix)
 
     def update_plane_angle(self, zy_degrees, zx_degrees):
+        """Updates the orientation of the plane layer based on the given angles.
+
+        Args:
+            zy_degrees (float): Rotation angle around the ZY axis in degrees.
+            zx_degrees (float): Rotation angle around the ZX axis in degrees.
+        """
         if self.align_planes_window.plane_layer is None:
             return
 
@@ -214,6 +216,76 @@ class AlignPlanesModel(QObject):
         self.align_planes_window.plane_layer.plane.normal = normal
         self._calculate_intersection_points()
         self._calculate_current_position()
+        
+    def _rotate_images(self, transform_matrix):
+        """Rotates the targeting layer and the labels layer if it exists using the given matrix.
+
+        Args:
+            transform_matrix (np.ndarray): The affine transformation matrix.
+
+        Returns:
+            tuple: Transformed image and label layers.
+        """
+        image = transform_layer(
+            self.layer_model.targeting_layer_original, transform_matrix
+        )
+        labels = None
+        if (
+            self.layer_model.labels_layer is not None
+            and self.layer_model.labels_layer_original is not None
+        ):
+            labels = transform_layer(
+                self.layer_model.labels_layer_original, transform_matrix
+            )
+        return image, labels
+        
+    def _on_finish_apply_rotation(self, image_layer, labels_layer):
+        """Updates the viewer and layers after rotation is finished.
+
+        Args:
+            image_layer: The rotated image layer.
+            labels_layer: The rotated labels layer, or None.
+        """
+        self.layer_model.targeting_layer.data = image_layer.data
+        self.layer_model.targeting_layer.translate = image_layer.translate
+        self.layer_model.targeting_layer.scale = image_layer.scale
+        if (
+            self.layer_model.labels_layer is not None
+            and labels_layer is not None
+        ):
+            self.layer_model.labels_layer.data = labels_layer.data
+            self.layer_model.labels_layer.scale = labels_layer.scale
+            self.layer_model.labels_layer.affine = (
+                self.layer_model.targeting_layer.affine
+            )
+            self.layer_model.labels_layer.translate = (
+                self.layer_model.targeting_layer.translate
+            )
+        self.rotation_finished.emit(self.affine_matrix)
+        
+    def _on_add_targeting_layer(self, layer):
+        self.reset()
+        self.layer_model.targeting_layer.events.affine.connect(
+            self._on_affine_changed
+        )
+        
+    def _on_add_labels_layer(self, labels_layer):
+        self.layer_model.labels_layer.events.data.connect(
+            self._on_labels_data_changed
+        )
+        if self.affine_matrix is not None:
+            new_layer = transform_layer(
+                self.layer_model.labels_layer_original, self.affine_matrix
+            )
+            self.layer_model.labels_layer.data = new_layer.data
+            self.layer_model.labels_layer.scale = new_layer.scale
+        if self.layer_model.targeting_layer is not None:
+            self.layer_model.labels_layer.affine = (
+                self.layer_model.targeting_layer.affine
+            )
+            self.layer_model.labels_layer.translate = (
+                self.layer_model.targeting_layer.translate
+            )
 
     def _calculate_intersection_points(self):
         # contruct 3D points for corners of image
@@ -262,6 +334,11 @@ class AlignPlanesModel(QObject):
         self.t = t
 
     def update_plane_position(self, t):
+        """Updates the position of the plane layer based on the interpolation parameter.
+
+        Args:
+            t (float): Interpolation parameter between the two intersection points (0 to 1).
+        """
         if self.align_planes_window.plane_layer is None:
             return
         new_position = (1 - t) * self.intersection_points[

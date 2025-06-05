@@ -14,7 +14,26 @@ from napari_sbem_viewer._utils.registration_utils import (
 )
 
 
-class AffineModel(QObject):
+class AffineModel(QObject):    
+    """Model for managing affine registration between two image layers in napari.
+
+    This class handles the logic for interactive affine registration, including
+    managing points layers, and computing and applying transformation matrices.
+    This handles the z-translation and flipping of the targeting images as well
+    as the 2D affine transformation based on user-defined points.
+
+    Attributes:
+        activated (Signal): Emitted when the necessary layers for registration are added (e.g. both the EM and targeting layers).
+        deactivated (Signal): Emitted when either the EM or targeting layers are removed.
+        transform_loaded (Signal): Emitted when a transformation matrix is loaded or reset.
+        viewer: The napari viewer instance.
+        layer_model: The model managing image layers for registration.
+        delete_pts (bool): Whether to delete points after ending the registration.
+        points_layers (list): List containing the fixed and moving points layers.
+        is_doing_registration (bool): Whether registration is currently active.
+        transform_method (Align2DMethods): The transformation method used for registration.
+        remove_outliers (bool): Whether to remove outliers during transformation.
+    """
     activated = Signal()
     deactivated = Signal()
     transform_loaded = Signal()
@@ -33,17 +52,12 @@ class AffineModel(QObject):
         self.layer_model.em_layer_added.connect(self._on_add_layer)
         self.layer_model.em_layer_removed.connect(self._on_remove_layer)
 
-    def _on_add_layer(self, layer):
-        if (
-            self.layer_model.em_layer is not None
-            and self.layer_model.targeting_layer is not None
-        ):
-            self.activated.emit()
-
-    def _on_remove_layer(self):
-        self.deactivated.emit()
-
     def start_registration(self):
+        """Begins the interactive registration process.
+
+        Raises:
+            ValueError: If required image layers are not selected or are invalid.
+        """
         if (
             not self.layer_model.targeting_layer
             or not self.layer_model.em_layer
@@ -81,6 +95,7 @@ class AffineModel(QObject):
         self.is_doing_registration = True
 
     def stop_registration(self):
+        """Stops the registration process and cleans up points layers."""
         if not self.is_doing_registration:
             return
         self.layer_model.targeting_layer.mode = Mode.PAN_ZOOM
@@ -91,10 +106,19 @@ class AffineModel(QObject):
         self.is_doing_registration = False
 
     def reset_transform(self):
+        """Stops registration and emits a signal to indicate the transform was reset."""
         self.stop_registration()
         self.transform_loaded.emit()
 
     def load_transform(self, affine_matrix):
+        """Loads and applies a 2D affine transform to the moving image layer.
+
+        Args:
+            affine_matrix (np.ndarray): The 2D affine matrix to apply.
+
+        Raises:
+            ValueError: If the provided matrix is not a valid 2D affine matrix.
+        """
         if not is_2d_affine_matrix(affine_matrix):
             print(affine_matrix)
             raise ValueError(
@@ -106,22 +130,44 @@ class AffineModel(QObject):
         self.transform_loaded.emit()
 
     def get_affine_matrix(self):
+        """Returns the current affine matrix of the moving image layer.
+
+        Returns:
+            np.ndarray: The affine matrix.
+
+        Raises:
+            ValueError: If no moving image layer is selected.
+        """
         if self.layer_model.targeting_layer is None:
             raise ValueError('No moving image layer selected')
         return self.layer_model.targeting_layer.affine.affine_matrix
 
     def is_z_flipped(self):
+        """Checks if the Z axis of the moving image layer is flipped.
+
+        Returns:
+            bool: True if Z is flipped, False otherwise.
+        """
         if not self.layer_model.targeting_layer:
             return False
         return self.layer_model.targeting_layer.affine.affine_matrix[0, 0] < 0
     
     def set_transform_method(self, method):
+        """Sets the transformation method for registration.
+
+        Args:
+            method (str): The name of the transformation method.
+
+        Raises:
+            ValueError: If the method name is invalid.
+        """
         try:
             self.transform_method = Align2DMethods[method]
         except KeyError:
             raise ValueError(f'Invalid transform method: {method}')
 
     def do_transform(self):
+        """Calculates and applies the affine transform based on point correspondences."""
         fixed_points_layer, moving_points_layer = self.points_layers
         if (
             self.layer_model.em_layer is None
@@ -166,6 +212,7 @@ class AffineModel(QObject):
         )
 
     def flip_z(self):
+        """Flips the Z axis of the moving image and its points layer."""
         moving_points_layer = self.points_layers[1]
         if self.layer_model.targeting_layer is not None:
             mat = convert_affine_to_ndims(
@@ -184,7 +231,12 @@ class AffineModel(QObject):
                     mat, moving_points_layer.ndim
                 )
 
-    def _offset_z(self, offset):
+    def offset_z(self, offset):
+        """Offsets the Z position of the moving image and its points layer.
+
+        Args:
+            offset (float): The amount to offset in Z (in microns).
+        """
         moving_points_layer = self.points_layers[1]
         if self.layer_model.targeting_layer is not None:
             current_z = self.viewer.dims.point[0]
@@ -200,6 +252,16 @@ class AffineModel(QObject):
                     mat, moving_points_layer.ndim
                 )
             self.viewer.dims.set_point(0, current_z)
+            
+    def _on_add_layer(self, layer):
+        if (
+            self.layer_model.em_layer is not None
+            and self.layer_model.targeting_layer is not None
+        ):
+            self.activated.emit()
+
+    def _on_remove_layer(self):
+        self.deactivated.emit()
 
     def _create_points_layers(self):
         # set points layer for each image

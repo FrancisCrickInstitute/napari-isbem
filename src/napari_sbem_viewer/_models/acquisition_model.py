@@ -7,11 +7,40 @@ from napari_sbem_viewer._utils.general_utils import is_multiple
 
 
 class AcquisitionModel(QObject):
+    """Model for managing SBEM acquisition logic and state.
+
+    This class coordinates the interaction between the napari viewer, ROI management,
+    TCP server communication, and live image acquisition. It handles requests from
+    the TCP server, updates ROI states, manages acquisition parameters, and emits
+    signals to update the GUI and other components.
+    
+    Attributes:
+        errored (Signal): Emitted when an error occurs, with a title and message.
+        acquisition_info_updated (Signal): Emitted when acquisition info is updated (z_depth, slice_thickness, paused).
+        rois_updated (Signal): Emitted when ROI data is updated.
+        viewer: The napari viewer instance.
+        layer_model: The model managing napari layers.
+        tcp_server: TCPServer instance for communication.
+        roi_data: ROIData instance for managing ROIs.
+        live_viewer: LiveViewer instance for live image acquisition.
+        fine_thickness: The fine section thickness for acquisition.
+        is_cutting_thin (bool): Whether thin sectioning is currently active.
+        last_z_depth: Last received z-depth value.
+        pause_before_acquire_roi (bool): Whether to pause before acquiring a new ROI.
+        pause_after_acquire_roi (bool): Whether to pause after acquiring a ROI.
+        reset_rois (bool): Whether to reset ROIs in SBEMimage.
+    """
     errored = Signal(str, str)
     acquisition_info_updated = Signal(float, float, bool)
     rois_updated = Signal(ROIData)
 
     def __init__(self, viewer, layer_model):
+        """Initializes the AcquisitionModel.
+
+        Args:
+            viewer: The napari viewer instance.
+            layer_model: The model managing napari layers.
+        """
         super().__init__()
         self.viewer = viewer
         self.layer_model = layer_model
@@ -29,6 +58,20 @@ class AcquisitionModel(QObject):
         self.live_viewer.cleared.connect(self.layer_model.remove_em_layer)
 
     def process_request(self, request):
+        """Processes an acquisition request from the TCP server.
+
+        This method is called when a request is received from SBEMimage.
+        It processes the request and adds the necessary commands to the 
+        TCP server using the current z-depth and ROI information.
+        
+        Args:
+            request (dict): Dictionary containing 'slice_thickness', 'z_depth', and 'paused' keys.
+
+        Emits:
+            acquisition_info_updated: With z_depth, slice_thickness, and paused status.
+            rois_updated: With updated ROIData.
+            errored: If an error occurs during processing.
+        """
         try:
             slice_thickness = request['slice_thickness']
             z_depth = request['z_depth']
@@ -61,6 +104,15 @@ class AcquisitionModel(QObject):
             self.tcp_server.send_response()
 
     def set_roi_layer(self, roi_layer):
+        """Sets the ROI layer and updates ROI data accordingly.
+
+        Args:
+            roi_layer (Labels or None): The napari Labels layer containing ROI masks,
+                or None to clear ROIs.
+
+        Emits:
+            rois_updated: With updated ROIData.
+        """
         self.roi_data.clear()
 
         if roi_layer is not None:
@@ -92,9 +144,23 @@ class AcquisitionModel(QObject):
         self.fine_thickness = fine_thickness
 
     def get_viewer_z_depth(self):
+        """Gets the current z-depth in world coordinates from the viewer.
+
+        Returns:
+            float: The current z-depth in world coordinates.
+        """
         return self.viewer.dims.point[0] + self.live_viewer.position_z
 
     def focus_on_roi(self, idx, region='center'):
+        """Centers the napari viewer on the specified ROI and region.
+
+        Args:
+            idx (int): Index of the ROI to focus on.
+            region (str): Region of the ROI to focus on ('center', 'top', or 'bottom').
+
+        Raises:
+            ValueError: If an invalid region is specified.
+        """
         roi = self.roi_data.rois[idx]
         if region == 'center':
             z = roi.center[0]
@@ -111,6 +177,7 @@ class AcquisitionModel(QObject):
         self.viewer.dims.set_point(0, coords[0])
 
     def reset_view(self):
+        """Resets the napari viewer and focusses on the most recent slice in the live viewer."""
         self.viewer.reset_view()
         self.live_viewer.reset_z_view()
 

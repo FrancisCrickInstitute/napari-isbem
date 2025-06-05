@@ -14,12 +14,45 @@ from napari_sbem_viewer._utils.image_utils import (
 
 
 class TargetingModel(QObject):
+    """Model for defining ROI labels for targeted imaging.
+
+    This class provides methods for creating, uploading and manipulating
+    label layers (ROIs). It supports running connected components, merging
+    nearby labels, dilation of labels, and interpolation of labels between
+    annotated slices.
+    
+    The `editing_enabled` attribute controls whether the user can edit the labels.
+    To ensure that only the original (unrotated) labels are edited, editing is only
+    enabled when there has not been a rotation applied to the targeting or labels layers.
+    This flag is updated from the `AlignPlaneModel`'s `rotation_finished` signal.
+
+    Attributes:
+        interpolation_progress_updated (Signal): Emitted with progress percentage during interpolation.
+        interpolation_started (Signal): Emitted when interpolation starts.
+        interpolation_finished (Signal): Emitted when interpolation finishes.
+        editing_updated (Signal): Emitted when editing state changes.
+        viewer: The napari viewer instance.
+        layer_model: The model managing image and label layers.
+        annotated_labels: The current annotated labels array.
+        autofill_labels (bool): Whether autofill is enabled for painting.
+        editing_enabled (bool): Whether editing is enabled.
+        interpolation_progress_updated (Signal): Emitted with progress percentage during interpolation.
+        interpolation_started (Signal): Emitted when interpolation starts.
+        interpolation_finished (Signal): Emitted when interpolation finishes.
+        editing_updated (Signal): Emitted when editing state changes.
+    """
     interpolation_progress_updated = Signal(int)
     interpolation_started = Signal()
     interpolation_finished = Signal()
     editing_updated = Signal()
 
     def __init__(self, viewer, layer_model):
+        """Initializes the TargetingModel.
+
+        Args:
+            viewer: The napari viewer instance.
+            layer_model: The model managing image and label layers.
+        """
         super().__init__()
         self.viewer = viewer
         self.layer_model = layer_model
@@ -32,6 +65,11 @@ class TargetingModel(QObject):
         self.layer_model.labels_layer_removed.connect(self.reset_labels)
 
     def add_new_labels_layer(self, downsample_factor):
+        """Adds a new blank labels layer for ROI annotation.
+
+        Args:
+            downsample_factor (int): The factor by which to downsample the labels layer.
+        """
         labels_shape = [
             dim // downsample_factor
             for dim in self.layer_model.targeting_layer_original.data.shape
@@ -50,6 +88,14 @@ class TargetingModel(QObject):
         self.layer_model.add_labels_layer(layer)
 
     def upload_existing_labels(self, file_path):
+        """Uploads an existing labels file as the ROI layer.
+        The labels is assumed to match the existing targeting layer,
+        and the scale is adjusted accordingly if the uploaded labels
+        have been downsampled.
+
+        Args:
+            file_path (str): Path to the labels TIFF file.
+        """
         labels = tifffile.imread(file_path)
         scale_factors = calculate_scale(
             labels.shape, self.layer_model.targeting_layer_original.data.shape
@@ -66,6 +112,11 @@ class TargetingModel(QObject):
         self.layer_model.add_labels_layer(layer)
 
     def connected_components(self):
+        """Applies connected components labeling to the current labels layer.
+
+        Raises:
+            ValueError: If no labels layer is present.
+        """
         if self.layer_model.labels_layer is None:
             raise ValueError('No labels layer found')
         cc_mask = connected_components_sitk(self.layer_model.labels_layer.data)
@@ -73,6 +124,11 @@ class TargetingModel(QObject):
         self.annotated_labels = cc_mask.copy()
 
     def merge_nearby_labels(self, tolerance):
+        """Merges nearby labeled objects within a given tolerance.
+
+        Args:
+            tolerance (float): Distance threshold for merging, in microns.
+        """
         tolerance_px = round(
             tolerance / self.layer_model.labels_layer.scale[0]
         )  # TODO: assumes isotropic scale
@@ -83,6 +139,11 @@ class TargetingModel(QObject):
         self.annotated_labels = merged_labels.copy()
 
     def dilate_labels(self, size):
+        """Dilates each label in the labels layer by a given size.
+
+        Args:
+            size (float): Dilation size in microns.
+        """
         size_px = round(
             size / self.layer_model.labels_layer.scale[0]
         )  # TODO: assumes isotropic scale
@@ -96,6 +157,11 @@ class TargetingModel(QObject):
         self.annotated_labels = self.layer_model.labels_layer.data.copy()
 
     def interpolate_labels(self):
+        """Interpolates missing slices in the labels layer.
+
+        Raises:
+            ValueError: If no labels layer is present.
+        """
         if self.annotated_labels is None:
             raise ValueError('No labels layer found')
 
@@ -112,15 +178,22 @@ class TargetingModel(QObject):
         )
 
     def reset_interpolation(self):
+        """Resets the labels layer to the last annotated state."""
         self.interpolation_progress_updated.emit(0)
         self.layer_model.labels_layer.data = self.annotated_labels
 
     def reset_labels(self):
+        """Resets the annotated labels and emits interpolation finished signal."""
         self.annotated_labels = None
         self.interpolation_progress_updated.emit(0)
         self.interpolation_finished.emit()
 
     def enable_editing(self, enabled):
+        """Enables or disables editing of the labels layer.
+
+        Args:
+            enabled (bool): Whether editing should be enabled.
+        """
         self.editing_enabled = enabled == True
         self.editing_updated.emit()
 

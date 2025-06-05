@@ -178,11 +178,11 @@ class RegistrationController:
 
     def _on_click_move_down(self):
         offset_amount = self.view.z_alignment.move_amount_slider.value()
-        self.model.affine_model._offset_z(offset_amount)
+        self.model.affine_model.offset_z(offset_amount)
 
     def _on_click_move_up(self):
         offset_amount = self.view.z_alignment.move_amount_slider.value()
-        self.model.affine_model._offset_z(-offset_amount)
+        self.model.affine_model.offset_z(-offset_amount)
 
     def _on_click_reset(self):
         if self.view.affine_2d.reset_confirmation_dialog():
