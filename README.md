@@ -1,13 +1,13 @@
 # napari-sbem-viewer
 
-[![License MIT](https://img.shields.io/pypi/l/napari-sbem-viewer.svg?color=green)](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/raw/main/LICENSE)
+<!-- [![License MIT](https://img.shields.io/pypi/l/napari-sbem-viewer.svg?color=green)](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/raw/main/LICENSE) -->
 <!-- [![PyPI](https://img.shields.io/pypi/v/napari-sbem-viewer.svg?color=green)](https://pypi.org/project/napari-sbem-viewer) -->
 <!-- [![Python Version](https://img.shields.io/pypi/pyversions/napari-sbem-viewer.svg?color=green)](https://python.org) -->
 [![tests](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/workflows/tests/badge.svg)](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/actions)
 <!-- [![codecov](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer/branch/main/graph/badge.svg)](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer) -->
 <!-- [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-sbem-viewer)](https://napari-hub.org/plugins/napari-sbem-viewer) -->
 
-A napari plugin to enable targeted imaging in SBEMimage. Read the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer) for more information.
+A napari plugin to enable targeted imaging in SBEMimage. Read the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer).
 
 ----------------------------------
 
