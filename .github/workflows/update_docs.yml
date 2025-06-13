@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 permissions:
   contents: write
 jobs:
@@ -25,4 +28,4 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install mkdocs-material
-      - run: mkdocs gh-deploy --force --remote-name origin --remote-branch gh-pages
+      - run: mkdocs gh-deploy --force

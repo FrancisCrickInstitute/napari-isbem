@@ -1,34 +1,23 @@
 # napari-sbem-viewer
 
-[![License MIT](https://img.shields.io/pypi/l/napari-sbem-viewer.svg?color=green)](https://github.com/grahamross123/napari-sbem-viewer/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/napari-sbem-viewer.svg?color=green)](https://pypi.org/project/napari-sbem-viewer)
-[![Python Version](https://img.shields.io/pypi/pyversions/napari-sbem-viewer.svg?color=green)](https://python.org)
-[![tests](https://github.com/grahamross123/napari-sbem-viewer/workflows/tests/badge.svg)](https://github.com/grahamross123/napari-sbem-viewer/actions)
-[![codecov](https://codecov.io/gh/grahamross123/napari-sbem-viewer/branch/main/graph/badge.svg)](https://codecov.io/gh/grahamross123/napari-sbem-viewer)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-sbem-viewer)](https://napari-hub.org/plugins/napari-sbem-viewer)
+[![License MIT](https://img.shields.io/pypi/l/napari-sbem-viewer.svg?color=green)](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/raw/main/LICENSE)
+<!-- [![PyPI](https://img.shields.io/pypi/v/napari-sbem-viewer.svg?color=green)](https://pypi.org/project/napari-sbem-viewer) -->
+<!-- [![Python Version](https://img.shields.io/pypi/pyversions/napari-sbem-viewer.svg?color=green)](https://python.org) -->
+[![tests](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/workflows/tests/badge.svg)](https://github.com/FrancisCrickInstitute/napari-sbem-viewer/actions)
+<!-- [![codecov](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer/branch/main/graph/badge.svg)](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer) -->
+<!-- [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-sbem-viewer)](https://napari-hub.org/plugins/napari-sbem-viewer) -->
 
-A plugin to connect with SBEMimage and choose ROIs to image
+A napari plugin to enable targeted imaging in SBEMimage. Read the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer) for more information.
 
 ----------------------------------
 
-This [napari] plugin was generated with [Cookiecutter] using [@napari]'s [cookiecutter-napari-plugin] template.
-
-<!--
-Don't miss the full getting started guide to set up your new package:
-https://github.com/napari/cookiecutter-napari-plugin#getting-started
-
-and review the napari docs for plugin developers:
-https://napari.org/stable/plugins/index.html
--->
-
 ## Installation
 
-You can install `napari-sbem-viewer` via [pip]:
+You can install `napari-sbem-viewer` directly from the repository with:
 
-    pip install napari-sbem-viewer
+    pip install git+https://github.com/FrancisCrickInstitute/napari-sbem-viewer
 
-
-
+More detailed instructions can be seen in the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer) for more information.
 
 ## Contributing
 

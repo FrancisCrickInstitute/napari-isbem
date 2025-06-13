@@ -35,3 +35,13 @@ Once the installation is complete, open the plugin with
 ```
 napari -w napari-sbem-viewer
 ```
+
+## Development build
+
+When developing the plugin, you can clone repository and install the package in editable mode with
+
+```
+git clone git@github.com:FrancisCrickInstitute/napari-sbem-viewer.git
+cd napari-sbem-viewer
+pip install -e .
+```
