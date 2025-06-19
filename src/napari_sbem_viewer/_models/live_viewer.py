@@ -99,8 +99,12 @@ class LiveViewer(QObject):
             raise FileNotFoundError('Image directory does not exist.')
         self.image_dir = image_dir
         dask_arrays = []
-        for tiff in self._get_images_from_dir():
-            image_pyramids = load_as_dask(tiff, self.dtype)
+        for filename in self._get_images_from_dir():
+            image_pyramids = load_as_dask(
+                os.path.join(self.image_dir, filename),
+                self.image_shapes,
+                self.dtype,
+            )
             dask_arrays.append(image_pyramids)
 
         if len(self.added_files) < 2:
@@ -139,15 +143,14 @@ class LiveViewer(QObject):
 
         self.watching = True
         while self.watching:
-            # yield every tiff file after checking the metadata is correct
-            for tiff in self._get_images_from_dir():
-                yield from tiff
+            # yield every tiff filename after checking the metadata is correct
+            yield from self._get_images_from_dir()
 
-    def append(self, tiff):
+    def append(self, filename):
         """Appends a new TIFF image to the current image layer.
 
         Args:
-            tiff (TiffFile): The TIFF file to append.
+            filename (str): The filename of the TIFF to append to the viewer.
 
         Raises:
             ValueError: If the image layer is not initialized.
@@ -155,7 +158,11 @@ class LiveViewer(QObject):
         if self.layer is None:
             raise ValueError('Image layer not initialized.')
 
-        image_pyramids = load_as_dask(tiff, self.dtype)
+        image_pyramids = load_as_dask(
+            os.path.join(self.image_dir, filename),
+            self.image_shapes,
+            self.dtype,
+        )
         self._append_to_layer(image_pyramids)
         self.reset_z_view()
 
@@ -226,14 +233,28 @@ class LiveViewer(QObject):
             if (filename not in self.added_files) and (
                 filename not in self.skipped_files
             ):
-                tiff = TiffFile(os.path.join(self.image_dir, filename))
-                if self._init_metadata(tiff):
-                    self.added_files.add(filename)
-                    yield tiff
-                else:
-                    self.skipped_files.add(filename)
+                with TiffFile(os.path.join(self.image_dir, filename)) as tiff:
+                    if self._init_metadata(tiff):
+                        self.added_files.add(filename)
+                        yield filename
+                    else:
+                        self.skipped_files.add(filename)
 
     def _init_metadata(self, tiff):
+        """Initializes metadata from the TIFF file and checks validity.
+
+        If this is the first image, sets metadata attributes. For subsequent images,
+        checks that metadata is consistent with the initial image.
+
+        Args:
+            tiff (TiffFile): The TIFF file to extract metadata from.
+
+        Returns:
+            bool: True if the image should be added to the viewer, False if it should be skipped.
+
+        Raises:
+            ValueError: If the file does not contain OME metadata, or if metadata is invalid or inconsistent.
+        """
         # Get ome metadata from tiff
         xml_metadata = tiff.ome_metadata
         if xml_metadata is None:
@@ -282,7 +303,8 @@ class LiveViewer(QObject):
             self.added_files
         )
         # Add image to the viewer if current z depth matches expected value
-        if math.isclose(expected_z, current_z):
+        # Allow for a tolerance of 0.0001 micrometers (0.1 nanometers)
+        if math.isclose(expected_z, current_z, abs_tol=1e-4):
             return True
         # Don't add image to the viewer if the current z depth is too small
         elif current_z < expected_z:

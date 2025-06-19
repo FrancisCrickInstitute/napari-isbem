@@ -12,7 +12,7 @@ from ome_zarr.io import parse_url
 from ome_zarr.writer import write_multiscale
 from skimage.io.collection import alphanumeric_key
 from skimage.transform import downscale_local_mean
-from tifffile import TiffWriter, imread
+from tifffile import TiffFile, TiffWriter, imread
 
 
 def save_tiff(
@@ -95,21 +95,17 @@ def get_ome_position(metadata, axis):
     return convert_to_micrometers(pixel_size, units)
 
 
-def load_as_dask(tiff, dtype):
+def load_as_dask(filename, shapes, dtype):
     arrays = []
-    for level in range(len(tiff.pages)):
-        data = dask.delayed(load_pyramid_slice)(tiff, level)
-        arrays.append(
-            da.from_delayed(data, shape=tiff.pages[level].shape, dtype=dtype)
-        )
+    for level in range(len(shapes)):
+        data = dask.delayed(load_pyramid_slice)(filename, level)
+        arrays.append(da.from_delayed(data, shape=shapes[level], dtype=dtype))
     return arrays
 
 
-def load_pyramid_slice(tiff, level):
-    data = da.from_zarr(tiff.aszarr(level=level))
-    if data.chunksize == data.shape:
-        data = data.rechunk()
-    return data
+def load_pyramid_slice(filename, level):
+    with TiffFile(filename) as tiff:
+        return da.from_zarr(tiff.aszarr(level=level))
 
 
 def get_dask_stack(image_dir, ext='tif'):
