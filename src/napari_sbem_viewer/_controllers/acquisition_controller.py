@@ -179,7 +179,7 @@ class AcquisitionController:
         try:
             self.acquisition_model.live_viewer.start_watching(ov_dir)
         except (ValueError, FileNotFoundError) as e:
-            self._on_error_overview(e)
+            self.view.show_error('Overview error', str(e))
             return
 
     def _on_roi_layer_changed(self):
