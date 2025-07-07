@@ -17,7 +17,7 @@ You can install `napari-sbem-viewer` directly from the repository with:
 
     pip install git+https://github.com/FrancisCrickInstitute/napari-sbem-viewer
 
-More detailed instructions can be seen in the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer) for more information.
+More detailed instructions can be seen in the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer).
 
 ## Contributing
 
