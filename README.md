@@ -7,7 +7,7 @@
 <!-- [![codecov](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer/branch/main/graph/badge.svg)](https://codecov.io/gh/FrancisCrickInstitute/napari-sbem-viewer) -->
 <!-- [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-sbem-viewer)](https://napari-hub.org/plugins/napari-sbem-viewer) -->
 
-A napari plugin to enable targeted imaging in SBEMimage. Read the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer).
+A napari plugin to enable targeted imaging in SBEMimage. Read the [documentation](https://FrancisCrickInstitute.github.io/napari-sbem-viewer) for more information.
 
 ----------------------------------
 
