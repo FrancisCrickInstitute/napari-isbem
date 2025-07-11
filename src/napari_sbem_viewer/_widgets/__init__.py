@@ -1,3 +1,0 @@
-from napari_sbem_viewer._widgets.sbem_viewer import (
-    SBEMViewerWidget as SBEMViewerWidget,
-)

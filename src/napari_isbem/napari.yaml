@@ -1,0 +1,10 @@
+name: napari-isbem
+display_name: iSBEM
+contributions:
+  commands:
+    - id: napari-isbem.make_isbem_widget
+      python_name: napari_isbem._widgets:iSBEMWidget
+      title: Open iSBEM
+  widgets:
+    - command: napari-isbem.make_isbem_widget
+      display_name: iSBEM

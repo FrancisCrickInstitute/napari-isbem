@@ -11,7 +11,7 @@ The controllers in `/_controllers` connect Qt events from the views to trigger m
 
 
 ```
-└── napari_sbem_viewer
+└── napari_isbem
     ├── __init__.py
     ├── _controllers
     │   ├── __init__.py
@@ -44,7 +44,7 @@ The controllers in `/_controllers` connect Qt events from the views to trigger m
     │   └── targeting_view.py
     ├── _widgets
     │   ├── __init__.py
-    │   └── sbem_viewer.py
+    │   └── isbem.py
     └── napari.yaml
 
 ```

@@ -1,5 +1,5 @@
 [project]
-name = "napari-sbem-viewer"
+name = "napari-isbem"
 dynamic = ["version"]
 description = "A plugin to allow targeted acquisition in SBEMimage."
 readme = "README.md"
@@ -48,7 +48,7 @@ testing = [
 ]
 
 [project.entry-points."napari.manifest"]
-napari-sbem-viewer = "napari_sbem_viewer:napari.yaml"
+napari-isbem = "napari_isbem:napari.yaml"
 
 
 
@@ -67,7 +67,7 @@ where = ["src"]
 
 
 [tool.setuptools_scm]
-write_to = "src/napari_sbem_viewer/_version.py"
+write_to = "src/napari_isbem/_version.py"
 
 
 [tool.black]

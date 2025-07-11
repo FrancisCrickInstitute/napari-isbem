@@ -2,9 +2,9 @@
 title: Overview
 ---
 
-# napari-sbem-viewer
+# napari-isbem
 
-[`napari-sbem-viewer`](https://github.com/FrancisCrickInstitute/napari-sbem-viewer) is a napari plugin to enable targeted acquisition of samples in Serial Block-Face Scanning Electron Microscopy (SBF-SEM). Coordinates of regions of interest can be found using non-destructive X-Ray Microscopy (XRM) images. The plugin interfaces with the open-source acquisition software SBEMimage to update acquired sections in real-time during imaging.
+[`napari-isbem`](https://github.com/FrancisCrickInstitute/napari-isbem) is a napari plugin to enable targeted acquisition of samples in Serial Block-Face Scanning Electron Microscopy (SBF-SEM). Coordinates of regions of interest can be found using non-destructive X-Ray Microscopy (XRM) images. The plugin interfaces with the open-source acquisition software SBEMimage to update acquired sections in real-time during imaging.
 
 The main workflow is described below:
 
