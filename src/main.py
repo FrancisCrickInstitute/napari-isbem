@@ -1,6 +1,6 @@
 import napari
 
-from napari_isbem._widgets import SBEMViewerWidget
+from napari_isbem._widgets import iSBEMWidget
 
 if __name__ == '__main__':
     # OVERVIEW_DIR = '/Users/rossg/sbemimage/EM04652/overviews/ov000/'
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     TRANSFORM_TXT = '/Users/rossg/Documents/MRC-MM/example_data/kidney/EM04652_slice018/napari_transform_edit.txt'
 
     viewer = napari.Viewer()
-    main_widget = SBEMViewerWidget(viewer)
+    main_widget = iSBEMWidget(viewer)
     viewer.window.add_dock_widget(main_widget)
 
     # Configure acquisition widget
@@ -24,12 +24,12 @@ if __name__ == '__main__':
         50
     )
     main_widget.acquisition_view.tcp_settings.start_server_button.click()
-    main_widget.acquisition_model.live_viewer.start_watching(OVERVIEW_DIR)
+    # main_widget.acquisition_model.live_viewer.start_watching(OVERVIEW_DIR)
 
     # Configure targeting widget
-    main_widget.layer_model.import_targeting_image(X_RAY_STACK)
-    main_widget.targeting_model.upload_existing_labels(ROI_STACK)
+    # main_widget.layer_model.import_targeting_image(X_RAY_STACK)
+    # main_widget.targeting_model.upload_existing_labels(ROI_STACK)
 
-    main_widget.registration_model.load_transform(TRANSFORM_TXT)
+    # main_widget.registration_model.load_transform(TRANSFORM_TXT)
 
     napari.run()
