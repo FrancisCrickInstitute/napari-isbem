@@ -20,10 +20,10 @@ if __name__ == '__main__':
     viewer.window.add_dock_widget(main_widget)
 
     # Configure acquisition widget
-    main_widget.acquisition_view.acquisition_settings.fine_thickness_spinbox.setValue(
-        50
-    )
-    main_widget.acquisition_view.tcp_settings.start_server_button.click()
+    #main_widget.acquisition_view.acquisition_settings.fine_thickness_spinbox.setValue(
+    #    50
+    #)
+    #main_widget.acquisition_view.tcp_settings.start_server_button.click()
     # main_widget.acquisition_model.live_viewer.start_watching(OVERVIEW_DIR)
 
     # Configure targeting widget
