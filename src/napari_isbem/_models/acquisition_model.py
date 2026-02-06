@@ -200,11 +200,14 @@ class AcquisitionModel(QObject):
         for roi in self.roi_data.rois:
             y, x = roi.center[1:]
             h, w = roi.size[1:]
+            # get center position from default (top-left) position as reference for ROIs
+            ref_center = (np.array([self.live_viewer.position_x, self.live_viewer.position_y]) +
+                          np.array([self.live_viewer.size_x, self.live_viewer.size_y]) / 2)
             self.tcp_server.add_grid(
                 roi.id,
                 [float(x), float(y)],
                 [float(w), float(h)],
-                [self.live_viewer.position_x, self.live_viewer.position_y],
+                ref_center.tolist(),
             )
             if roi.state == ROIState.ACQUIRING:
                 self.tcp_server.activate_grid(roi.id)
