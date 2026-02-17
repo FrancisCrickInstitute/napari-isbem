@@ -58,9 +58,9 @@ class TCPServer(QThread):
 
         Args:
             roi_id (int): The ROI identifier.
-            roi_center (Any): The center coordinates (in microns) of the ROI relative to the reference center position.
+            roi_center (Any): The center coordinates (in microns) of the ROI relative to the reference image center.
             roi_size (Any): The size of the ROI (in microns).
-            ref_center (Any): The reference position (in microns).
+            ref_center (Any): Position of the reference image center (in microns).
         """
         self.response_commands.append(
             {
