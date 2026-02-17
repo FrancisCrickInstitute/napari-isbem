@@ -53,14 +53,14 @@ class TCPServer(QThread):
             {'msg': 'DELETE ALL ARRAY GRIDS', 'args': [], 'kwargs': {}}
         )
 
-    def add_grid(self, roi_id, roi_center, roi_size, ov_position):
+    def add_grid(self, roi_id, roi_center, roi_size, ref_center):
         """Appends an ADD ARRAY GRID command to the response commands.
 
         Args:
             roi_id (int): The ROI identifier.
-            roi_center (Any): The center coordinates (in microns) of the ROI relative to the centre of the overview image.
+            roi_center (Any): The center coordinates (in microns) of the ROI relative to the reference image center.
             roi_size (Any): The size of the ROI (in microns).
-            ov_position (Any): The overview position relative to the SBEMimage stage, in microns.
+            ref_center (Any): Position of the reference image center (in microns).
         """
         self.response_commands.append(
             {
@@ -70,7 +70,7 @@ class TCPServer(QThread):
                     roi_id,
                     roi_center,
                     roi_size,
-                    ov_position,
+                    ref_center,
                 ],
                 'kwargs': {},
             }
