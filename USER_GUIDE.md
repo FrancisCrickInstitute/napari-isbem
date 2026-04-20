@@ -6,7 +6,7 @@ Edited: 20.04.2025, Fiona Young
 
 This is a step-by-step user guide for a typical workflow using iSBEM. It describes the steps depicted in the [accompanying PDF](.assets/20250520_iSBEM_user_guide.pdf), which is referenced throughout ("slide x").
 
-## Before "targeting"
+## Before "Targeting"
 
 - Approach block, when cutting, adjust the focus stigmators and wobbler
 - Acquire Overview stack (Z = 1 µm) with a cutting thickness matching
@@ -14,12 +14,12 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - When importing X-ray as TIFF, check if the correct pixel size is saved
   in the image properties
 
-## Import Datasets and preprocess ROIs \> "Targeting "
+## Import Datasets and preprocess ROIs \> "Targeting"
 
 - Go to "Targeting" (top right menu)
-- Import X-ray tomogram (OME-zarr) (slide 2) and adjust contrast, if
+- Import X-ray tomogram (OME-zarr or TIFF format) (slide 2) and adjust contrast, if
   needed (slide 3)
-- Import labels (tiff) (slide 3)
+- Import labels (TIFF) (slide 3)
 
 <p align="center"><img src=".assets/image1.png" alt="Import menu" width="450"></p>
 
@@ -29,7 +29,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
   individual ROIs
 - Save adjusted ROIs by selecting "Export labels" (slide 7)
 
-<p align="center"><img src=".assets/.assets/image2.png" alt="Label settings" width="800"></p>
+<p align="center"><img src=".assets/image2.png" alt="Label settings" width="800"></p>
 
 - Go to "acquisition" (top right menu) \> set EM overview directory \>
   move slider to the left until EM overview is visible (slide 8 -10)
@@ -89,13 +89,14 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - By double-clicking on "ROI ID" in the depicted table, the respective
   ROI is shown in the center of the napari viewer -\> can be used to
   check each ROI
+- Set the acquisition settings, including cutting thickness and pause options, as required (slides 25-27)
 - Press "Start server" (slide 24)
 
 <p align="center"><img src=".assets/image8.png" alt="TCP server" width="800"></p>
 
 - Go to SBEMimage \> tick "Use TCP" \> click on the "..." symbol next to
   it
-- In the popup window, select "Sync data" \> click "Ok" (slide 25)
+- In the popup window, select "Sync data" \> click "Ok" (slide 28)
 - ROIs should appear in the SBEMimage Viewport \> check if positions are
   correct
 
@@ -108,7 +109,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
   in napari
 - Continue with the acquisition
 
-## Resuming from saved transformation
+## Resuming from saved transformation (slides 30-38)
 
 - Import X-ray and saved labels as usual
 - Saved labels should be dilated and merged
