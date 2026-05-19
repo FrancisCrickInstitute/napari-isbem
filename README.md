@@ -25,7 +25,7 @@ A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest
 
 ## Installation
 
-### 1. Install napari
+### Installing napari
 
 Create a Python 3.12 environment with napari installed (skip this step if you are already a napari user and have napari installed in your environment).
 
@@ -44,7 +44,7 @@ conda create -n napari-isbem python=3.12 napari=0.5 pyqt -c conda-forge
 conda activate napari-isbem
 ```
 
-### 2. Install the plugin
+### Installing the plugin
 
 ```
 # with uv
@@ -67,7 +67,7 @@ More detailed instructions for all scenarios can be found in the [installation d
 
 ## Usage
 
-To get started, follow the step by step illustrated [user guide](USER_GUIDE.md) (also available in [PDF format](.assets/20250520_iSBEM_user_guide.pdf)). For more detailed information on the features and settings, see the [full documentation](https://FrancisCrickInstitute.github.io/napari-isbem).
+To get started, follow the step by step illustrated [user guide](USER_GUIDE.md). For more detailed information on the features and settings, see the [full documentation](https://FrancisCrickInstitute.github.io/napari-isbem).
 
 ## Contributing
 
