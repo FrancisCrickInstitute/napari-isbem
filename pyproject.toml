@@ -3,16 +3,17 @@ name = "napari-isbem"
 dynamic = ["version"]
 description = "A plugin to allow targeted acquisition in SBEMimage."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-  {name = "Graham Ross"},
-  {email = "graham.ross@crick.ac.uk"},
+  {name = "Graham Ross", email = "graham.ross@crick.ac.uk"},
+  {name = "Joost de Folter"}, 
+  {name = "Fiona Young"}
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Framework :: napari",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
@@ -54,7 +55,7 @@ napari-isbem = "napari_isbem:napari.yaml"
 
 
 [build-system]
-requires = ["setuptools>=42.0.0", "wheel", "setuptools_scm"]
+requires = ["setuptools>=77.0.3", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
