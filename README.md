@@ -65,6 +65,10 @@ SBEMimage is installed separately (it is not a Python package dependency of napa
 
 More detailed instructions for all scenarios can be found in the [installation documentation](https://FrancisCrickInstitute.github.io/napari-isbem/installation/).
 
+## Usage
+
+To get started, follow the step by step illustrated [user guide](USER_GUIDE.md) (also available in [PDF format](.assets/20250520_iSBEM_user_guide.pdf)). For more detailed information on the features and settings, see the [full documentation](https://FrancisCrickInstitute.github.io/napari-isbem).
+
 ## Contributing
 
 Contributions are very welcome. Tests can be run with [tox]; please ensure
