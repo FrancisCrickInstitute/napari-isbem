@@ -17,7 +17,7 @@ A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest
 
 | napari-isbem | SBEMimage | Notes |
 |---|---|---|
-| v0.2.1+ | ≥ 2026.xx (upcoming tagged release) | Recommended |
+| v0.2.1+ | ≥ [2026.06](https://github.com/SBEMimage/SBEMimage/releases/tag/2026.06) | Recommended |
 | v0.2.0 | 2026.02.06 dev ([`3754ef9`](https://github.com/SBEMimage/SBEMimage/tree/3754ef96bc19426995bcfae012410a90a2b5f0ae)) | Breaking change from v0.1.0 |
 | v0.1.0 | 2025.11.14 dev ([`58e36a5`](https://github.com/SBEMimage/SBEMimage/tree/58e36a5f55d4cbc0b4f18b6db780f4808a6520d4)) | Initial release |
 
