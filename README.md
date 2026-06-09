@@ -21,7 +21,11 @@ A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest
 | v0.2.0 | 2026.02.06 dev ([`3754ef9`](https://github.com/SBEMimage/SBEMimage/tree/3754ef96bc19426995bcfae012410a90a2b5f0ae)) | Breaking change from v0.1.0 |
 | v0.1.0 | 2025.11.14 dev ([`58e36a5`](https://github.com/SBEMimage/SBEMimage/tree/58e36a5f55d4cbc0b4f18b6db780f4808a6520d4)) | Initial release |
 
-> **Important:** v0.2.0 introduced a breaking change in the SBEMimage metadata format. napari-isbem v0.2.x is **not** compatible with earlier SBEMimage versions, and v0.1.0 is **not** compatible with later ones.
+>  [!IMPORTANT]
+> v0.2.0 introduced a breaking change in the SBEMimage metadata format. napari-isbem v0.2.x is **not** compatible with earlier SBEMimage versions, and v0.1.0 is **not** compatible with later ones.
+
+> [!TIP]
+> To install a specific version, use `napari-isbem==<version>`, for example `pip install napari-isbem==0.1.0`, or download directly from the [releases] page.
 
 ## Installation
 
@@ -49,6 +53,8 @@ conda activate napari-isbem
 ```
 # with uv
 uv pip install napari-isbem
+# to install a specific version, e.g. v0.2.0
+uv pip install napari-isbem==0.2.0
 # with pip/conda
 pip install napari-isbem
 ```
@@ -92,3 +98,4 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 [PyPI]: https://pypi.org/
 [MIT]: http://opensource.org/licenses/MIT
 [file an issue]: https://github.com/FrancisCrickInstitute/napari-isbem/issues
+[releases]: https://github.com/FrancisCrickInstitute/napari-isbem/releases

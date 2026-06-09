@@ -52,7 +52,9 @@ testing = [
 [project.entry-points."napari.manifest"]
 napari-isbem = "napari_isbem:napari.yaml"
 
-
+[project.urls]
+Documentation = "https://franciscrickinstitute.github.io/napari-isbem/"
+Repository = "https://github.com/FrancisCrickInstitute/napari-isbem"
 
 [build-system]
 requires = ["setuptools>=77.0.3", "wheel", "setuptools_scm"]
