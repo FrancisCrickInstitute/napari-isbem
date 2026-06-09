@@ -29,6 +29,7 @@ dependencies = [
     "SimpleITK",
     "napari-ome-zarr",
     "napari-tiff",
+    "ome-zarr",
     "opencv-python",
     "scikit-image",
     "scikit-learn",
