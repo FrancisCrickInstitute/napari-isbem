@@ -11,7 +11,7 @@ Ronchi, Paolo, Graham Ross, Alana Burrell, et al. 2026. **‘iSBEM: An Open-Sour
 
 A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest identified in X-Ray Microscopy (XRM) (or other correlative modality) images can be registered to the SBF-SEM data, and the plugin communicates with SBEMimage over TCP to automatically update acquisition regions in real-time. Read the accompanying [preprint] and the [documentation] for more information.
 
-![hero](.assets/hero.png)
+![](.assets/hero.png)
 
 ----------------------------------
 

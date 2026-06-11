@@ -6,9 +6,13 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-  {name = "Graham Ross", email = "graham.ross@crick.ac.uk"},
+  {name = "Graham Ross"},
   {name = "Joost de Folter"}, 
   {name = "Fiona Young"}
+]
+maintainers = [
+    {name = "Fiona Young", email="fiona.young@crick.ac.uk"},
+    {name = "Joost de Folter", email="joost.defolter@crick.ac.uk"}, 
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
