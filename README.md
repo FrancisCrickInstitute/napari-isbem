@@ -1,13 +1,15 @@
-# napari-isbem
+# iSEBM: Automated ROI Targeting in Volume Electron Microscopy
 
-<!-- [![License MIT](https://img.shields.io/pypi/l/napari-isbem.svg?color=green)](https://github.com/FrancisCrickInstitute/napari-isbem/raw/main/LICENSE) -->
-<!-- [![PyPI](https://img.shields.io/pypi/v/napari-isbem.svg?color=green)](https://pypi.org/project/napari-isbem) -->
-<!-- [![Python Version](https://img.shields.io/pypi/pyversions/napari-isbem.svg?color=green)](https://python.org) -->
+[![License MIT](https://img.shields.io/pypi/l/napari-isbem.svg?color=green)](https://github.com/FrancisCrickInstitute/napari-isbem/raw/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/napari-isbem.svg?color=green)](https://pypi.org/project/napari-isbem)
 [![tests](https://github.com/FrancisCrickInstitute/napari-isbem/workflows/tests/badge.svg)](https://github.com/FrancisCrickInstitute/napari-isbem/actions)
+[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-isbem)](https://napari-hub.org/plugins/napari-isbem)
+<!-- [![Python Version](https://img.shields.io/pypi/pyversions/napari-isbem.svg?color=green)](https://python.org) -->
 <!-- [![codecov](https://codecov.io/gh/FrancisCrickInstitute/napari-isbem/branch/main/graph/badge.svg)](https://codecov.io/gh/FrancisCrickInstitute/napari-isbem) -->
-<!-- [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-isbem)](https://napari-hub.org/plugins/napari-isbem) -->
 
-A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest identified in X-Ray Microscopy (XRM) (or other correlative modality) images can be registered to the SBF-SEM data, and the plugin communicates with SBEMimage over TCP to automatically update acquisition regions in real-time. Read the [documentation] for more information.
+Ronchi, Paolo, Graham Ross, Alana Burrell, et al. 2026. **‘iSBEM: An Open-Source Workflow for Automated ROI Targeting in Volume Electron Microscopy’.** Preprint, bioRxiv, June 6. https://doi.org/10.64898/2026.06.05.730298.
+
+A [napari] plugin to enable targeted imaging in [SBEMimage]. Regions of interest identified in X-Ray Microscopy (XRM) (or other correlative modality) images can be registered to the SBF-SEM data, and the plugin communicates with SBEMimage over TCP to automatically update acquisition regions in real-time. Read the accompanying [preprint] and the [documentation] for more information.
 
 ![hero](.assets/hero.png)
 
@@ -93,6 +95,7 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 
 [napari]: https://napari.org/
 [SBEMimage]: sbemimage.readthedocs.io
+[preprint]: https://www.biorxiv.org/content/10.64898/2026.06.05.730298v1
 [documentation]: https://FrancisCrickInstitute.github.io/napari-isbem
 [tox]: https://tox.readthedocs.io/en/latest/
 [uv]: https://docs.astral.sh/uv/pip/environments/
