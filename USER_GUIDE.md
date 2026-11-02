@@ -2,7 +2,7 @@
 
 Created: 20.05.2025, Yanneck Klenz
 
-Edited: 20.04.2025, Fiona Young
+Edited: 20.04.2026, Fiona Young
 
 This is a step-by-step user guide for a typical workflow using iSBEM. It describes the steps depicted in the [accompanying PDF](.assets/20250520_iSBEM_user_guide.pdf), which is referenced throughout ("slide x").
 
