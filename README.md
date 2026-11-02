@@ -77,7 +77,7 @@ More detailed instructions for all scenarios can be found in the [installation d
 
 ## Usage
 
-To get started, follow the step by step illustrated [user guide](USER_GUIDE.md). For more detailed information on the features and settings, see the [full documentation](https://FrancisCrickInstitute.github.io/napari-isbem).
+To get started, follow the step by step illustrated [user guide](https://FrancisCrickInstitute.github.io/napari-isbem/user_guide/). For more detailed information on the features and settings, see the [full documentation](https://FrancisCrickInstitute.github.io/napari-isbem).
 
 ## Contributing
 

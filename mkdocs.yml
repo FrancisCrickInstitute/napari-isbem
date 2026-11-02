@@ -5,6 +5,7 @@ nav:
   - Overview: index.md
   - Installation: installation.md
   - Usage:
+    - Step-by-step guide: user_guide/index.md
     - Targeting: targeting.md
     - Acquisition: acquisition.md
     - Registration: registration.md

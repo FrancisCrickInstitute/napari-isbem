@@ -12,3 +12,5 @@ The main workflow is described below:
 2. To view the SBF-SEM data, select the overview directory of the current SBEMimage project in the [Acquisition](acquisition.md) tab. The napari viewer is automaically updated when new images are acquired.
 3. Align the targeting and SBF-SEM images in the [Registration](registration.md) tab to obtain ROI coordinates relative to the SBF-SEM data.
 4. Start the TCP server in the [Acquisition](acquisition.md) tab and select the registered ROI layer. Continue the SBEMimage acquisition with `Use TCP` enabled to automatically image ROIs.
+
+For an illustrated walkthrough of a typical session, see the [step-by-step user guide](user_guide/index.md).

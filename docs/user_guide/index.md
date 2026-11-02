@@ -4,7 +4,7 @@ Created: 20.05.2025, Yanneck Klenz
 
 Edited: 20.04.2026, Fiona Young
 
-This is a step-by-step user guide for a typical workflow using iSBEM. It describes the steps depicted in the [accompanying PDF](.assets/20250520_iSBEM_user_guide.pdf), which is referenced throughout ("slide x").
+This is a step-by-step user guide for a typical workflow using iSBEM. It describes the steps depicted in the [accompanying PDF](images/20250520_iSBEM_user_guide.pdf), which is referenced throughout ("slide x").
 
 ## Before "Targeting"
 
@@ -21,7 +21,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
   needed (slide 3)
 - Import labels (TIFF) (slide 3)
 
-<p align="center"><img src=".assets/image1.png" alt="Import menu" width="450"></p>
+<p align="center"><img src="images/image1.png" alt="Import menu" width="450"></p>
 
 - Dilate ROIs, create a buffer in all dimensions (slide 4)
 - Run connected components and merge nearby labels to avoid double
@@ -29,12 +29,12 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
   individual ROIs
 - Save adjusted ROIs by selecting "Export labels" (slide 7)
 
-<p align="center"><img src=".assets/image2.png" alt="Label settings" width="800"></p>
+<p align="center"><img src="images/image2.png" alt="Label settings" width="800"></p>
 
 - Go to "acquisition" (top right menu) \> set EM overview directory \>
   move slider to the left until EM overview is visible (slide 8 -10)
 
-<p align="center"><img src=".assets/image3_arrows.png" alt="Load overviews" width="800"></p>
+<p align="center"><img src="images/image3_arrows.png" alt="Load overviews" width="800"></p>
 
 ## Rotation Transformation \> "Registration"
 
@@ -45,7 +45,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - Adjust the position to match X-ray to EM overview (slide 12)
 - Adjust the rotation in Z-X and Z-Y to match both images (slide 13)
 
-<p align="center"><img src=".assets/image4_arrows.png" alt="Rotation controls" width="800"></p>
+<p align="center"><img src="images/image4_arrows.png" alt="Rotation controls" width="800"></p>
 
 - Close second window \> "apply rotation" \> message "Image rotated
   successfully!"
@@ -55,7 +55,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - Select X-ray image (left menu) \> click "transform" bottom (top left)
   \> rotate and move X-ray image next to EM overview (slide 16)
 
-<p align="center"><img src=".assets/image5.png" alt="Transform" width="800"></p>
+<p align="center"><img src="images/image5.png" alt="Transform" width="800"></p>
 
 - Tick reverse Z direction, if both datasets do **not** move in the same
   direction when changing the bottom slider (slide 17)
@@ -65,7 +65,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - If the overview is no longer depicted in the viewer, go to
   "Acquisition" \> "Reset view"
 
-<p align="center"><img src=".assets/image6.png" alt="Z alignement" width="800"></p>
+<p align="center"><img src="images/image6.png" alt="Z alignement" width="800"></p>
 
 - Press "Start" under 2D alignment \> "point" layer for each modality
   should be added to the layer list on the left (slide 19)
@@ -74,7 +74,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - Alignment is done in real-time \> after each point is added, evaluate
   the output
 
-<p align="center"><img src=".assets/image7.png" alt="Landmark registration" width="800"></p>
+<p align="center"><img src="images/image7.png" alt="Landmark registration" width="800"></p>
 
 - Using the drop-down menu, select the desired transformation method
   (Euclidean, Similarity, Affine ) -\> output is updated immediately \>
@@ -92,7 +92,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - Set the acquisition settings, including cutting thickness and pause options, as required (slides 25-27)
 - Press "Start server" (slide 24)
 
-<p align="center"><img src=".assets/image8.png" alt="TCP server" width="800"></p>
+<p align="center"><img src="images/image8.png" alt="TCP server" width="800"></p>
 
 - Go to SBEMimage \> tick "Use TCP" \> click on the "..." symbol next to
   it
@@ -100,7 +100,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - ROIs should appear in the SBEMimage Viewport \> check if positions are
   correct
 
-<p align="center"><img src=".assets/image9.png" alt="SBEMimage TCP server" width="800"></p>
+<p align="center"><img src="images/image9.png" alt="SBEMimage TCP server" width="800"></p>
 
 - Adjust the focus and the stigmators
 - In acquisition settings, define target depth (e.g. 10. µm) and cutting
@@ -117,7 +117,7 @@ This is a step-by-step user guide for a typical workflow using iSBEM. It describ
 - Go to "Registration" \> click "Upload transform" \> select the last
   saved transformation
 
-<p align="center"><img src=".assets/image10.png" alt="Upload transform" width="800"></p>
+<p align="center"><img src="images/image10.png" alt="Upload transform" width="800"></p>
 
 - Should apply rotation and 2D transform on the X-ray
 - Resume with "ROI selection" as described above (slide 24, 25)
