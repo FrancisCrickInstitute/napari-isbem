@@ -1,0 +1,1047 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A napari plugin to allow targeted acquisition for SBF-SEM imaging.">
+      
+      
+      
+        <link rel="canonical" href="https://FrancisCrickInstitute.github.io/napari-isbem/user_guide/">
+      
+      
+        <link rel="prev" href="../installation/">
+      
+      
+        <link rel="next" href="../targeting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Step-by-step guide - napari-isbem</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#isbem-user-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="napari-isbem" class="md-header__button md-logo" aria-label="napari-isbem" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            napari-isbem
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Step-by-step guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="napari-isbem" class="md-nav__button md-logo" aria-label="napari-isbem" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    napari-isbem
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Usage
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step-by-step guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step-by-step guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before "Targeting"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#import-datasets-and-preprocess-rois-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Import Datasets and preprocess ROIs > "Targeting"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rotation-transformation-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rotation Transformation > "Registration"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2d-alignment-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2D alignment > "Registration"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#roi-selection-acquisition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROI selection > "Acquisition"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resuming-from-saved-transformation-slides-30-38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resuming from saved transformation (slides 30-38)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../targeting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Targeting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Developer guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../file_structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    File structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../storing_layers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storing layers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sbemimage_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SBEMimage integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roi_coordinates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ROI coordinates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registration_limitations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registration limitations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#before-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before "Targeting"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#import-datasets-and-preprocess-rois-targeting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Import Datasets and preprocess ROIs > "Targeting"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rotation-transformation-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rotation Transformation > "Registration"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2d-alignment-registration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2D alignment > "Registration"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#roi-selection-acquisition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROI selection > "Acquisition"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resuming-from-saved-transformation-slides-30-38" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resuming from saved transformation (slides 30-38)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="isbem-user-guide">iSBEM User Guide</h1>
+<p>Created: 20.05.2025, Yanneck Klenz</p>
+<p>Edited: 20.04.2026, Fiona Young</p>
+<p>This is a step-by-step user guide for a typical workflow using iSBEM. It describes the steps depicted in the <a href="images/20250520_iSBEM_user_guide.pdf">accompanying PDF</a>, which is referenced throughout ("slide x").</p>
+<h2 id="before-targeting">Before "Targeting"</h2>
+<ul>
+<li>Approach block, when cutting, adjust the focus stigmators and wobbler</li>
+<li>Acquire Overview stack (Z = 1 µm) with a cutting thickness matching
+  the settings for the actual acquisition (e.g. 100 µm)</li>
+<li>When importing X-ray as TIFF, check if the correct pixel size is saved
+  in the image properties</li>
+</ul>
+<h2 id="import-datasets-and-preprocess-rois-targeting">Import Datasets and preprocess ROIs &gt; "Targeting"</h2>
+<ul>
+<li>Go to "Targeting" (top right menu)</li>
+<li>Import X-ray tomogram (OME-zarr or TIFF format) (slide 2) and adjust contrast, if
+  needed (slide 3)</li>
+<li>Import labels (TIFF) (slide 3)</li>
+</ul>
+<p align="center"><img src="images/image1.png" alt="Import menu" width="450"></p>
+
+<ul>
+<li>Dilate ROIs, create a buffer in all dimensions (slide 4)</li>
+<li>Run connected components and merge nearby labels to avoid double
+  scanning (adjust merge tolerance based on tile size) =&gt; create
+  individual ROIs</li>
+<li>Save adjusted ROIs by selecting "Export labels" (slide 7)</li>
+</ul>
+<p align="center"><img src="images/image2.png" alt="Label settings" width="800"></p>
+
+<ul>
+<li>Go to "acquisition" (top right menu) &gt; set EM overview directory &gt;
+  move slider to the left until EM overview is visible (slide 8 -10)</li>
+</ul>
+<p align="center"><img src="images/image3_arrows.png" alt="Load overviews" width="800"></p>
+
+<h2 id="rotation-transformation-registration">Rotation Transformation &gt; "Registration"</h2>
+<ul>
+<li>Go to "Registration" &gt; show rotation =&gt; second napari window pops up
+  with X-ray volume in cyan</li>
+<li>Drag and rotate the image (in the pop-up window) to match EM overview
+  (slide 12)</li>
+<li>Adjust the position to match X-ray to EM overview (slide 12)</li>
+<li>Adjust the rotation in Z-X and Z-Y to match both images (slide 13)</li>
+</ul>
+<p align="center"><img src="images/image4_arrows.png" alt="Rotation controls" width="800"></p>
+
+<ul>
+<li>Close second window &gt; "apply rotation" &gt; message "Image rotated
+  successfully!"</li>
+</ul>
+<h2 id="2d-alignment-registration">2D alignment &gt; "Registration"</h2>
+<ul>
+<li>Select X-ray image (left menu) &gt; click "transform" bottom (top left)
+  &gt; rotate and move X-ray image next to EM overview (slide 16)</li>
+</ul>
+<p align="center"><img src="images/image5.png" alt="Transform" width="800"></p>
+
+<ul>
+<li>Tick reverse Z direction, if both datasets do <strong>not</strong> move in the same
+  direction when changing the bottom slider (slide 17)</li>
+<li>Click "move up" or "move down" to match the display of the X-ray to
+  the EM overview (slide 18) as accurately as possible</li>
+<li>can adjust "Move amount (µm)" to be more accurate</li>
+<li>If the overview is no longer depicted in the viewer, go to
+  "Acquisition" &gt; "Reset view"</li>
+</ul>
+<p align="center"><img src="images/image6.png" alt="Z alignement" width="800"></p>
+
+<ul>
+<li>Press "Start" under 2D alignment &gt; "point" layer for each modality
+  should be added to the layer list on the left (slide 19)</li>
+<li>Select landmarks on EM and X-ray sequentially for 2D registration
+  (images should switch automatically)</li>
+<li>Alignment is done in real-time &gt; after each point is added, evaluate
+  the output</li>
+</ul>
+<p align="center"><img src="images/image7.png" alt="Landmark registration" width="800"></p>
+
+<ul>
+<li>Using the drop-down menu, select the desired transformation method
+  (Euclidean, Similarity, Affine ) -&gt; output is updated immediately &gt;
+  can compare results of different methods (slide 21)</li>
+<li>Satisfied with the result of 2D alignment &gt; press "stop" (slide 22)</li>
+<li>Save rotation and 2D alignment as ".txt" by clicking "Save transform"</li>
+</ul>
+<h2 id="roi-selection-acquisition">ROI selection &gt; "Acquisition"</h2>
+<ul>
+<li>Go to the "Acquisition" tab (top right menu)</li>
+<li>In the drop-down menu under "ROI settings," select "ROIs" (slide 24)</li>
+<li>By double-clicking on "ROI ID" in the depicted table, the respective
+  ROI is shown in the center of the napari viewer -&gt; can be used to
+  check each ROI</li>
+<li>Set the acquisition settings, including cutting thickness and pause options, as required (slides 25-27)</li>
+<li>Press "Start server" (slide 24)</li>
+</ul>
+<p align="center"><img src="images/image8.png" alt="TCP server" width="800"></p>
+
+<ul>
+<li>Go to SBEMimage &gt; tick "Use TCP" &gt; click on the "..." symbol next to
+  it</li>
+<li>In the popup window, select "Sync data" &gt; click "Ok" (slide 28)</li>
+<li>ROIs should appear in the SBEMimage Viewport &gt; check if positions are
+  correct</li>
+</ul>
+<p align="center"><img src="images/image9.png" alt="SBEMimage TCP server" width="800"></p>
+
+<ul>
+<li>Adjust the focus and the stigmators</li>
+<li>In acquisition settings, define target depth (e.g. 10. µm) and cutting
+  thickness (e.g. 100 nm) and start acquisition</li>
+<li>After the defined target depth is reached, re-register the two volumes
+  in napari</li>
+<li>Continue with the acquisition</li>
+</ul>
+<h2 id="resuming-from-saved-transformation-slides-30-38">Resuming from saved transformation (slides 30-38)</h2>
+<ul>
+<li>Import X-ray and saved labels as usual</li>
+<li>Saved labels should be dilated and merged</li>
+<li>Load EM overview as described</li>
+<li>Go to "Registration" &gt; click "Upload transform" &gt; select the last
+  saved transformation</li>
+</ul>
+<p align="center"><img src="images/image10.png" alt="Upload transform" width="800"></p>
+
+<ul>
+<li>Should apply rotation and 2D transform on the X-ray</li>
+<li>Resume with "ROI selection" as described above (slide 24, 25)</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+    
+  </body>
+</html>
